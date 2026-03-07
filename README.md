@@ -11,6 +11,8 @@ The DIDWW API provides a simple yet powerful interface that allows you to fully 
 
 The DIDWW API v3 is a fully compliant implementation of the [JSON API specification](http://jsonapi.org/format/).
 
+This SDK uses [JsonApiSerializer](https://github.com/codecutout/JsonApiSerializer) for JSON:API serialization and deserialization.
+
 Read more https://doc.didww.com/api
 
 The client sends the `X-DIDWW-API-Version: 2022-05-10` header with each request.
