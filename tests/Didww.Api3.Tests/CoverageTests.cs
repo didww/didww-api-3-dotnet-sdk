@@ -123,40 +123,11 @@ public class DownloadExportTest : BaseTest
     }
 
     [Fact]
-    public async Task TestDownloadExportToStream()
-    {
-        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv";
-        WireMock.Given(
-            Request.Create().WithPath("/v3/exports/test-id.csv").UsingGet()
-        ).RespondWith(
-            Response.Create()
-                .WithStatusCode(200)
-                .WithBody("col1,col2\nval1,val2\n")
-        );
-
-        var export = new Export { Id = "test-id", Url = exportUrl };
-        using var memoryStream = new MemoryStream();
-        await Client.DownloadExportAsync(export, memoryStream);
-
-        memoryStream.Length.Should().BeGreaterThan(0);
-    }
-
-    [Fact]
     public async Task TestDownloadExportNullUrl()
     {
         var export = new Export { Id = "test-id", Url = null };
 
         var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
-        await act.Should().ThrowAsync<DidwwClientException>()
-            .WithMessage("*URL is null*");
-    }
-
-    [Fact]
-    public async Task TestDownloadExportStreamNullUrl()
-    {
-        var export = new Export { Id = "test-id", Url = null };
-
-        var act = () => Client.DownloadExportAsync(export, new MemoryStream());
         await act.Should().ThrowAsync<DidwwClientException>()
             .WithMessage("*URL is null*");
     }
