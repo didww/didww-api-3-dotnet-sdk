@@ -5,7 +5,9 @@ using Didww.Api3.Examples;
 // Usage: dotnet run --framework net10.0 [example-name]
 // Available examples: balance, countries, regions, did-groups, dids, trunks,
 //   trunk-groups, voice-out-trunks, orders, orders-available, orders-capacity,
-//   capacity-pools, exports, encryption, webhook
+//   orders-all-items, orders-reservation, capacity-pools, shared-capacity-groups,
+//   did-reservations, did-trunk-assignment, identity-address-proofs,
+//   exports, encryption, webhook
 
 var exampleName = args.Length > 0 ? args[0].ToLower() : "all";
 var client = exampleName != "webhook" ? ExampleClientFactory.Create() : null;
@@ -50,6 +52,24 @@ try
         case "capacity-pools":
             await CapacityPoolsExample.RunAsync(client!);
             break;
+        case "shared-capacity-groups":
+            await SharedCapacityGroupsExample.RunAsync(client!);
+            break;
+        case "did-reservations":
+            await DidReservationsExample.RunAsync(client!);
+            break;
+        case "did-trunk-assignment":
+            await DidTrunkAssignmentExample.RunAsync(client!);
+            break;
+        case "identity-address-proofs":
+            await IdentityAddressProofsExample.RunAsync(client!);
+            break;
+        case "orders-all-items":
+            await OrdersAllItemTypesExample.RunAsync(client!);
+            break;
+        case "orders-reservation":
+            await OrdersReservationDidsExample.RunAsync(client!);
+            break;
         case "exports":
             await ExportsExample.RunAsync(client!);
             break;
@@ -90,7 +110,10 @@ try
             Console.WriteLine($"Unknown example: {exampleName}");
             Console.WriteLine("Available: balance, countries, regions, did-groups, dids, trunks,");
             Console.WriteLine("  trunk-groups, voice-out-trunks, orders, orders-available,");
-            Console.WriteLine("  orders-capacity, capacity-pools, exports, encryption, webhook, all");
+            Console.WriteLine("  orders-capacity, orders-all-items, orders-reservation,");
+            Console.WriteLine("  capacity-pools, shared-capacity-groups, did-reservations,");
+            Console.WriteLine("  did-trunk-assignment, identity-address-proofs,");
+            Console.WriteLine("  exports, encryption, webhook, all");
             break;
     }
 }

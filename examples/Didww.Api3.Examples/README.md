@@ -41,6 +41,12 @@ You can also use `--framework net9.0` if you have .NET 9 installed.
 | [`OrdersAvailableDidsExample.cs`](OrdersAvailableDidsExample.cs) | `orders-available` | Orders a specific available DID with nested includes. |
 | [`OrdersCapacityExample.cs`](OrdersCapacityExample.cs) | `orders-capacity` | Purchases capacity from a capacity pool. |
 | [`CapacityPoolsExample.cs`](CapacityPoolsExample.cs) | `capacity-pools` | Lists capacity pools with shared groups and pricings. |
+| [`SharedCapacityGroupsExample.cs`](SharedCapacityGroupsExample.cs) | `shared-capacity-groups` | CRUD shared capacity group from pool. |
+| [`DidReservationsExample.cs`](DidReservationsExample.cs) | `did-reservations` | Reserves an available DID, lists and deletes. |
+| [`DidTrunkAssignmentExample.cs`](DidTrunkAssignmentExample.cs) | `did-trunk-assignment` | Creates trunk, assigns to DID, shows exclusivity. |
+| [`IdentityAddressProofsExample.cs`](IdentityAddressProofsExample.cs) | `identity-address-proofs` | Creates identity, address, lists proof types. |
+| [`OrdersAllItemTypesExample.cs`](OrdersAllItemTypesExample.cs) | `orders-all-items` | Demonstrates all 3 order item types in one example. |
+| [`OrdersReservationDidsExample.cs`](OrdersReservationDidsExample.cs) | `orders-reservation` | Reserves DID then orders via ReservationDidOrderItem. |
 | [`ExportsExample.cs`](ExportsExample.cs) | `exports` | Creates a CDR export and downloads when ready. |
 | [`EncryptionExample.cs`](EncryptionExample.cs) | `encryption` | Encrypts a file and uploads to `encrypted_files`. |
 | [`WebhookExample.cs`](WebhookExample.cs) | `webhook` | Demonstrates webhook callback signature validation. |
