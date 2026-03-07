@@ -100,9 +100,9 @@ public class DownloadExportTest : BaseTest
     [Fact]
     public async Task TestDownloadExportToFile()
     {
-        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv";
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
         WireMock.Given(
-            Request.Create().WithPath("/v3/exports/test-id.csv").UsingGet()
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
         ).RespondWith(
             Response.Create()
                 .WithStatusCode(200)
@@ -135,9 +135,9 @@ public class DownloadExportTest : BaseTest
     [Fact]
     public async Task TestDownloadExportHttpError()
     {
-        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv";
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
         WireMock.Given(
-            Request.Create().WithPath("/v3/exports/test-id.csv").UsingGet()
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
         ).RespondWith(
             Response.Create().WithStatusCode(404)
         );

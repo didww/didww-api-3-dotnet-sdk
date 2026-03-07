@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Didww.Api3.Converter;
 using Didww.Api3.Exception;
 using Didww.Api3.Resource;
@@ -139,6 +140,27 @@ public class DidwwClient
         await using var stream = await response.Content.ReadAsStreamAsync();
         await using var fileStream = File.Create(filePath);
         await stream.CopyToAsync(fileStream);
+    }
+
+    public async Task DownloadAndDecompressExportAsync(Export export, string filePath)
+    {
+        ArgumentNullException.ThrowIfNull(export);
+        ArgumentNullException.ThrowIfNull(filePath);
+
+        var url = export.Url ?? throw new DidwwClientException("Export URL is null");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Api-Key", _credentials.ApiKey);
+        request.Headers.Add(ApiVersionHeader, ApiVersion);
+
+        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        if (!response.IsSuccessStatusCode)
+            throw new DidwwClientException($"Failed to download export: HTTP {(int)response.StatusCode}");
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        await using var gzipStream = new GZipStream(stream, CompressionMode.Decompress);
+        await using var fileStream = File.Create(filePath);
+        await gzipStream.CopyToAsync(fileStream);
     }
 
     public class Builder
