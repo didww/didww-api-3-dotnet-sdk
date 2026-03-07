@@ -13,26 +13,37 @@ All examples read the API key from the `DIDWW_API_KEY` environment variable.
 
 ## Run an example
 
+Since the project targets multiple frameworks, you must specify one with `--framework`:
+
 ```bash
 # Run all examples
-DIDWW_API_KEY=your_api_key dotnet run --project examples/Didww.Api3.Examples
+DIDWW_API_KEY=your_api_key dotnet run --project examples/Didww.Api3.Examples --framework net10.0
 
 # Run a specific example
-DIDWW_API_KEY=your_api_key dotnet run --project examples/Didww.Api3.Examples -- balance
+DIDWW_API_KEY=your_api_key dotnet run --project examples/Didww.Api3.Examples --framework net10.0 -- balance
 ```
+
+You can also use `--framework net9.0` if you have .NET 9 installed.
 
 ## Available examples
 
-| Example | Description |
-|---|---|
-| [`BalanceExample.cs`](BalanceExample.cs) | Fetches and prints current account balance and credit. |
-| [`CountriesExample.cs`](CountriesExample.cs) | Lists countries, demonstrates filtering, and fetches one country by ID. |
-| [`DidsExample.cs`](DidsExample.cs) | Lists DIDs and demonstrates DID updates. |
-| [`TrunksExample.cs`](TrunksExample.cs) | Creates SIP and PSTN trunks with enum-based configuration. |
-| [`OrdersExample.cs`](OrdersExample.cs) | Creates a DID order by SKU. |
-| [`ExportsExample.cs`](ExportsExample.cs) | Creates a CDR export and downloads it when ready. |
-| [`EncryptionExample.cs`](EncryptionExample.cs) | Encrypts a file and uploads to `encrypted_files`. |
-| [`WebhookExample.cs`](WebhookExample.cs) | Demonstrates webhook callback signature validation. |
+| Example | Command | Description |
+|---|---|---|
+| [`BalanceExample.cs`](BalanceExample.cs) | `balance` | Fetches and prints current account balance and credit. |
+| [`CountriesExample.cs`](CountriesExample.cs) | `countries` | Lists countries and fetches one with included regions. |
+| [`RegionsExample.cs`](RegionsExample.cs) | `regions` | Lists regions with filtering, sorting, and includes. |
+| [`DidGroupsExample.cs`](DidGroupsExample.cs) | `did-groups` | Lists DID groups with included SKUs and pricing details. |
+| [`DidsExample.cs`](DidsExample.cs) | `dids` | Lists DIDs and demonstrates DID updates. |
+| [`TrunksExample.cs`](TrunksExample.cs) | `trunks` | Creates SIP and PSTN trunks, lists and deletes. |
+| [`TrunkGroupsExample.cs`](TrunkGroupsExample.cs) | `trunk-groups` | Creates trunk group with two trunks, lists, updates, deletes. |
+| [`VoiceOutTrunksExample.cs`](VoiceOutTrunksExample.cs) | `voice-out-trunks` | CRUD operations on outbound trunks. |
+| [`OrdersExample.cs`](OrdersExample.cs) | `orders` | Orders a DID by resolving SKU from DID group. |
+| [`OrdersAvailableDidsExample.cs`](OrdersAvailableDidsExample.cs) | `orders-available` | Orders a specific available DID with nested includes. |
+| [`OrdersCapacityExample.cs`](OrdersCapacityExample.cs) | `orders-capacity` | Purchases capacity from a capacity pool. |
+| [`CapacityPoolsExample.cs`](CapacityPoolsExample.cs) | `capacity-pools` | Lists capacity pools with shared groups and pricings. |
+| [`ExportsExample.cs`](ExportsExample.cs) | `exports` | Creates a CDR export and downloads when ready. |
+| [`EncryptionExample.cs`](EncryptionExample.cs) | `encryption` | Encrypts a file and uploads to `encrypted_files`. |
+| [`WebhookExample.cs`](WebhookExample.cs) | `webhook` | Demonstrates webhook callback signature validation. |
 
 ## Troubleshooting
 
@@ -41,3 +52,5 @@ If `DIDWW_API_KEY` is missing, examples fail with:
 ```
 DIDWW_API_KEY environment variable is not set
 ```
+
+If you see `Unable to run your project. Your project targets multiple frameworks`, add `--framework net10.0` (or `net9.0`) to the command.
