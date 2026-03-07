@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using Didww.Api3.Callback;
 using Didww.Api3.Exception;
@@ -146,6 +147,41 @@ public class DownloadExportTest : BaseTest
         var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
         await act.Should().ThrowAsync<DidwwClientException>()
             .WithMessage("*404*");
+    }
+    [Fact]
+    public async Task TestDownloadAndDecompressExport()
+    {
+        var csvContent = "Date/Time Start (UTC),DID,Duration\n2018-12-06,972397239159652,0\n";
+        using var ms = new MemoryStream();
+        await using (var gz = new GZipStream(ms, CompressionMode.Compress, leaveOpen: true))
+        {
+            await gz.WriteAsync(System.Text.Encoding.UTF8.GetBytes(csvContent));
+        }
+        var gzData = ms.ToArray();
+
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/gzip")
+                .WithBody(gzData)
+        );
+
+        var export = new Export { Id = "test-id", Url = exportUrl };
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await Client.DownloadAndDecompressExportAsync(export, tempFile);
+            var content = File.ReadAllText(tempFile);
+            content.Should().Contain("Date/Time Start (UTC)");
+            content.Should().Contain("972397239159652");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 }
 
