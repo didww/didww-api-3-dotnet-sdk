@@ -144,23 +144,19 @@ public class DidwwClient
 
     public async Task DownloadAndDecompressExportAsync(Export export, string filePath)
     {
-        ArgumentNullException.ThrowIfNull(export);
-        ArgumentNullException.ThrowIfNull(filePath);
-
-        var url = export.Url ?? throw new DidwwClientException("Export URL is null");
-
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add("Api-Key", _credentials.ApiKey);
-        request.Headers.Add(ApiVersionHeader, ApiVersion);
-
-        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-        if (!response.IsSuccessStatusCode)
-            throw new DidwwClientException($"Failed to download export: HTTP {(int)response.StatusCode}");
-
-        await using var stream = await response.Content.ReadAsStreamAsync();
-        await using var gzipStream = new GZipStream(stream, CompressionMode.Decompress);
-        await using var fileStream = File.Create(filePath);
-        await gzipStream.CopyToAsync(fileStream);
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await DownloadExportAsync(export, tempFile);
+            await using var compressedStream = File.OpenRead(tempFile);
+            await using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+            await using var fileStream = File.Create(filePath);
+            await gzipStream.CopyToAsync(fileStream);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 
     public class Builder
