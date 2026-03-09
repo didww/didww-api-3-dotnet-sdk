@@ -14,6 +14,8 @@ public class DirtyContractResolver : JsonApiContractResolver
         if (typeof(BaseResource).IsAssignableFrom(property.DeclaringType))
         {
             var baseShouldSerialize = property.ShouldSerialize;
+            var valueProvider = property.ValueProvider;
+
             property.ShouldSerialize = instance =>
             {
                 // Let base decide first
@@ -24,7 +26,13 @@ public class DirtyContractResolver : JsonApiContractResolver
                     return true;
 
                 if (!DirtySerializationContext.IsDirtyOnlyModeEnabled)
+                {
+                    // In normal mode (create), skip null values
+                    var value = valueProvider?.GetValue(instance);
+                    if (value == null)
+                        return false;
                     return true;
+                }
 
                 // In dirty-only mode, only serialize id + type + dirty fields
                 if (property.PropertyName == "id" || property.PropertyName == "type")
@@ -32,6 +40,9 @@ public class DirtyContractResolver : JsonApiContractResolver
 
                 return resource.IsFieldDirty(property.PropertyName!);
             };
+
+            // Include null values — we handle null filtering in ShouldSerialize above
+            property.NullValueHandling = NullValueHandling.Include;
         }
 
         return property;

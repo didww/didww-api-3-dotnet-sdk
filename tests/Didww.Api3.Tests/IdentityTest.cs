@@ -26,7 +26,7 @@ public class IdentityTest : BaseTest
     [Fact]
     public async Task TestCreateIdentity()
     {
-        StubPost("identities", "identities/create.json");
+        StubPost("identities", "identities/create_request.json", "identities/create.json");
 
         var identity = new Identity
         {
@@ -81,7 +81,7 @@ public class IdentityTest : BaseTest
     [Fact]
     public async Task TestUpdateIdentity()
     {
-        StubPatch("identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", "identities/update.json");
+        StubPatch("identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae", "identities/update_request.json", "identities/update.json");
 
         var identity = Identity.Build("e96ae7d1-11d5-42bc-a5c5-211f3c3788ae");
         identity.FirstName = "Jake";

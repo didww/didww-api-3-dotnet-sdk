@@ -37,14 +37,14 @@ public class AddressVerificationTest : BaseTest
     [Fact]
     public async Task TestCreateAddressVerification()
     {
-        StubPost("address_verifications", "address_verifications/create.json");
+        StubPost("address_verifications", "address_verifications/create_request.json", "address_verifications/create.json");
 
         var verification = new AddressVerification
         {
             CallbackUrl = "http://example.com",
             CallbackMethod = CallbackMethod.Get,
             Address = Address.Build("d3414687-40f4-4346-a267-c2c65117d28c"),
-            Dids = new List<Did> { Did.Build("some-did-id") }
+            Dids = new List<Did> { Did.Build("a9d64c02-4486-4acb-a9a1-be4c81ff0659") }
         };
 
         var response = await Client.AddressVerifications().CreateAsync(verification);

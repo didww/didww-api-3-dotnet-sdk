@@ -27,7 +27,7 @@ public class AddressTest : BaseTest
     [Fact]
     public async Task TestCreateAddress()
     {
-        StubPost("addresses", "addresses/create.json");
+        StubPost("addresses", "addresses/create_request.json", "addresses/create.json");
 
         var address = new Address
         {
@@ -36,7 +36,7 @@ public class AddressTest : BaseTest
             AddressLine = "some street",
             Description = "test address",
             Country = Country.Build("1f6fc2bd-f081-4202-9b1a-d9cb88d942b9"),
-            Identity = Identity.Build("some-identity-id")
+            Identity = Identity.Build("5e9df058-50d2-4e34-b0d4-d1746b86f41a")
         };
 
         var response = await Client.Addresses().CreateAsync(address);
@@ -53,12 +53,13 @@ public class AddressTest : BaseTest
     [Fact]
     public async Task TestUpdateAddress()
     {
-        StubPatch("addresses/bf69bc70-e1c2-442c-9f30-335ee299b663", "addresses/update.json");
+        StubPatch("addresses/bf69bc70-e1c2-442c-9f30-335ee299b663", "addresses/update_request.json", "addresses/update.json");
 
         var address = Address.Build("bf69bc70-e1c2-442c-9f30-335ee299b663");
         address.CityName = "Chicago";
         address.PostalCode = "1234";
         address.AddressLine = "Main street";
+        address.Description = "some address";
 
         var response = await Client.Addresses().UpdateAsync(address);
         var updated = response.Data;

@@ -70,7 +70,7 @@ public class VoiceInTrunkTest : BaseTest
     [Fact]
     public async Task TestCreateVoiceInTrunk()
     {
-        StubPost("voice_in_trunks", "voice_in_trunks/create.json");
+        StubPost("voice_in_trunks", "voice_in_trunks/create_request.json", "voice_in_trunks/create.json");
 
         var config = new PstnConfiguration { Dst = "558540420024" };
 
@@ -90,7 +90,7 @@ public class VoiceInTrunkTest : BaseTest
     [Fact]
     public async Task TestUpdatePstnTrunk()
     {
-        StubPatch("voice_in_trunks/41b94706-325e-4704-a433-d65105758836", "voice_in_trunks/update_pstn.json");
+        StubPatch("voice_in_trunks/41b94706-325e-4704-a433-d65105758836", "voice_in_trunks/update_pstn_request.json", "voice_in_trunks/update_pstn.json");
 
         var config = new PstnConfiguration { Dst = "558540420025" };
 
@@ -108,6 +108,42 @@ public class VoiceInTrunkTest : BaseTest
     }
 
     [Fact]
+    public async Task TestUpdateSipTrunk()
+    {
+        StubPatch("voice_in_trunks/a80006b6-4183-4865-8b99-7ebbd359a762",
+            "voice_in_trunks/update_sip_request.json", "voice_in_trunks/update_sip.json");
+
+        var sipConfig = new SipConfiguration
+        {
+            Username = "new-username",
+            Host = "216.58.215.110",
+            Port = 5060,
+            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729, Codec.G723, Codec.TELEPHONE_EVENT },
+            SstRefreshMethodId = SstRefreshMethod.INVITE,
+            MediaEncryptionMode = MediaEncryptionMode.Zrtp,
+            StirShakenMode = StirShakenMode.Pai,
+            AllowedRtpIps = new List<string> { "127.0.0.1" }
+        };
+
+        var trunk = VoiceInTrunk.Build("a80006b6-4183-4865-8b99-7ebbd359a762");
+        trunk.Name = "hello, updated test sip trunk";
+        trunk.Description = "just a description";
+        trunk.Configuration = sipConfig;
+
+        var response = await Client.VoiceInTrunks().UpdateAsync(trunk);
+        var updated = response.Data;
+
+        updated.Id.Should().Be("a80006b6-4183-4865-8b99-7ebbd359a762");
+        updated.Name.Should().Be("hello, updated test sip trunk");
+        updated.Configuration.Should().BeOfType<SipConfiguration>();
+
+        var config = (SipConfiguration)updated.Configuration!;
+        config.Username.Should().Be("new-username");
+        config.MediaEncryptionMode.Should().Be(MediaEncryptionMode.Zrtp);
+        config.StirShakenMode.Should().Be(StirShakenMode.Pai);
+    }
+
+    [Fact]
     public async Task TestDeleteVoiceInTrunk()
     {
         var id = "41b94706-325e-4704-a433-d65105758836";
@@ -119,7 +155,7 @@ public class VoiceInTrunkTest : BaseTest
     [Fact]
     public async Task TestCreateSipTrunkWithReroutingDisconnectCodes()
     {
-        StubPost("voice_in_trunks", "voice_in_trunks/create_sip_with_rerouting.json");
+        StubPost("voice_in_trunks", "voice_in_trunks/create_sip_with_rerouting_request.json", "voice_in_trunks/create_sip_with_rerouting.json");
 
         var sipConfig = new SipConfiguration
         {

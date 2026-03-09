@@ -37,13 +37,14 @@ public class SharedCapacityGroupTest : BaseTest
     [Fact]
     public async Task TestCreateSharedCapacityGroup()
     {
-        StubPost("shared_capacity_groups", "shared_capacity_groups/create.json");
+        StubPost("shared_capacity_groups", "shared_capacity_groups/create_request.json", "shared_capacity_groups/create.json");
 
         var group = new SharedCapacityGroup
         {
             Name = "java-sdk",
             SharedChannelsCount = 5,
-            CapacityPool = CapacityPool.Build("some-pool-id")
+            MeteredChannelsCount = 0,
+            CapacityPool = CapacityPool.Build("f288d07c-e2fc-4ae6-9837-b18fb469c324")
         };
 
         var response = await Client.SharedCapacityGroups().CreateAsync(group);
@@ -58,11 +59,12 @@ public class SharedCapacityGroupTest : BaseTest
     [Fact]
     public async Task TestUpdateSharedCapacityGroup()
     {
-        StubPatch("shared_capacity_groups/89f987e2-0862-4bf4-a3f4-cdc89af0d875", "shared_capacity_groups/update.json");
+        StubPatch("shared_capacity_groups/89f987e2-0862-4bf4-a3f4-cdc89af0d875", "shared_capacity_groups/update_request.json", "shared_capacity_groups/update.json");
 
         var group = SharedCapacityGroup.Build("89f987e2-0862-4bf4-a3f4-cdc89af0d875");
         group.Name = "didww1";
         group.SharedChannelsCount = 10;
+        group.MeteredChannelsCount = 2;
 
         var response = await Client.SharedCapacityGroups().UpdateAsync(group);
         var updated = response.Data;

@@ -9,7 +9,7 @@ public class ProofTest : BaseTest
     [Fact]
     public async Task TestCreateProof()
     {
-        StubPost("proofs", "proofs/create.json");
+        StubPost("proofs", "proofs/create_request.json", "proofs/create.json");
 
         var proofType = ProofType.Build("19cd7b22-559b-41d4-99c9-7ad7ad63d5d1");
         var encryptedFile = EncryptedFile.Build("254b3c2d-c40c-4ff7-93b1-a677aee7fa10");
@@ -33,7 +33,7 @@ public class ProofTest : BaseTest
     [Fact]
     public async Task TestCreateProofWithIdentityEntity()
     {
-        StubPost("proofs", "proofs/create_with_identity.json");
+        StubPost("proofs", "proofs/create_with_identity_request.json", "proofs/create_with_identity.json");
 
         var proof = new Proof
         {
@@ -52,7 +52,7 @@ public class ProofTest : BaseTest
     [Fact]
     public async Task TestCreateProofWithAddressEntity()
     {
-        StubPost("proofs", "proofs/create_with_address.json");
+        StubPost("proofs", "proofs/create_with_address_request.json", "proofs/create_with_address.json");
 
         var proof = new Proof
         {

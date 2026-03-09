@@ -80,6 +80,18 @@ public class DidTest : BaseTest
     }
 
     [Fact]
+    public async Task TestUpdateDidClearDescription()
+    {
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_clear_description_request.json", "dids/update.json");
+
+        var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
+        did.Description = null;
+
+        await Client.Dids().UpdateAsync(did);
+    }
+
+    [Fact]
     public async Task TestUpdateDidFromLoadedResource()
     {
         StubGet("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/show.json");

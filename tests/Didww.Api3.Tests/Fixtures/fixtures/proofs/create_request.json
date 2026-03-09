@@ -1,7 +1,6 @@
 {
   "data": {
     "type": "proofs",
-    "attributes": {},
     "relationships": {
       "proof_type": {
         "data": {

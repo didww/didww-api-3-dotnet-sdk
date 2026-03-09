@@ -1,7 +1,6 @@
 {
   "data": {
     "type": "proofs",
-    "attributes": {},
     "relationships": {
       "files": {
         "data": [

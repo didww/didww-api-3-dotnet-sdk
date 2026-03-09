@@ -25,7 +25,7 @@ public class OrderTest : BaseTest
     [Fact]
     public async Task TestCreateOrder()
     {
-        StubPost("orders", "orders/create.json");
+        StubPost("orders", "orders/create_request.json", "orders/create.json");
 
         var item1 = new DidOrderItem { SkuId = "acc46374-0b34-4912-9f67-8340339db1e5", Qty = 2 };
         var item2 = new DidOrderItem { SkuId = "f36d2812-2195-4385-85e8-e59c3484a8bc", Qty = 1 };
@@ -190,7 +190,7 @@ public class OrderTest : BaseTest
     [Fact]
     public async Task TestOrderSkuSaveWithCallback()
     {
-        StubPost("orders", "orders_with_callback/create.json");
+        StubPost("orders", "orders_with_callback/create_request.json", "orders_with_callback/create.json");
 
         var item = new DidOrderItem
         {

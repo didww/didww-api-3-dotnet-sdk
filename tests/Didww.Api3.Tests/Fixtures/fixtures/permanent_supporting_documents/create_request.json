@@ -1,7 +1,6 @@
 {
   "data": {
     "type": "permanent_supporting_documents",
-    "attributes": {},
     "relationships": {
       "identity": {
         "data": {

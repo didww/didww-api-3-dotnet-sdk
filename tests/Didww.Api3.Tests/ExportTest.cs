@@ -38,15 +38,16 @@ public class ExportTest : BaseTest
     [Fact]
     public async Task TestCreateExport()
     {
-        StubPost("exports", "exports/create.json");
+        StubPost("exports", "exports/create_request.json", "exports/create.json");
 
         var export = new Export
         {
             ExportType = ExportType.CdrIn,
             Filters = new Dictionary<string, object>
             {
-                { "year", 2024 },
-                { "month", 1 }
+                { "did_number", "1234556789" },
+                { "year", "2019" },
+                { "month", "01" }
             }
         };
 

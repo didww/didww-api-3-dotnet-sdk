@@ -35,12 +35,12 @@ public class DidReservationTest : BaseTest
     [Fact]
     public async Task TestCreateDidReservation()
     {
-        StubPost("did_reservations", "did_reservations/create.json");
+        StubPost("did_reservations", "did_reservations/create_request.json", "did_reservations/create.json");
 
         var reservation = new DidReservation
         {
-            Description = "test reservation",
-            AvailableDid = AvailableDid.Build("some-available-did-id")
+            Description = "DIDWW",
+            AvailableDid = AvailableDid.Build("857d1462-5f43-4238-b007-ff05f282e41b")
         };
 
         var response = await Client.DidReservations().CreateAsync(reservation);

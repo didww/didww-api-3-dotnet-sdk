@@ -25,7 +25,7 @@ public class VoiceInTrunkGroupTest : BaseTest
     [Fact]
     public async Task TestCreateVoiceInTrunkGroup()
     {
-        StubPost("voice_in_trunk_groups", "voice_in_trunk_groups/create.json");
+        StubPost("voice_in_trunk_groups", "voice_in_trunk_groups/create_request.json", "voice_in_trunk_groups/create.json");
 
         var group = new VoiceInTrunkGroup
         {
@@ -33,8 +33,8 @@ public class VoiceInTrunkGroupTest : BaseTest
             CapacityLimit = 1000,
             VoiceInTrunks = new List<VoiceInTrunk>
             {
-                VoiceInTrunk.Build("trunk-1"),
-                VoiceInTrunk.Build("trunk-2")
+                VoiceInTrunk.Build("7c15bca2-7f17-46fb-9486-7e2a17158c7e"),
+                VoiceInTrunk.Build("b07a4cab-48c6-4b3a-9670-11b90b81bdef")
             }
         };
 
@@ -49,7 +49,7 @@ public class VoiceInTrunkGroupTest : BaseTest
     [Fact]
     public async Task TestUpdateVoiceInTrunkGroup()
     {
-        StubPatch("voice_in_trunk_groups/b2319703-ce6c-480d-bb53-614e7abcfc96", "voice_in_trunk_groups/update.json");
+        StubPatch("voice_in_trunk_groups/b2319703-ce6c-480d-bb53-614e7abcfc96", "voice_in_trunk_groups/update_request.json", "voice_in_trunk_groups/update.json");
 
         var group = VoiceInTrunkGroup.Build("b2319703-ce6c-480d-bb53-614e7abcfc96");
         group.Name = "trunk group sample updated with 2 trunks";

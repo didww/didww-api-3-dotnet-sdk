@@ -37,7 +37,7 @@ public class CapacityPoolTest : BaseTest
     [Fact]
     public async Task TestUpdateCapacityPool()
     {
-        StubPatch("capacity_pools/f288d07c-e2fc-4ae6-9837-b18fb469c324", "capacity_pools/update.json");
+        StubPatch("capacity_pools/f288d07c-e2fc-4ae6-9837-b18fb469c324", "capacity_pools/update_request.json", "capacity_pools/update.json");
 
         var pool = CapacityPool.Build("f288d07c-e2fc-4ae6-9837-b18fb469c324");
         pool.TotalChannelsCount = 25;
