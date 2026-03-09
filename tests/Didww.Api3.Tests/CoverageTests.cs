@@ -101,13 +101,22 @@ public class DownloadExportTest : BaseTest
     [Fact]
     public async Task TestDownloadExportToFile()
     {
+        var csvContent = "col1,col2\nval1,val2\n";
+        using var ms = new MemoryStream();
+        await using (var gz = new GZipStream(ms, CompressionMode.Compress, leaveOpen: true))
+        {
+            await gz.WriteAsync(System.Text.Encoding.UTF8.GetBytes(csvContent));
+        }
+        var gzData = ms.ToArray();
+
         var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
         WireMock.Given(
             Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
         ).RespondWith(
             Response.Create()
                 .WithStatusCode(200)
-                .WithBody("col1,col2\nval1,val2\n")
+                .WithHeader("Content-Type", "application/octet-stream")
+                .WithBody(gzData)
         );
 
         var export = new Export { Id = "test-id", Url = exportUrl };
@@ -115,7 +124,10 @@ public class DownloadExportTest : BaseTest
         try
         {
             await Client.DownloadExportAsync(export, tempFile);
-            File.ReadAllText(tempFile).Should().Contain("col1,col2");
+            var bytes = await File.ReadAllBytesAsync(tempFile);
+            // Verify gzip magic bytes
+            bytes[0].Should().Be(0x1f);
+            bytes[1].Should().Be(0x8b);
         }
         finally
         {
@@ -165,7 +177,7 @@ public class DownloadExportTest : BaseTest
         ).RespondWith(
             Response.Create()
                 .WithStatusCode(200)
-                .WithHeader("Content-Type", "application/gzip")
+                .WithHeader("Content-Type", "application/octet-stream")
                 .WithBody(gzData)
         );
 
