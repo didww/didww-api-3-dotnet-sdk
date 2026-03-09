@@ -1,4 +1,5 @@
 using System.Net;
+using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -52,10 +53,36 @@ public abstract class BaseTest : IDisposable
         );
     }
 
+    protected void StubPost(string urlPath, string requestFixturePath, string responseFixturePath, int status = 201)
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/" + urlPath).UsingPost()
+                .WithBody(new JsonMatcher(LoadFixture(requestFixturePath)))
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(status)
+                .WithHeader("Content-Type", "application/vnd.api+json")
+                .WithBody(LoadFixture(responseFixturePath))
+        );
+    }
+
     protected void StubPatch(string urlPath, string responseFixturePath, int status = 200)
     {
         WireMock.Given(
             Request.Create().WithPath("/v3/" + urlPath).UsingPatch()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(status)
+                .WithHeader("Content-Type", "application/vnd.api+json")
+                .WithBody(LoadFixture(responseFixturePath))
+        );
+    }
+
+    protected void StubPatch(string urlPath, string requestFixturePath, string responseFixturePath, int status = 200)
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/" + urlPath).UsingPatch()
+                .WithBody(new JsonMatcher(LoadFixture(requestFixturePath)))
         ).RespondWith(
             Response.Create()
                 .WithStatusCode(status)
