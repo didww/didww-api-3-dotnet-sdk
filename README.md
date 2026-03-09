@@ -1,7 +1,7 @@
 # DIDWW API v3 .NET SDK
 
 [![Tests](https://github.com/didww/didww-api-3-dotnet-sdk/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/didww/didww-api-3-dotnet-sdk/actions/workflows/tests.yml)
-![Coverage](.github/badges/coverage.svg)
+![Coverage](https://didww.github.io/didww-api-3-dotnet-sdk/badge_combined.svg)
 
 .NET client for [DIDWW API v3](https://doc.didww.com).
 
