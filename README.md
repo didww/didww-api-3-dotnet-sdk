@@ -543,6 +543,21 @@ dotnet format --verify-no-changes
 dotnet build
 ```
 
+## Release
+
+To publish a new version to NuGet:
+
+1. Update the version in `src/Didww.Api3/Didww.Api3.csproj`
+2. Commit and push to `main`
+3. Create and push a version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The [release workflow](.github/workflows/release.yml) will automatically build, test, and publish the package to [NuGet](https://www.nuget.org/).
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/didww/didww-api-3-dotnet-sdk
