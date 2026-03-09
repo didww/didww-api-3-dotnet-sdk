@@ -1,0 +1,17 @@
+{
+  "data": {
+    "id": "f4492d73-16bb-43c6-9ce2-da9ef9e6378e",
+    "type": "dids",
+    "attributes": {
+      "dedicated_channels_count": 5
+    },
+    "relationships": {
+      "capacity_pool": {
+        "data": {
+          "type": "capacity_pools",
+          "id": "daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d"
+        }
+      }
+    }
+  }
+}

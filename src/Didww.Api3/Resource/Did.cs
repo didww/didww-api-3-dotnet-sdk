@@ -96,11 +96,13 @@ public class Did : BaseResource
         }
     }
 
+    private CapacityPool? _capacityPool;
     [JsonProperty("capacity_pool")]
-    public CapacityPool? CapacityPool { get; set; }
+    public CapacityPool? CapacityPool { get => _capacityPool; set => _capacityPool = MarkDirty("capacityPool", value); }
 
+    private SharedCapacityGroup? _sharedCapacityGroup;
     [JsonProperty("shared_capacity_group")]
-    public SharedCapacityGroup? SharedCapacityGroup { get; set; }
+    public SharedCapacityGroup? SharedCapacityGroup { get => _sharedCapacityGroup; set => _sharedCapacityGroup = MarkDirty("sharedCapacityGroup", value); }
 
     [JsonProperty("address_verification")]
     public AddressVerification? AddressVerification { get; set; }

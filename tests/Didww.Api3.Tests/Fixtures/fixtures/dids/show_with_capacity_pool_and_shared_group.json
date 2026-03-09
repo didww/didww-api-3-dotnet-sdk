@@ -1,0 +1,135 @@
+{
+  "data": {
+    "id": "f4492d73-16bb-43c6-9ce2-da9ef9e6378e",
+    "type": "dids",
+    "attributes": {
+      "blocked": true,
+      "capacity_limit": 10,
+      "description": "test",
+      "terminated": false,
+      "awaiting_registration": true,
+      "created_at": "2026-03-09T11:59:28.000Z",
+      "billing_cycles_count": null,
+      "number": "4924111131124",
+      "expires_at": "2026-04-09T11:59:28.748Z",
+      "channels_included_count": 0,
+      "dedicated_channels_count": 5
+    },
+    "relationships": {
+      "did_group": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/did_group",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/did_group"
+        }
+      },
+      "order": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/order",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/order"
+        }
+      },
+      "capacity_pool": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/capacity_pool",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/capacity_pool"
+        },
+        "data": {
+          "type": "capacity_pools",
+          "id": "daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d"
+        }
+      },
+      "shared_capacity_group": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/shared_capacity_group",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/shared_capacity_group"
+        },
+        "data": {
+          "type": "shared_capacity_groups",
+          "id": "06ce1e71-c00e-4770-a475-87b78aebc8f7"
+        }
+      },
+      "address_verification": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/address_verification",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/address_verification"
+        }
+      },
+      "voice_in_trunk": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/voice_in_trunk",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/voice_in_trunk"
+        }
+      },
+      "voice_in_trunk_group": {
+        "links": {
+          "self": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/relationships/voice_in_trunk_group",
+          "related": "https://sandbox-api.didww.com/v3/dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e/voice_in_trunk_group"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d",
+      "type": "capacity_pools",
+      "attributes": {
+        "name": "Standard",
+        "renew_date": "2026-03-21",
+        "total_channels_count": 171,
+        "assigned_channels_count": 22,
+        "minimum_limit": 0,
+        "minimum_qty_per_order": 1,
+        "setup_price": "0.0",
+        "monthly_price": "15.0",
+        "metered_rate": "1.0"
+      },
+      "relationships": {
+        "countries": {
+          "links": {
+            "self": "https://sandbox-api.didww.com/v3/capacity_pools/daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d/relationships/countries",
+            "related": "https://sandbox-api.didww.com/v3/capacity_pools/daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d/countries"
+          }
+        },
+        "shared_capacity_groups": {
+          "links": {
+            "self": "https://sandbox-api.didww.com/v3/capacity_pools/daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d/relationships/shared_capacity_groups",
+            "related": "https://sandbox-api.didww.com/v3/capacity_pools/daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d/shared_capacity_groups"
+          }
+        },
+        "qty_based_pricings": {
+          "links": {
+            "self": "https://sandbox-api.didww.com/v3/capacity_pools/daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d/relationships/qty_based_pricings",
+            "related": "https://sandbox-api.didww.com/v3/capacity_pools/daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d/qty_based_pricings"
+          }
+        }
+      }
+    },
+    {
+      "id": "06ce1e71-c00e-4770-a475-87b78aebc8f7",
+      "type": "shared_capacity_groups",
+      "attributes": {
+        "name": "E2E Group B",
+        "shared_channels_count": 3,
+        "created_at": "2026-03-09T11:59:30.899Z",
+        "metered_channels_count": 0
+      },
+      "relationships": {
+        "capacity_pool": {
+          "links": {
+            "self": "https://sandbox-api.didww.com/v3/shared_capacity_groups/06ce1e71-c00e-4770-a475-87b78aebc8f7/relationships/capacity_pool",
+            "related": "https://sandbox-api.didww.com/v3/shared_capacity_groups/06ce1e71-c00e-4770-a475-87b78aebc8f7/capacity_pool"
+          }
+        },
+        "dids": {
+          "links": {
+            "self": "https://sandbox-api.didww.com/v3/shared_capacity_groups/06ce1e71-c00e-4770-a475-87b78aebc8f7/relationships/dids",
+            "related": "https://sandbox-api.didww.com/v3/shared_capacity_groups/06ce1e71-c00e-4770-a475-87b78aebc8f7/dids"
+          }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "api_version": "2022-05-10"
+  }
+}

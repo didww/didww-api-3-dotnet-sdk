@@ -43,7 +43,8 @@ public class DidTest : BaseTest
     [Fact]
     public async Task TestUpdateDid()
     {
-        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/update.json");
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_request.json", "dids/update.json");
 
         var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
         did.CapacityLimit = 2;
@@ -63,7 +64,8 @@ public class DidTest : BaseTest
     [Fact]
     public async Task TestUpdateDidTerminated()
     {
-        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/update_terminated.json");
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_terminated_request.json", "dids/update_terminated.json");
 
         var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
         did.Terminated = true;
@@ -81,7 +83,8 @@ public class DidTest : BaseTest
     public async Task TestUpdateDidFromLoadedResource()
     {
         StubGet("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/show.json");
-        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/update.json");
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_from_loaded_request.json", "dids/update.json");
 
         var did = (await Client.Dids().FindAsync("9df99644-f1a5-4a3c-99a4-559d758eb96b")).Data;
         did.Description = "patched from loaded resource";
@@ -94,45 +97,111 @@ public class DidTest : BaseTest
     [Fact]
     public async Task TestUpdateDidSetVoiceInTrunkNullifiesTrunkGroup()
     {
-        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/update.json");
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_set_voice_in_trunk_request.json", "dids/update.json");
 
         var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
         var trunk = VoiceInTrunk.Build("41b94706-325e-4704-a433-d65105758836");
         did.VoiceInTrunk = trunk;
 
         await Client.Dids().UpdateAsync(did);
-
-        var requests = WireMock.LogEntries.Where(e =>
-            e.RequestMessage.Method == "PATCH").ToList();
-        requests.Should().HaveCount(1);
-        var body = requests[0].RequestMessage.Body;
-        var json = Newtonsoft.Json.Linq.JObject.Parse(body);
-        var relationships = json["data"]!["relationships"]!;
-
-        // voice_in_trunk_group should be nullified
-        relationships["voice_in_trunk_group"]!["data"]!.Type.Should().Be(Newtonsoft.Json.Linq.JTokenType.Null);
     }
 
     [Fact]
     public async Task TestUpdateDidSetVoiceInTrunkGroupNullifiesTrunk()
     {
-        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/update.json");
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_set_voice_in_trunk_group_request.json", "dids/update.json");
 
         var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
-        var trunkGroup = VoiceInTrunkGroup.Build("some-trunk-group-id");
+        var trunkGroup = VoiceInTrunkGroup.Build("b2319703-ce6c-480d-bb53-614e7abcfc96");
         did.VoiceInTrunkGroup = trunkGroup;
 
         await Client.Dids().UpdateAsync(did);
+    }
 
-        var requests = WireMock.LogEntries.Where(e =>
-            e.RequestMessage.Method == "PATCH").ToList();
-        requests.Should().HaveCount(1);
-        var body = requests[0].RequestMessage.Body;
-        var json = Newtonsoft.Json.Linq.JObject.Parse(body);
-        var relationships = json["data"]!["relationships"]!;
+    [Fact]
+    public async Task TestUpdateDidBuiltResourceSendsOnlyDirtyAttributes()
+    {
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_built_single_attr_request.json", "dids/update.json");
 
-        // voice_in_trunk should be nullified
-        relationships["voice_in_trunk"]!["data"]!.Type.Should().Be(Newtonsoft.Json.Linq.JTokenType.Null);
+        var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
+        did.Description = "a";
+
+        await Client.Dids().UpdateAsync(did);
+    }
+
+    [Fact]
+    public async Task TestUpdateDidCapacityPoolIsDirty()
+    {
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_capacity_pool_request.json", "dids/update.json");
+
+        var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
+        did.CapacityPool = CapacityPool.Build("pool-uuid");
+
+        await Client.Dids().UpdateAsync(did);
+    }
+
+    [Fact]
+    public async Task TestUpdateDidSharedCapacityGroupIsDirty()
+    {
+        StubPatch("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b",
+            "dids/update_shared_capacity_group_request.json", "dids/update.json");
+
+        var did = Did.Build("9df99644-f1a5-4a3c-99a4-559d758eb96b");
+        did.SharedCapacityGroup = SharedCapacityGroup.Build("scg-uuid");
+
+        await Client.Dids().UpdateAsync(did);
+    }
+
+    [Fact]
+    public async Task TestUpdateDidDedicatedChannelsCountIsDirty()
+    {
+        StubPatch("dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e",
+            "dids/update_dedicated_channels_request.json", "dids/update_dedicated_channels.json");
+
+        var did = Did.Build("f4492d73-16bb-43c6-9ce2-da9ef9e6378e");
+        did.DedicatedChannelsCount = 5;
+        did.CapacityPool = CapacityPool.Build("daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d");
+
+        var response = await Client.Dids().UpdateAsync(did);
+        var updated = response.Data;
+
+        updated.DedicatedChannelsCount.Should().Be(5);
+        updated.CapacityLimit.Should().Be(10);
+        updated.Number.Should().Be("4924111131124");
+    }
+
+    [Fact]
+    public async Task TestFindDidWithCapacityPoolAndSharedCapacityGroup()
+    {
+        StubGet("dids/f4492d73-16bb-43c6-9ce2-da9ef9e6378e", "dids/show_with_capacity_pool_and_shared_group.json");
+
+        var queryParams = new QueryParams().Include("capacity_pool", "shared_capacity_group");
+        var response = await Client.Dids().FindAsync("f4492d73-16bb-43c6-9ce2-da9ef9e6378e", queryParams);
+        var did = response.Data;
+
+        did.Number.Should().Be("4924111131124");
+        did.DedicatedChannelsCount.Should().Be(5);
+        did.CapacityLimit.Should().Be(10);
+
+        var capacityPool = did.CapacityPool;
+        capacityPool.Should().NotBeNull();
+        capacityPool!.Id.Should().Be("daae37a3-c4fc-40a7-b5e6-6ec9d08ed74d");
+        capacityPool.Name.Should().Be("Standard");
+        capacityPool.TotalChannelsCount.Should().Be(171);
+        capacityPool.AssignedChannelsCount.Should().Be(22);
+        capacityPool.SetupPrice.Should().Be(0.0m);
+        capacityPool.MonthlyPrice.Should().Be(15.0m);
+        capacityPool.MeteredRate.Should().Be(1.0m);
+
+        var sharedGroup = did.SharedCapacityGroup;
+        sharedGroup.Should().NotBeNull();
+        sharedGroup!.Id.Should().Be("06ce1e71-c00e-4770-a475-87b78aebc8f7");
+        sharedGroup.Name.Should().Be("E2E Group B");
+        sharedGroup.SharedChannelsCount.Should().Be(3);
     }
 
     [Fact]

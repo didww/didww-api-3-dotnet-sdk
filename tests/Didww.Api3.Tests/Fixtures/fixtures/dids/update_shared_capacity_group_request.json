@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+    "type": "dids",
+    "relationships": {
+      "shared_capacity_group": {
+        "data": {
+          "id": "scg-uuid",
+          "type": "shared_capacity_groups"
+        }
+      }
+    }
+  }
+}

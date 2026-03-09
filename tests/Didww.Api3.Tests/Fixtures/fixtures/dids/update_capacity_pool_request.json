@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": "9df99644-f1a5-4a3c-99a4-559d758eb96b",
+    "type": "dids",
+    "relationships": {
+      "capacity_pool": {
+        "data": {
+          "id": "pool-uuid",
+          "type": "capacity_pools"
+        }
+      }
+    }
+  }
+}
