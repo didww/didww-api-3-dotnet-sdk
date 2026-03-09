@@ -20,10 +20,10 @@ public class DidOrderItem : OrderItemBase
     public int? Qty { get; set; }
 
     [JsonProperty("nrc")]
-    public double? Nrc { get; set; }
+    public decimal? Nrc { get; set; }
 
     [JsonProperty("mrc")]
-    public double? Mrc { get; set; }
+    public decimal? Mrc { get; set; }
 
     [JsonProperty("billed_from")]
     public string? BilledFrom { get; set; }

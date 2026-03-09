@@ -9,10 +9,10 @@ public class StockKeepingUnit : BaseResource
     public static StockKeepingUnit Build(string id) => BaseResource.Build<StockKeepingUnit>(id);
 
     [JsonProperty("setup_price")]
-    public double? SetupPrice { get; set; }
+    public decimal? SetupPrice { get; set; }
 
     [JsonProperty("monthly_price")]
-    public double? MonthlyPrice { get; set; }
+    public decimal? MonthlyPrice { get; set; }
 
     [JsonProperty("channels_included_count")]
     public int? ChannelsIncludedCount { get; set; }

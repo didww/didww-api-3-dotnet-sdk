@@ -7,11 +7,11 @@ public class Balance : BaseResource
     public override string Type => "balances";
 
     [JsonProperty("total_balance")]
-    public double? TotalBalance { get; set; }
+    public decimal? TotalBalance { get; set; }
 
     [JsonProperty("balance")]
-    public double? BalanceAmount { get; set; }
+    public decimal? BalanceAmount { get; set; }
 
     [JsonProperty("credit")]
-    public double? Credit { get; set; }
+    public decimal? Credit { get; set; }
 }

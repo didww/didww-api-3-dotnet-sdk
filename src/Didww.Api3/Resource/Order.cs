@@ -12,7 +12,7 @@ public class Order : BaseResource
     public static Order Build(string id) => BaseResource.Build<Order>(id);
 
     [JsonProperty("amount")]
-    public double? Amount { get; set; }
+    public decimal? Amount { get; set; }
 
     [JsonProperty("status")]
     public OrderStatus? Status { get; set; }

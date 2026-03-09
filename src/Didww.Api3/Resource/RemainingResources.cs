@@ -18,9 +18,9 @@ public class CapacityPool : BaseResource
     [JsonProperty("assigned_channels_count")] public int? AssignedChannelsCount { get; set; }
     [JsonProperty("minimum_limit")] public int? MinimumLimit { get; set; }
     [JsonProperty("minimum_qty_per_order")] public int? MinimumQtyPerOrder { get; set; }
-    [JsonProperty("setup_price")] public double? SetupPrice { get; set; }
-    [JsonProperty("monthly_price")] public double? MonthlyPrice { get; set; }
-    [JsonProperty("metered_rate")] public double? MeteredRate { get; set; }
+    [JsonProperty("setup_price")] public decimal? SetupPrice { get; set; }
+    [JsonProperty("monthly_price")] public decimal? MonthlyPrice { get; set; }
+    [JsonProperty("metered_rate")] public decimal? MeteredRate { get; set; }
 
     [JsonProperty("countries")] public List<Country>? Countries { get; set; }
     [JsonProperty("shared_capacity_groups")] public List<SharedCapacityGroup>? SharedCapacityGroups { get; set; }

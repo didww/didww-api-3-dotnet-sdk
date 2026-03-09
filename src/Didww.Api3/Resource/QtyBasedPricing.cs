@@ -12,8 +12,8 @@ public class QtyBasedPricing : BaseResource
     public int? Qty { get; set; }
 
     [JsonProperty("setup_price")]
-    public double? SetupPrice { get; set; }
+    public decimal? SetupPrice { get; set; }
 
     [JsonProperty("monthly_price")]
-    public double? MonthlyPrice { get; set; }
+    public decimal? MonthlyPrice { get; set; }
 }
