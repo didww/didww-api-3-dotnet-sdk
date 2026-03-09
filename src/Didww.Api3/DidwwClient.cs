@@ -13,6 +13,9 @@ public class DidwwClient
     public const string ApiVersionHeader = "X-DIDWW-API-Version";
     public const string ApiVersion = "2022-05-10";
 
+    public static readonly string SdkUserAgent =
+        $"didww-dotnet-sdk/{typeof(DidwwClient).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
+
     private readonly DidwwCredentials _credentials;
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerSettings _serializerSettings;
@@ -207,7 +210,7 @@ public class DidwwClient
         {
             request.Headers.TryAddWithoutValidation("Content-Type", "application/vnd.api+json");
             request.Headers.TryAddWithoutValidation("Accept", "application/vnd.api+json");
-            request.Headers.TryAddWithoutValidation("User-Agent", "didww-dotnet-sdk/1.0.0");
+            request.Headers.TryAddWithoutValidation("User-Agent", SdkUserAgent);
             request.Headers.TryAddWithoutValidation(ApiVersionHeader, ApiVersion);
 
             var path = request.RequestUri?.AbsolutePath ?? "";

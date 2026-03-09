@@ -1,4 +1,7 @@
 using FluentAssertions;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
 
 namespace Didww.Api3.Tests;
 
@@ -43,5 +46,36 @@ public class DidwwClientTest
     {
         var act = () => DidwwClient.NewBuilder().Build();
         act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void TestSdkUserAgentContainsVersion()
+    {
+        DidwwClient.SdkUserAgent.Should().StartWith("didww-dotnet-sdk/");
+        DidwwClient.SdkUserAgent.Should().MatchRegex(@"^didww-dotnet-sdk/\d+\.\d+\.\d+$");
+    }
+
+    [Fact]
+    public async Task TestRequestIncludesUserAgentHeader()
+    {
+        using var wireMock = WireMockServer.Start();
+        var client = DidwwClient.NewBuilder()
+            .SetCredentials(new DidwwCredentials("test-key", DidwwEnvironment.Sandbox))
+            .SetBaseUrl(wireMock.Url + "/v3")
+            .Build();
+
+        wireMock.Given(
+            Request.Create().WithPath("/v3/countries").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/vnd.api+json")
+                .WithBody("{\"data\":[]}")
+        );
+
+        await client.Countries().ListAsync();
+
+        var request = wireMock.LogEntries.First().RequestMessage;
+        request.Headers!["User-Agent"].First().Should().Be(DidwwClient.SdkUserAgent);
     }
 }
