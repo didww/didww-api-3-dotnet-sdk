@@ -116,7 +116,7 @@ public class DidwwClient
         var responseBody = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
-            throw new DidwwClientException($"Failed to upload encrypted file: HTTP {(int)response.StatusCode} {responseBody}");
+            ThrowApiException((int)response.StatusCode, responseBody);
 
         var root = JObject.Parse(responseBody);
         var idsNode = root["ids"] as JArray;
@@ -139,7 +139,10 @@ public class DidwwClient
 
         var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
-            throw new DidwwClientException($"Failed to download export: HTTP {(int)response.StatusCode}");
+        {
+            var responseBody = await response.Content.ReadAsStringAsync();
+            ThrowApiException((int)response.StatusCode, responseBody);
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync();
         await using var fileStream = File.Create(filePath);
@@ -162,6 +165,32 @@ public class DidwwClient
         {
             File.Delete(tempFile);
         }
+    }
+
+    private static void ThrowApiException(int httpStatus, string body)
+    {
+        var errors = new List<ApiError>();
+        try
+        {
+            var root = JObject.Parse(body);
+            var errorsNode = root["errors"] as JArray;
+            if (errorsNode != null)
+            {
+                foreach (var errorNode in errorsNode)
+                {
+                    errors.Add(errorNode.ToObject<ApiError>()!);
+                }
+            }
+        }
+        catch
+        {
+            // ignore parse errors
+        }
+
+        if (errors.Count == 0)
+            throw new DidwwApiException(httpStatus, body);
+
+        throw new DidwwApiException(httpStatus, errors);
     }
 
     public class Builder

@@ -70,8 +70,39 @@ public class UploadEncryptedFileTest : BaseTest
         var act = () => Client.UploadEncryptedFileAsync(
             "data"u8.ToArray(), "test.pdf", "fp123");
 
-        await act.Should().ThrowAsync<DidwwClientException>()
-            .WithMessage("*422*");
+        await act.Should().ThrowAsync<DidwwApiException>()
+            .Where(e => e.HttpStatus == 422);
+    }
+
+    [Fact]
+    public async Task TestUploadEncryptedFileApiErrorWithJsonErrors()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(422)
+                .WithHeader("Content-Type", "application/vnd.api+json")
+                .WithBody("""
+                {
+                    "errors": [
+                        {
+                            "title": "is invalid",
+                            "detail": "fingerprint - is invalid",
+                            "status": "422"
+                        }
+                    ]
+                }
+                """)
+        );
+
+        var act = () => Client.UploadEncryptedFileAsync(
+            "data"u8.ToArray(), "test.pdf", "fp123");
+
+        var ex = await act.Should().ThrowAsync<DidwwApiException>();
+        ex.Which.HttpStatus.Should().Be(422);
+        ex.Which.Errors.Should().HaveCount(1);
+        ex.Which.Errors[0].Detail.Should().Be("fingerprint - is invalid");
     }
 
     [Fact]
@@ -110,6 +141,140 @@ public class UploadEncryptedFileTest : BaseTest
 
         await act.Should().ThrowAsync<DidwwClientException>()
             .WithMessage("*Unexpected*");
+    }
+}
+
+// --- DownloadExportAsync tests ---
+public class DownloadExportTest : BaseTest
+{
+    [Fact]
+    public async Task TestDownloadExportToFile()
+    {
+        var csvContent = "col1,col2\nval1,val2\n";
+        using var ms = new MemoryStream();
+        await using (var gz = new GZipStream(ms, CompressionMode.Compress, leaveOpen: true))
+        {
+            await gz.WriteAsync(System.Text.Encoding.UTF8.GetBytes(csvContent));
+        }
+        var gzData = ms.ToArray();
+
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/octet-stream")
+                .WithBody(gzData)
+        );
+
+        var export = new Export { Id = "test-id", Url = exportUrl };
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await Client.DownloadExportAsync(export, tempFile);
+            var bytes = await File.ReadAllBytesAsync(tempFile);
+            // Verify gzip magic bytes
+            bytes[0].Should().Be(0x1f);
+            bytes[1].Should().Be(0x8b);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task TestDownloadExportNullUrl()
+    {
+        var export = new Export { Id = "test-id", Url = null };
+
+        var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
+        await act.Should().ThrowAsync<DidwwClientException>()
+            .WithMessage("*URL is null*");
+    }
+
+    [Fact]
+    public async Task TestDownloadExportHttpError()
+    {
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(404)
+        );
+
+        var export = new Export { Id = "test-id", Url = exportUrl };
+        var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
+        await act.Should().ThrowAsync<DidwwApiException>()
+            .Where(e => e.HttpStatus == 404);
+    }
+
+    [Fact]
+    public async Task TestDownloadExportApiErrorWithJsonErrors()
+    {
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(403)
+                .WithHeader("Content-Type", "application/vnd.api+json")
+                .WithBody("""
+                {
+                    "errors": [
+                        {
+                            "title": "Forbidden",
+                            "detail": "You are not authorized to access this resource",
+                            "status": "403"
+                        }
+                    ]
+                }
+                """)
+        );
+
+        var export = new Export { Id = "test-id", Url = exportUrl };
+        var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
+        var ex = await act.Should().ThrowAsync<DidwwApiException>();
+        ex.Which.HttpStatus.Should().Be(403);
+        ex.Which.Errors.Should().HaveCount(1);
+        ex.Which.Errors[0].Detail.Should().Be("You are not authorized to access this resource");
+    }
+
+    [Fact]
+    public async Task TestDownloadAndDecompressExport()
+    {
+        var csvContent = "Date/Time Start (UTC),DID,Duration\n2018-12-06,972397239159652,0\n";
+        using var ms = new MemoryStream();
+        await using (var gz = new GZipStream(ms, CompressionMode.Compress, leaveOpen: true))
+        {
+            await gz.WriteAsync(System.Text.Encoding.UTF8.GetBytes(csvContent));
+        }
+        var gzData = ms.ToArray();
+
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/octet-stream")
+                .WithBody(gzData)
+        );
+
+        var export = new Export { Id = "test-id", Url = exportUrl };
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await Client.DownloadAndDecompressExportAsync(export, tempFile);
+            var content = File.ReadAllText(tempFile);
+            content.Should().Contain("Date/Time Start (UTC)");
+            content.Should().Contain("972397239159652");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 }
 
