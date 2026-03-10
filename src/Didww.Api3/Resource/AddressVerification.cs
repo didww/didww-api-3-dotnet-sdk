@@ -25,7 +25,10 @@ public class AddressVerification : BaseResource
     public AddressVerificationStatus? Status { get; set; }
 
     [JsonProperty("reject_reasons")]
-    public string? RejectReasons { get; set; }
+    private string? RawRejectReasons { get; set; }
+
+    [JsonIgnore]
+    public string[]? RejectReasons => RawRejectReasons?.Split(new[] { "; " }, StringSplitOptions.None);
 
     [JsonProperty("reference")]
     public string? Reference { get; set; }

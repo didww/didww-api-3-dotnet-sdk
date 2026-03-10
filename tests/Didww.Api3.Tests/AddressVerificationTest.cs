@@ -35,6 +35,20 @@ public class AddressVerificationTest : BaseTest
     }
 
     [Fact]
+    public async Task TestFindRejectedAddressVerification()
+    {
+        StubGet("address_verifications/429e6d4e-2ee9-4953-aa98-0b3ac07f0f96", "address_verifications/show_rejected.json");
+
+        var response = await Client.AddressVerifications().FindAsync("429e6d4e-2ee9-4953-aa98-0b3ac07f0f96");
+        var verification = response.Data;
+
+        verification.Id.Should().Be("429e6d4e-2ee9-4953-aa98-0b3ac07f0f96");
+        verification.Status.Should().Be(AddressVerificationStatus.Rejected);
+        verification.RejectReasons.Should().BeEquivalentTo(new[] { "Address cannot be validated", "Proof of address should be not older than of 6 months" });
+        verification.Reference.Should().Be("ODW-879912");
+    }
+
+    [Fact]
     public async Task TestCreateAddressVerification()
     {
         StubPost("address_verifications", "address_verifications/create_request.json", "address_verifications/create.json");
