@@ -136,6 +136,7 @@ public class DidwwClient
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Api-Key", _credentials.ApiKey);
         request.Headers.Add(ApiVersionHeader, ApiVersion);
+        request.Headers.Add("User-Agent", SdkUserAgent);
 
         var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
