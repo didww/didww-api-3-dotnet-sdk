@@ -241,7 +241,7 @@ var order = new Order
 {
     Items = new List<OrderItemBase>
     {
-        new DidOrderItem
+        new AvailableDidOrderItem
         {
             SkuId = "sku-uuid",
             AvailableDidId = "available-did-uuid"
