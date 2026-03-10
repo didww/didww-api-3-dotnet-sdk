@@ -106,6 +106,7 @@ public class DidwwClient
         request.Headers.Add("Api-Key", _credentials.ApiKey);
         request.Headers.Add(ApiVersionHeader, ApiVersion);
         request.Headers.Add("Accept", "application/json");
+        request.Headers.Add("User-Agent", SdkUserAgent);
 
         using var uploadClient = new HttpClient();
         if (_httpClient.Timeout != TimeSpan.Zero)

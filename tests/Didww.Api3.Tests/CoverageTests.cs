@@ -76,6 +76,25 @@ public class UploadEncryptedFileTest : BaseTest
     }
 
     [Fact]
+    public async Task TestUploadIncludesUserAgentHeader()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(201)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"ids":["file-id-1"]}""")
+        );
+
+        var fileData = "test"u8.ToArray();
+        await Client.UploadEncryptedFileAsync(fileData, "test.pdf", "fp123");
+
+        var request = WireMock.LogEntries.First().RequestMessage;
+        request.Headers!["User-Agent"].First().Should().Be(DidwwClient.SdkUserAgent);
+    }
+
+    [Fact]
     public async Task TestUploadEncryptedFileUnexpectedResponse()
     {
         WireMock.Given(
