@@ -29,7 +29,7 @@ public class DidwwApiException : System.Exception
             {
                 if (i > 0)
                     sb.Append("; ");
-                sb.Append(errors[i].Detail);
+                sb.Append(errors[i].Detail ?? errors[i].Title);
             }
         }
         return sb.ToString();
