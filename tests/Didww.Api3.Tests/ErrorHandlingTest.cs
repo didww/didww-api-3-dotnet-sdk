@@ -83,6 +83,7 @@ public class ErrorHandlingTest : BaseTest
         ex.Which.HttpStatus.Should().Be(404);
         // Verify message falls back to Title when Detail is missing
         ex.Which.Message.Should().Contain("Record not found");
+        ex.Which.Errors.Should().HaveCount(1);
         ex.Which.Errors[0].Title.Should().Be("Record not found");
         ex.Which.Errors[0].Detail.Should().BeNull();
     }
