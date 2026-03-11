@@ -29,7 +29,7 @@ public class ReadOnlyRepository<T> where T : BaseResource
     public async Task<ApiResponse<List<T>>> ListAsync(QueryParams? queryParams = null)
     {
         var url = BaseUrl + "/" + Endpoint + (queryParams?.ToQueryString() ?? "");
-        var response = await HttpClient.GetAsync(url);
+        using var response = await HttpClient.GetAsync(url);
         await HandleErrorResponseAsync(response);
         var body = await response.Content.ReadAsStringAsync();
         var data = JsonConvert.DeserializeObject<List<T>>(body, SerializerSettings) ?? new List<T>();
@@ -41,7 +41,7 @@ public class ReadOnlyRepository<T> where T : BaseResource
     public async Task<ApiResponse<T>> FindAsync(string id, QueryParams? queryParams = null)
     {
         var url = BaseUrl + "/" + Endpoint + "/" + id + (queryParams?.ToQueryString() ?? "");
-        var response = await HttpClient.GetAsync(url);
+        using var response = await HttpClient.GetAsync(url);
         await HandleErrorResponseAsync(response);
         var body = await response.Content.ReadAsStringAsync();
         var data = JsonConvert.DeserializeObject<T>(body, SerializerSettings)!;

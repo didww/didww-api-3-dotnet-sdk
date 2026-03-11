@@ -36,7 +36,7 @@ public class DidwwApiException : System.Exception
                     }
                 }
             }
-            catch
+            catch (Newtonsoft.Json.JsonException)
             {
                 // ignore parse errors
             }

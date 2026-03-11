@@ -25,7 +25,7 @@ public class Repository<T> : ReadOnlyRepository<T> where T : BaseResource
         var url = BaseUrl + "/" + Endpoint + (queryParams?.ToQueryString() ?? "");
         var payload = JsonConvert.SerializeObject(resource, SerializerSettings);
         var content = new StringContent(payload, Encoding.UTF8, JsonApiMediaType);
-        var response = await HttpClient.PostAsync(url, content);
+        using var response = await HttpClient.PostAsync(url, content);
         await HandleErrorResponseAsync(response);
         var body = await response.Content.ReadAsStringAsync();
         var data = JsonConvert.DeserializeObject<T>(body, SerializerSettings)!;
@@ -52,7 +52,7 @@ public class Repository<T> : ReadOnlyRepository<T> where T : BaseResource
 
         var content = new StringContent(payload, Encoding.UTF8, JsonApiMediaType);
         var request = new HttpRequestMessage(new HttpMethod("PATCH"), url) { Content = content };
-        var response = await HttpClient.SendAsync(request);
+        using var response = await HttpClient.SendAsync(request);
         await HandleErrorResponseAsync(response);
         var body = await response.Content.ReadAsStringAsync();
         var data = JsonConvert.DeserializeObject<T>(body, SerializerSettings)!;
@@ -63,7 +63,7 @@ public class Repository<T> : ReadOnlyRepository<T> where T : BaseResource
     public async Task DeleteAsync(string id)
     {
         var url = BaseUrl + "/" + Endpoint + "/" + id;
-        var response = await HttpClient.DeleteAsync(url);
+        using var response = await HttpClient.DeleteAsync(url);
         await HandleErrorResponseAsync(response);
     }
 
