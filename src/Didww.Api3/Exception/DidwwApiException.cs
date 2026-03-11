@@ -19,6 +19,38 @@ public class DidwwApiException : System.Exception
         Errors = new List<ApiError>().AsReadOnly();
     }
 
+    internal static DidwwApiException FromResponseBody(int httpStatus, string? body)
+    {
+        var errors = new List<ApiError>();
+        if (!string.IsNullOrWhiteSpace(body))
+        {
+            try
+            {
+                var root = Newtonsoft.Json.Linq.JObject.Parse(body);
+                var errorsNode = root["errors"] as Newtonsoft.Json.Linq.JArray;
+                if (errorsNode != null)
+                {
+                    foreach (var errorNode in errorsNode)
+                    {
+                        errors.Add(errorNode.ToObject<ApiError>()!);
+                    }
+                }
+            }
+            catch
+            {
+                // ignore parse errors
+            }
+        }
+
+        if (errors.Count > 0)
+            return new DidwwApiException(httpStatus, errors);
+
+        var fallback = string.IsNullOrWhiteSpace(body)
+            ? $"HTTP {httpStatus}"
+            : body;
+        return new DidwwApiException(httpStatus, fallback);
+    }
+
     private static string BuildMessage(int httpStatus, IList<ApiError>? errors)
     {
         var sb = new System.Text.StringBuilder($"DIDWW API error (HTTP {httpStatus})");

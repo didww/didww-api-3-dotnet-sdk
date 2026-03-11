@@ -56,28 +56,7 @@ public class ReadOnlyRepository<T> where T : BaseResource
             return;
 
         var body = await response.Content.ReadAsStringAsync();
-        var errors = new List<ApiError>();
-        try
-        {
-            var root = JObject.Parse(body);
-            var errorsNode = root["errors"] as JArray;
-            if (errorsNode != null)
-            {
-                foreach (var errorNode in errorsNode)
-                {
-                    errors.Add(errorNode.ToObject<ApiError>()!);
-                }
-            }
-        }
-        catch
-        {
-            // ignore parse errors
-        }
-
-        if (errors.Count == 0)
-            throw new DidwwApiException((int)response.StatusCode, body);
-
-        throw new DidwwApiException((int)response.StatusCode, errors);
+        throw DidwwApiException.FromResponseBody((int)response.StatusCode, body);
     }
 
     protected Dictionary<string, object>? ExtractMeta(string body)

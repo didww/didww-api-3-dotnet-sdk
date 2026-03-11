@@ -140,7 +140,8 @@ public class DidwwClient
         using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
         {
-            throw new DidwwApiException((int)response.StatusCode, $"HTTP {(int)response.StatusCode}");
+            var body = await response.Content.ReadAsStringAsync();
+            throw DidwwApiException.FromResponseBody((int)response.StatusCode, body);
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync();
@@ -168,28 +169,7 @@ public class DidwwClient
 
     private static void ThrowApiException(int httpStatus, string body)
     {
-        var errors = new List<ApiError>();
-        try
-        {
-            var root = JObject.Parse(body);
-            var errorsNode = root["errors"] as JArray;
-            if (errorsNode != null)
-            {
-                foreach (var errorNode in errorsNode)
-                {
-                    errors.Add(errorNode.ToObject<ApiError>()!);
-                }
-            }
-        }
-        catch
-        {
-            // ignore parse errors
-        }
-
-        if (errors.Count == 0)
-            throw new DidwwApiException(httpStatus, body);
-
-        throw new DidwwApiException(httpStatus, errors);
+        throw DidwwApiException.FromResponseBody(httpStatus, body);
     }
 
     public class Builder
