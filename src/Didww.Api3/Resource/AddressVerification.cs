@@ -1,3 +1,4 @@
+using Didww.Api3.Converter;
 using Didww.Api3.Resource.Enums;
 using Newtonsoft.Json;
 
@@ -25,10 +26,8 @@ public class AddressVerification : BaseResource
     public AddressVerificationStatus? Status { get; set; }
 
     [JsonProperty("reject_reasons")]
-    private string? RawRejectReasons { get; set; }
-
-    [JsonIgnore]
-    public string[]? RejectReasons => RawRejectReasons?.Split(new[] { "; " }, StringSplitOptions.None);
+    [JsonConverter(typeof(SemicolonSplitConverter))]
+    public string[]? RejectReasons { get; set; }
 
     [JsonProperty("reference")]
     public string? Reference { get; set; }
