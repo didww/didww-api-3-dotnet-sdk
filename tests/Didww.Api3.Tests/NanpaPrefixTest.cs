@@ -36,4 +36,22 @@ public class NanpaPrefixTest : BaseTest
         prefix.Country.Should().NotBeNull();
         prefix.Country!.Name.Should().Be("United States");
     }
+
+    [Fact]
+    public async Task TestFindNanpaPrefixWithRegion()
+    {
+        StubGet("nanpa_prefixes/1e622e21-c740-4d3f-a615-2a7ef4991922", "nanpa_prefixes/show_with_region.json");
+
+        var queryParams = new QueryParams().Include("region");
+        var response = await Client.NanpaPrefixes().FindAsync("1e622e21-c740-4d3f-a615-2a7ef4991922", queryParams);
+        var prefix = response.Data;
+
+        prefix.Id.Should().Be("1e622e21-c740-4d3f-a615-2a7ef4991922");
+        prefix.Npa.Should().Be("201");
+        prefix.Nxx.Should().Be("221");
+        prefix.Region.Should().NotBeNull();
+        prefix.Region!.Id.Should().Be("346e64c8-18c2-4a12-b1e2-20e090043fca");
+        prefix.Region!.Name.Should().Be("New Jersey");
+        prefix.Region!.Iso.Should().Be("US-NJ");
+    }
 }

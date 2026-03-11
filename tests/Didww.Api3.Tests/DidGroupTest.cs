@@ -1,4 +1,5 @@
 using Didww.Api3.Http;
+using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 
 namespace Didww.Api3.Tests;
@@ -33,5 +34,22 @@ public class DidGroupTest : BaseTest
         group.Id.Should().Be("2187c36d-28fb-436f-8861-5a0f5b5a3ee1");
         group.AreaName.Should().Be("Aachen");
         group.Prefix.Should().Be("241");
+    }
+
+    [Fact]
+    public async Task TestFindDidGroupWithRequirement()
+    {
+        StubGet("did_groups/2187c36d-28fb-436f-8861-5a0f5b5a3ee1", "did_groups/show_with_requirement.json");
+
+        var queryParams = new QueryParams().Include("requirement");
+        var response = await Client.DidGroups().FindAsync("2187c36d-28fb-436f-8861-5a0f5b5a3ee1", queryParams);
+        var group = response.Data;
+
+        group.Id.Should().Be("2187c36d-28fb-436f-8861-5a0f5b5a3ee1");
+        group.AreaName.Should().Be("Aachen");
+        group.Prefix.Should().Be("241");
+        group.Requirement.Should().NotBeNull();
+        group.Requirement!.Id.Should().Be("8da1e0b2-047c-4baf-9c57-57143f09b9ce");
+        group.Requirement!.IdentityType.Should().Be(IdentityType.Any);
     }
 }
