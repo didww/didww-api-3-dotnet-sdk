@@ -99,7 +99,7 @@ public class DidwwClient
             { new ByteArrayContent(encryptedData), "encrypted_files[items][][file]", fileName }
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/encrypted_files")
+        using var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/encrypted_files")
         {
             Content = content
         };
@@ -112,7 +112,7 @@ public class DidwwClient
         if (_httpClient.Timeout != TimeSpan.Zero)
             uploadClient.Timeout = _httpClient.Timeout;
 
-        var response = await uploadClient.SendAsync(request);
+        using var response = await uploadClient.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
@@ -133,15 +133,14 @@ public class DidwwClient
 
         var url = export.Url ?? throw new DidwwClientException("Export URL is null");
 
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Api-Key", _credentials.ApiKey);
         request.Headers.Add(ApiVersionHeader, ApiVersion);
 
-        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
         {
-            var responseBody = await response.Content.ReadAsStringAsync();
-            ThrowApiException((int)response.StatusCode, responseBody);
+            throw new DidwwApiException((int)response.StatusCode, $"HTTP {(int)response.StatusCode}");
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync();

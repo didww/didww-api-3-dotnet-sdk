@@ -206,39 +206,30 @@ public class DownloadExportTest : BaseTest
 
         var export = new Export { Id = "test-id", Url = exportUrl };
         var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
-        await act.Should().ThrowAsync<DidwwApiException>()
-            .Where(e => e.HttpStatus == 404);
+        var ex = await act.Should().ThrowAsync<DidwwApiException>();
+        ex.Which.HttpStatus.Should().Be(404);
+        ex.Which.Message.Should().Be("HTTP 404");
+        ex.Which.Errors.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task TestDownloadExportApiErrorWithJsonErrors()
+    public async Task TestDownloadExportHttpErrorUnauthorized()
     {
         var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
         WireMock.Given(
             Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
         ).RespondWith(
             Response.Create()
-                .WithStatusCode(403)
-                .WithHeader("Content-Type", "application/vnd.api+json")
-                .WithBody("""
-                {
-                    "errors": [
-                        {
-                            "title": "Forbidden",
-                            "detail": "You are not authorized to access this resource",
-                            "status": "403"
-                        }
-                    ]
-                }
-                """)
+                .WithStatusCode(401)
+                .WithHeader("Content-Type", "text/html")
         );
 
         var export = new Export { Id = "test-id", Url = exportUrl };
         var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
         var ex = await act.Should().ThrowAsync<DidwwApiException>();
-        ex.Which.HttpStatus.Should().Be(403);
-        ex.Which.Errors.Should().HaveCount(1);
-        ex.Which.Errors[0].Detail.Should().Be("You are not authorized to access this resource");
+        ex.Which.HttpStatus.Should().Be(401);
+        ex.Which.Message.Should().Be("HTTP 401");
+        ex.Which.Errors.Should().BeEmpty();
     }
 
     [Fact]
