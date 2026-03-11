@@ -78,4 +78,29 @@ public class DidwwClientTest
         var request = wireMock.LogEntries.First().RequestMessage;
         request.Headers!["User-Agent"].First().Should().Be(DidwwClient.SdkUserAgent);
     }
+
+    [Fact]
+    public void TestSetInnerHandler()
+    {
+        var handler = new HttpClientHandler();
+        var credentials = new DidwwCredentials("test-key", DidwwEnvironment.Sandbox);
+        var client = DidwwClient.NewBuilder()
+            .SetCredentials(credentials)
+            .SetInnerHandler(handler)
+            .Build();
+
+        client.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TestSetTimeout()
+    {
+        var credentials = new DidwwCredentials("test-key", DidwwEnvironment.Sandbox);
+        var client = DidwwClient.NewBuilder()
+            .SetCredentials(credentials)
+            .SetTimeout(TimeSpan.FromSeconds(30))
+            .Build();
+
+        client.Should().NotBeNull();
+    }
 }

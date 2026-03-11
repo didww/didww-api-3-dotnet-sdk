@@ -3,6 +3,8 @@ using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration;
 using Didww.Api3.Resource.Enums;
 using FluentAssertions;
+using JsonApiSerializer;
+using Newtonsoft.Json;
 
 namespace Didww.Api3.Tests;
 
@@ -232,5 +234,44 @@ public class VoiceInTrunkTest : BaseTest
         config.ReroutingDisconnectCodeIds![0].Should().Be(ReroutingDisconnectCode.SIP_400_BAD_REQUEST);
         config.ReroutingDisconnectCodeIds[^1].Should().Be(ReroutingDisconnectCode.RINGING_TIMEOUT);
         config.ReroutingDisconnectCodeIds.Should().Contain(ReroutingDisconnectCode.SIP_480_TEMPORARILY_UNAVAILABLE);
+    }
+
+    [Fact]
+    public void TestSerializeNullConfiguration()
+    {
+        var trunk = new VoiceInTrunk
+        {
+            Name = "test",
+            Configuration = null
+        };
+
+        var settings = new JsonApiSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Include
+        };
+        var json = JsonConvert.SerializeObject(trunk, settings);
+        json.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TestDeserializeNullConfiguration()
+    {
+        var json = """
+        {
+            "data": {
+                "id": "abc",
+                "type": "voice_in_trunks",
+                "attributes": {
+                    "name": "test",
+                    "configuration": null
+                }
+            }
+        }
+        """;
+
+        var settings = new JsonApiSerializerSettings();
+        var trunk = JsonConvert.DeserializeObject<VoiceInTrunk>(json, settings);
+        trunk.Should().NotBeNull();
+        trunk!.Configuration.Should().BeNull();
     }
 }

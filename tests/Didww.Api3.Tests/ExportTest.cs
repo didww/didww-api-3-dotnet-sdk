@@ -177,6 +177,38 @@ public class ExportTest : BaseTest
             .WithMessage("*404*");
     }
 
+    [Fact]
+    public async Task TestDownloadExportSendsRequiredHeaders()
+    {
+        var exportUrl = WireMock.Url + "/v3/exports/test-id.csv.gz";
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/test-id.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/octet-stream")
+                .WithBody(new byte[] { 0x1f, 0x8b })
+        );
+
+        var export = new Export { Id = "test-id", Url = exportUrl };
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            await Client.DownloadExportAsync(export, tempFile);
+
+            var request = WireMock.LogEntries.First().RequestMessage;
+            request.Headers.Should().ContainKey("Api-Key");
+            request.Headers.Should().ContainKey("User-Agent");
+            request.Headers.Should().ContainKey(DidwwClient.ApiVersionHeader);
+            request.Headers!["User-Agent"].Should().ContainSingle()
+                .Which.Should().Be(DidwwClient.SdkUserAgent);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
     private static byte[] CompressToGzip(string content)
     {
         using var ms = new MemoryStream();

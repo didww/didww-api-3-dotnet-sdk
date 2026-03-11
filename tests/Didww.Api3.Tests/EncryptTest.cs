@@ -107,3 +107,39 @@ public class EncryptTest
         enc1.Should().NotBeEquivalentTo(enc2);
     }
 }
+
+public class EncryptWithClientTest : BaseTest
+{
+    [Fact]
+    public async Task TestEncryptViaClient()
+    {
+        StubGet("public_keys", "public_keys/index.json");
+
+        var encrypt = new Encrypt(Client);
+        encrypt.Fingerprint.Should().Contain(":::");
+        encrypt.PublicKeys.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task TestEncryptResetAsync()
+    {
+        StubGet("public_keys", "public_keys/index.json");
+
+        var encrypt = new Encrypt(Client);
+        var fp1 = encrypt.Fingerprint;
+        await encrypt.ResetAsync();
+        encrypt.Fingerprint.Should().Be(fp1);
+    }
+
+    [Fact]
+    public async Task TestEncryptDataViaClient()
+    {
+        StubGet("public_keys", "public_keys/index.json");
+
+        var encrypt = new Encrypt(Client);
+        var data = "test data"u8.ToArray();
+        var encrypted = encrypt.EncryptData(data);
+        encrypted.Should().NotBeEmpty();
+        encrypted.Length.Should().BeGreaterThan(data.Length);
+    }
+}

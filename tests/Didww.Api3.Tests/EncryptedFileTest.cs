@@ -1,4 +1,7 @@
+using Didww.Api3.Exception;
 using FluentAssertions;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 
 namespace Didww.Api3.Tests;
 
@@ -39,5 +42,100 @@ public class EncryptedFileTest : BaseTest
         StubDelete("encrypted_files/" + id);
 
         await Client.EncryptedFiles().DeleteAsync(id);
+    }
+
+    [Fact]
+    public async Task TestUploadEncryptedFile()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(201)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"ids":["file-id-1","file-id-2"]}""")
+        );
+
+        var fileData = "test file data"u8.ToArray();
+        var result = await Client.UploadEncryptedFileAsync(
+            fileData, "test.pdf", "fingerprint123", "Test description");
+
+        result.Should().HaveCount(2);
+        result[0].Should().Be("file-id-1");
+        result[1].Should().Be("file-id-2");
+    }
+
+    [Fact]
+    public async Task TestUploadEncryptedFileWithoutDescription()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(201)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"ids":["file-id-1"]}""")
+        );
+
+        var fileData = "test"u8.ToArray();
+        var result = await Client.UploadEncryptedFileAsync(fileData, "test.pdf", "fp123");
+
+        result.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task TestUploadEncryptedFileHttpError()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(422)
+                .WithBody("Validation failed")
+        );
+
+        var act = () => Client.UploadEncryptedFileAsync(
+            "data"u8.ToArray(), "test.pdf", "fp123");
+
+        await act.Should().ThrowAsync<DidwwClientException>()
+            .WithMessage("*422*");
+    }
+
+    [Fact]
+    public async Task TestUploadIncludesUserAgentHeader()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(201)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"ids":["file-id-1"]}""")
+        );
+
+        var fileData = "test"u8.ToArray();
+        await Client.UploadEncryptedFileAsync(fileData, "test.pdf", "fp123");
+
+        var request = WireMock.LogEntries.First().RequestMessage;
+        request.Headers!["User-Agent"].First().Should().Be(DidwwClient.SdkUserAgent);
+    }
+
+    [Fact]
+    public async Task TestUploadEncryptedFileUnexpectedResponse()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/encrypted_files").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(201)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"data":"unexpected"}""")
+        );
+
+        var act = () => Client.UploadEncryptedFileAsync(
+            "data"u8.ToArray(), "test.pdf", "fp123");
+
+        await act.Should().ThrowAsync<DidwwClientException>()
+            .WithMessage("*Unexpected*");
     }
 }

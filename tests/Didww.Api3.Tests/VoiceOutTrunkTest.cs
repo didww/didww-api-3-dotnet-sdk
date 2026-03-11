@@ -121,4 +121,17 @@ public class VoiceOutTrunkTest : BaseTest
 
         await Client.VoiceOutTrunks().DeleteAsync(id);
     }
+
+    [Fact]
+    public async Task TestCreateVoiceOutTrunkRegenerateCredential()
+    {
+        StubPost("voice_out_trunk_regenerate_credentials",
+            "voice_out_trunk_regenerate_credentials/create.json");
+
+        var regen = VoiceOutTrunkRegenerateCredential.Build("425ce763-a3a9-49b4-af5b-ada1a65c8864");
+        regen.VoiceOutTrunk = VoiceOutTrunk.Build("425ce763-a3a9-49b4-af5b-ada1a65c8864");
+
+        var response = await Client.VoiceOutTrunkRegenerateCredentials().CreateAsync(regen);
+        response.Data.Id.Should().Be("5fc59e7e-79eb-498a-8779-800416b5c68a");
+    }
 }

@@ -76,4 +76,27 @@ public class RequestValidatorTest
 
         validator.Validate("http://example.com/callbacks", payload, "fbdb1d1b18aa6c08324b7d64b71fb76370690e1d").Should().BeFalse();
     }
+
+    [Fact]
+    public void TestNullSignature()
+    {
+        var validator = new RequestValidator("key");
+        var payload = new Dictionary<string, string> { { "a", "b" } };
+        validator.Validate("http://example.com", payload, null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void TestHttpsDefaultPort()
+    {
+        var validator = new RequestValidator("SOMEAPIKEY");
+        var payload = new Dictionary<string, string>
+        {
+            { "status", "completed" },
+            { "id", "1dd7a68b-e235-402b-8912-fe73ee14243a" },
+            { "type", "orders" }
+        };
+
+        // HTTPS URL without explicit port should normalize to :443
+        validator.Validate("https://example.com/callbacks", payload, "57ba6c3c14ea4bfa9bebd079869cafb27dcba1b6").Should().BeTrue();
+    }
 }

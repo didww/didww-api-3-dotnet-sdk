@@ -2,6 +2,8 @@ using Didww.Api3.Resource;
 using Didww.Api3.Resource.Enums;
 using Didww.Api3.Resource.OrderItem;
 using FluentAssertions;
+using JsonApiSerializer;
+using Newtonsoft.Json;
 
 namespace Didww.Api3.Tests;
 
@@ -214,5 +216,22 @@ public class OrderTest : BaseTest
         created.CallbackUrl.Should().Be("https://example.com/callback");
         created.CallbackMethod.Should().Be(CallbackMethod.Post);
         created.Items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void TestSerializeNullItems()
+    {
+        var order = new Order
+        {
+            Items = null
+        };
+
+        var settings = new JsonApiSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Include
+        };
+        var json = JsonConvert.SerializeObject(order, settings);
+        // Should not throw, items serialized as null
+        json.Should().NotBeNull();
     }
 }
