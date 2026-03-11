@@ -156,7 +156,7 @@ public class ExportTest : BaseTest
     {
         var export = new Export { Id = "test-id", Url = null };
 
-        var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
+        var act = () => Client.DownloadExportAsync(export, Path.Combine(Path.GetTempPath(), "test.csv"));
         await act.Should().ThrowAsync<DidwwClientException>()
             .WithMessage("*URL is null*");
     }
@@ -172,7 +172,7 @@ public class ExportTest : BaseTest
         );
 
         var export = new Export { Id = "nonexistent", Url = exportUrl };
-        var act = () => Client.DownloadExportAsync(export, "/tmp/test.csv");
+        var act = () => Client.DownloadExportAsync(export, Path.Combine(Path.GetTempPath(), "test.csv"));
         await act.Should().ThrowAsync<DidwwClientException>()
             .WithMessage("*404*");
     }
