@@ -24,12 +24,18 @@ public class DidwwApiException : System.Exception
         var sb = new System.Text.StringBuilder($"DIDWW API error (HTTP {httpStatus})");
         if (errors != null && errors.Count > 0)
         {
-            sb.Append(": ");
-            for (int i = 0; i < errors.Count; i++)
+            var parts = new List<string>();
+            foreach (var error in errors)
             {
-                if (i > 0)
-                    sb.Append("; ");
-                sb.Append(errors[i].Detail ?? errors[i].Title);
+                var text = error.Detail ?? error.Title;
+                if (text != null)
+                    parts.Add(text);
+            }
+
+            if (parts.Count > 0)
+            {
+                sb.Append(": ");
+                sb.Append(string.Join("; ", parts));
             }
         }
         return sb.ToString();

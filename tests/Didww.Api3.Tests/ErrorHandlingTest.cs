@@ -81,32 +81,7 @@ public class ErrorHandlingTest : BaseTest
         var act = () => Client.Countries().FindAsync("nonexistent");
         var ex = await act.Should().ThrowAsync<DidwwApiException>();
         ex.Which.HttpStatus.Should().Be(404);
-    }
-
-    [Fact]
-    public async Task TestErrorMessageFallsBackToTitleWhenDetailIsMissing()
-    {
-        WireMock.Given(
-            Request.Create().WithPath("/v3/countries/nonexistent").UsingGet()
-        ).RespondWith(
-            Response.Create()
-                .WithStatusCode(404)
-                .WithHeader("Content-Type", "application/vnd.api+json")
-                .WithBody("""
-                {
-                    "errors": [
-                        {
-                            "title": "Record not found",
-                            "status": "404"
-                        }
-                    ]
-                }
-                """)
-        );
-
-        var act = () => Client.Countries().FindAsync("nonexistent");
-        var ex = await act.Should().ThrowAsync<DidwwApiException>();
-        ex.Which.HttpStatus.Should().Be(404);
+        // Verify message falls back to Title when Detail is missing
         ex.Which.Message.Should().Contain("Record not found");
         ex.Which.Errors[0].Title.Should().Be("Record not found");
         ex.Which.Errors[0].Detail.Should().BeNull();
