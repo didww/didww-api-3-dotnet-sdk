@@ -106,7 +106,7 @@ public class DidwwClient
         request.Headers.Add("Accept", "application/json");
         request.Headers.Add("User-Agent", SdkUserAgent);
 
-        var response = await _httpClient.SendAsync(request);
+        using var response = await _httpClient.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
@@ -130,7 +130,7 @@ public class DidwwClient
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Accept", "application/octet-stream");
 
-        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         if (!response.IsSuccessStatusCode)
             throw new DidwwClientException($"Failed to download export: HTTP {(int)response.StatusCode}");
 
@@ -205,7 +205,6 @@ public class DidwwClient
             if (!request.Headers.Contains("Accept"))
             {
                 request.Headers.TryAddWithoutValidation("Accept", "application/vnd.api+json");
-                request.Headers.TryAddWithoutValidation("Content-Type", "application/vnd.api+json");
             }
 
             request.Headers.TryAddWithoutValidation("User-Agent", SdkUserAgent);
