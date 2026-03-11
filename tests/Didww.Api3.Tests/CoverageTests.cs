@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using Didww.Api3.Callback;
 using Didww.Api3.Exception;
@@ -176,7 +177,8 @@ public class DownloadExportTest : BaseTest
             request.Headers.Should().ContainKey("Api-Key");
             request.Headers.Should().ContainKey("User-Agent");
             request.Headers.Should().ContainKey(DidwwClient.ApiVersionHeader);
-            string.Join(" ", request.Headers!["User-Agent"]).Should().Contain(DidwwClient.SdkUserAgent);
+            request.Headers!["User-Agent"].Should().ContainSingle()
+                .Which.Should().Be(DidwwClient.SdkUserAgent);
         }
         finally
         {

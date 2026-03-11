@@ -104,7 +104,6 @@ public class DidwwClient
             Content = content
         };
         request.Headers.Add("Accept", "application/json");
-        request.Headers.Add("User-Agent", SdkUserAgent);
 
         using var response = await _httpClient.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -207,8 +206,15 @@ public class DidwwClient
                 request.Headers.TryAddWithoutValidation("Accept", "application/vnd.api+json");
             }
 
-            request.Headers.TryAddWithoutValidation("User-Agent", SdkUserAgent);
-            request.Headers.TryAddWithoutValidation(ApiVersionHeader, ApiVersion);
+            if (!request.Headers.Contains("User-Agent"))
+            {
+                request.Headers.TryAddWithoutValidation("User-Agent", SdkUserAgent);
+            }
+
+            if (!request.Headers.Contains(ApiVersionHeader))
+            {
+                request.Headers.TryAddWithoutValidation(ApiVersionHeader, ApiVersion);
+            }
 
             var path = request.RequestUri?.AbsolutePath ?? "";
             if (!path.Contains("public_keys"))
