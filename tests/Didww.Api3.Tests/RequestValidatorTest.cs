@@ -100,6 +100,34 @@ public class RequestValidatorTest
         validator.Validate("https://example.com/callbacks", payload, "57ba6c3c14ea4bfa9bebd079869cafb27dcba1b6").Should().BeTrue();
     }
 
+    [Fact]
+    public void TestNonHexSignature()
+    {
+        var validator = new RequestValidator("SOMEAPIKEY");
+        var payload = new Dictionary<string, string>
+        {
+            { "id", "1dd7a68b-e235-402b-8912-fe73ee14243a" },
+            { "status", "completed" },
+            { "type", "orders" }
+        };
+
+        validator.Validate("http://example.com/callbacks", payload, "not-hex").Should().BeFalse();
+    }
+
+    [Fact]
+    public void TestOddLengthHexSignature()
+    {
+        var validator = new RequestValidator("SOMEAPIKEY");
+        var payload = new Dictionary<string, string>
+        {
+            { "id", "1dd7a68b-e235-402b-8912-fe73ee14243a" },
+            { "status", "completed" },
+            { "type", "orders" }
+        };
+
+        validator.Validate("http://example.com/callbacks", payload, "abc").Should().BeFalse();
+    }
+
     [Theory]
     [InlineData("http://foo.com/bar", "4d1ce2be656d20d064183bec2ab98a2ff3981f73")] // NOSONAR
     [InlineData("http://foo.com:80/bar", "4d1ce2be656d20d064183bec2ab98a2ff3981f73")] // NOSONAR
