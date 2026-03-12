@@ -101,6 +101,22 @@ public class RequestValidatorTest
     }
 
     [Fact]
+    // https://doc.didww.com/api3/2022-05-10/callbacks-details.html#algorithm-implementation-details
+    public void TestDocumentationExample()
+    {
+        var validator = new RequestValidator("szrdgh6547umt7tht7xbqhj6g9gdbyp7");
+        var url = "https://mycompany.com/didww_callbacks?opaque=123";
+        var payload = new Dictionary<string, string>
+        {
+            { "id", "bf2cee72-6caa-4ae2-917e-bea01945691e" },
+            { "status", "completed" },
+            { "type", "orders" }
+        };
+
+        validator.Validate(url, payload, "30f66e9d72eb5e193051fd02952f70d8e934b4ff").Should().BeTrue();
+    }
+
+    [Fact]
     public void TestNonHexSignature()
     {
         var validator = new RequestValidator("SOMEAPIKEY");
