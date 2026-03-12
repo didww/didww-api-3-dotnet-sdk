@@ -19,7 +19,16 @@ public class RequestValidator
         if (string.IsNullOrEmpty(signature))
             return false;
 
-        return ValidSignature(url, payload) == signature;
+        try
+        {
+            var expected = Convert.FromHexString(ValidSignature(url, payload));
+            var actual = Convert.FromHexString(signature);
+            return CryptographicOperations.FixedTimeEquals(expected, actual);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     private string ValidSignature(string url, Dictionary<string, string> payload)
