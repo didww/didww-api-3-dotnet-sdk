@@ -4,7 +4,7 @@ using Didww.Api3.Examples;
 // Set DIDWW_API_KEY environment variable before running.
 // Usage: dotnet run --framework net10.0 [example-name]
 // Available examples: balance, countries, regions, did-groups, dids, trunks,
-//   trunk-groups, voice-out-trunks, orders, orders-available, orders-capacity,
+//   trunk-groups, voice-out-trunks, orders, orders-nanpa, orders-available, orders-capacity,
 //   orders-all-items, orders-reservation, capacity-pools, shared-capacity-groups,
 //   did-reservations, did-trunk-assignment, identity-address-proofs,
 //   exports, encryption, webhook
@@ -42,6 +42,9 @@ try
             break;
         case "orders":
             await OrdersExample.RunAsync(client!);
+            break;
+        case "orders-nanpa":
+            await OrdersNanpaExample.RunAsync(client!);
             break;
         case "orders-available":
             await OrdersAvailableDidsExample.RunAsync(client!);
@@ -109,7 +112,7 @@ try
         default:
             Console.WriteLine($"Unknown example: {exampleName}");
             Console.WriteLine("Available: balance, countries, regions, did-groups, dids, trunks,");
-            Console.WriteLine("  trunk-groups, voice-out-trunks, orders, orders-available,");
+            Console.WriteLine("  trunk-groups, voice-out-trunks, orders, orders-nanpa, orders-available,");
             Console.WriteLine("  orders-capacity, orders-all-items, orders-reservation,");
             Console.WriteLine("  capacity-pools, shared-capacity-groups, did-reservations,");
             Console.WriteLine("  did-trunk-assignment, identity-address-proofs,");

@@ -38,6 +38,7 @@ You can also use `--framework net9.0` if you have .NET 9 installed.
 | [`TrunkGroupsExample.cs`](TrunkGroupsExample.cs) | `trunk-groups` | Creates trunk group with two trunks, lists, updates, deletes. |
 | [`VoiceOutTrunksExample.cs`](VoiceOutTrunksExample.cs) | `voice-out-trunks` | CRUD operations on outbound trunks. |
 | [`OrdersExample.cs`](OrdersExample.cs) | `orders` | Orders a DID by resolving SKU from DID group. |
+| [`OrdersNanpaExample.cs`](OrdersNanpaExample.cs) | `orders-nanpa` | Orders a DID number by NPA/NXX prefix. |
 | [`OrdersAvailableDidsExample.cs`](OrdersAvailableDidsExample.cs) | `orders-available` | Orders a specific available DID with nested includes. |
 | [`OrdersCapacityExample.cs`](OrdersCapacityExample.cs) | `orders-capacity` | Purchases capacity from a capacity pool. |
 | [`CapacityPoolsExample.cs`](CapacityPoolsExample.cs) | `capacity-pools` | Lists capacity pools with shared groups and pricings. |
