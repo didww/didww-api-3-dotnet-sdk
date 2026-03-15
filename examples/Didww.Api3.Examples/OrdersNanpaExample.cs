@@ -10,14 +10,15 @@ public static class OrdersNanpaExample
     {
         Console.WriteLine("--- Order DID by NPA/NXX prefix ---");
 
-        // Step 1: find the NANPA prefix by NPA/NXX (e.g. 201-221)
+        // Step 1: find the NANPA prefix by NPA/NXX (NPA+NXX without dash, e.g. 201221 for NPA=201, NXX=221)
+        const string npanxx = "201221";
         var nanpaParams = new QueryParams()
-            .Filter("npanxx", "201221")
+            .Filter("npanxx", npanxx)
             .Page(1, 1);
         var nanpaPrefixResponse = await client.NanpaPrefixes().ListAsync(nanpaParams);
         if (nanpaPrefixResponse.Data.Count == 0)
         {
-            Console.WriteLine("  NANPA prefix 201-221 not found, skipping.");
+            Console.WriteLine($"  NANPA prefix {npanxx} not found, skipping.");
             return;
         }
 
@@ -39,7 +40,7 @@ public static class OrdersNanpaExample
         }
 
         var sku = didGroups.Data[0].StockKeepingUnits![0];
-        Console.WriteLine($"  DID group: {didGroups.Data[0].Id}  SKU: {sku.Id} (monthly: {sku.MonthlyPrice})");
+        Console.WriteLine($"  DID group: {didGroups.Data[0].Id} SKU: {sku.Id} (monthly: {sku.MonthlyPrice})");
 
         // Step 3: create the order
         var orderItem = new DidOrderItem
