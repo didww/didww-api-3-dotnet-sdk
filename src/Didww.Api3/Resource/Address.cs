@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Didww.Api3.Resource;
 
-public class Address : BaseResource, IProofEntity
+public class Address : BaseResource
 {
     public override string Type => "addresses";
 

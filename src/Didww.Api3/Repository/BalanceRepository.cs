@@ -6,21 +6,21 @@ using Newtonsoft.Json;
 
 namespace Didww.Api3.Repository;
 
-public class SingletonRepository<T> : ReadOnlyRepository<T> where T : BaseResource
+public class BalanceRepository : ReadOnlyRepository<Balance>
 {
-    public SingletonRepository(HttpClient httpClient, JsonSerializerSettings serializerSettings,
+    public BalanceRepository(HttpClient httpClient, JsonSerializerSettings serializerSettings,
         string baseUrl, string endpoint)
         : base(httpClient, serializerSettings, baseUrl, endpoint)
     {
     }
 
-    public async Task<ApiResponse<T>> FindAsync(QueryParams? queryParams = null)
+    public async Task<ApiResponse<Balance>> FindAsync(QueryParams? queryParams = null)
     {
         var url = BuildUrl(queryParams: queryParams);
         var response = await HttpClient.GetAsync(url);
         await HandleErrorResponseAsync(response);
         var body = await response.Content.ReadAsStringAsync();
-        var data = JsonConvert.DeserializeObject<T>(body, SerializerSettings)!;
-        return new ApiResponse<T>(data, ExtractMeta(body));
+        var data = JsonConvert.DeserializeObject<Balance>(body, SerializerSettings)!;
+        return new ApiResponse<Balance>(data, ExtractMeta(body));
     }
 }

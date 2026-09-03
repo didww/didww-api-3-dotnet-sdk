@@ -1,3 +1,4 @@
+using Didww.Api3;
 using Didww.Api3.Examples;
 
 // DIDWW API v3 .NET SDK Examples
@@ -13,7 +14,17 @@ using Didww.Api3.Examples;
 //   address-verifications, orders-emergency, emergency-scenario, voice-in-trunk-groups
 
 var exampleName = args.Length > 0 ? args[0].ToLower() : "all";
-var client = exampleName != "webhook" ? ExampleClientFactory.Create() : null;
+DidwwClient? client = null;
+if (exampleName != "webhook")
+{
+    var apiKey = Environment.GetEnvironmentVariable("DIDWW_API_KEY")
+                 ?? throw new InvalidOperationException("DIDWW_API_KEY environment variable is not set");
+
+    client = DidwwClient.NewBuilder()
+        .SetCredentials(new DidwwCredentials(apiKey, DidwwEnvironment.Sandbox))
+        .SetTimeout(TimeSpan.FromSeconds(30))
+        .Build();
+}
 
 try
 {
