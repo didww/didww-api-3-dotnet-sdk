@@ -8,7 +8,9 @@ public class AddressRequirement : BaseResource
     public override string Type => "address_requirements";
 
     [JsonProperty("identity_type")] public IdentityType? IdentityType { get; set; }
+    /// <summary>Null when the country does not accept a personal identity.</summary>
     [JsonProperty("personal_area_level")] public AreaLevel? PersonalAreaLevel { get; set; }
+    /// <summary>Null when the country does not accept a business identity.</summary>
     [JsonProperty("business_area_level")] public AreaLevel? BusinessAreaLevel { get; set; }
     [JsonProperty("address_area_level")] public AreaLevel? AddressAreaLevel { get; set; }
     [JsonProperty("personal_proof_qty")] public int? PersonalProofQty { get; set; }

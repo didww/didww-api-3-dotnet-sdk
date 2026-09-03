@@ -19,11 +19,11 @@ public class EmergencyRequirementTest : BaseTest
         first.Id.Should().Be("11111111-2222-3333-4444-555555555555");
         first.IdentityType.Should().Be("personal");
         first.AddressAreaLevel.Should().Be("city");
-        first.PersonalAreaLevel.Should().Be("city");
-        first.BusinessAreaLevel.Should().Be("city");
+        first.PersonalAreaLevel.Should().Be("country");
+        first.BusinessAreaLevel.Should().BeNull();
         first.AddressMandatoryFields.Should().BeEquivalentTo(new[] { "street", "city", "postal_code" });
         first.PersonalMandatoryFields.Should().BeEquivalentTo(new[] { "first_name", "last_name" });
-        first.BusinessMandatoryFields.Should().BeEquivalentTo(new[] { "company_name", "tax_number" });
+        first.BusinessMandatoryFields.Should().BeEmpty();
         first.EstimateSetupTime.Should().Be("7-14 days");
         first.RequirementRestrictionMessage.Should().BeNull();
         first.Meta.Should().NotBeNull();
@@ -43,6 +43,9 @@ public class EmergencyRequirementTest : BaseTest
 
         requirement.Id.Should().Be("01234567-89ab-cdef-0123-456789abcdef");
         requirement.IdentityType.Should().Be("business");
+        requirement.AddressAreaLevel.Should().Be("area");
+        requirement.PersonalAreaLevel.Should().BeNull();
+        requirement.BusinessAreaLevel.Should().Be("world_wide");
         requirement.EstimateSetupTime.Should().Be("7-14 days");
         requirement.RequirementRestrictionMessage.Should()
             .Be("Additional compliance review is required for this country.");

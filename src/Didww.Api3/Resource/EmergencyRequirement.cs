@@ -14,9 +14,11 @@ public class EmergencyRequirement : BaseResource
     [JsonProperty("address_area_level")]
     public string? AddressAreaLevel { get; set; }
 
+    /// <summary>Null when the country does not accept a personal identity for emergency calling.</summary>
     [JsonProperty("personal_area_level")]
     public string? PersonalAreaLevel { get; set; }
 
+    /// <summary>Null when the country does not accept a business identity for emergency calling.</summary>
     [JsonProperty("business_area_level")]
     public string? BusinessAreaLevel { get; set; }
 
@@ -41,7 +43,7 @@ public class EmergencyRequirement : BaseResource
     [JsonProperty("did_group_type")]
     public DidGroupType? DidGroupType { get; set; }
 
-    /// <summary>Resource-level meta. Contains setup_price and monthly_price.</summary>
+    /// <summary>Resource-level meta. Contains setup_price and monthly_price, decimal strings.</summary>
     [JsonProperty("meta")]
     public Dictionary<string, object>? Meta { get; set; }
 }
