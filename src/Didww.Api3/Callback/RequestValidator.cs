@@ -7,11 +7,12 @@ public class RequestValidator
 {
     public const string HeaderName = "X-DIDWW-Signature";
 
-    private readonly string _apiKey;
+    private readonly string _callbackSecret;
 
-    public RequestValidator(string apiKey)
+    /// <param name="callbackSecret">The callback secret enabled in the DIDWW User Panel.</param>
+    public RequestValidator(string callbackSecret)
     {
-        _apiKey = apiKey;
+        _callbackSecret = callbackSecret;
     }
 
     public bool Validate(string url, Dictionary<string, string> payload, string? signature)
@@ -39,7 +40,7 @@ public class RequestValidator
         {
             data.Append(entry.Key).Append(entry.Value);
         }
-        return HmacSha1(data.ToString(), _apiKey);
+        return HmacSha1(data.ToString(), _callbackSecret);
     }
 
     private static string NormalizeUrl(string url)

@@ -568,10 +568,12 @@ var fileIds = await client.UploadEncryptedFileAsync(
 
 Validate incoming webhook callbacks from DIDWW using HMAC-SHA1 signature verification.
 
+Initialize the validator with the callback secret that is enabled in the DIDWW User Panel (**APIs → DIDWW API 3 → Callback Secrets**). DIDWW signs every callback with it and sends callbacks only while a callback secret is enabled.
+
 ```csharp
 using Didww.Api3.Callback;
 
-var validator = new RequestValidator("your-api-key");
+var validator = new RequestValidator("your-callback-secret");
 var isValid = validator.Validate(
     requestUrl,       // full original URL
     payloadParams,    // Dictionary<string, string> of payload key-value pairs
