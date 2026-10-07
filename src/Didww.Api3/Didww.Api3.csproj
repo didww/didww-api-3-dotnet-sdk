@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Didww.Api3</RootNamespace>
     <PackageId>Didww.Api3</PackageId>
-    <Version>3.1.0</Version>
+    <Version>3.2.0</Version>
     <Authors>DIDWW</Authors>
     <Description>DIDWW API v3 SDK for .NET</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
