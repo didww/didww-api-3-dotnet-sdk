@@ -7,7 +7,7 @@ public static class WebhookExample
     public static void Run()
     {
         Console.WriteLine("--- Webhook Callback Validation ---");
-        var validator = new RequestValidator("your-api-key");
+        var validator = new RequestValidator("your-callback-secret");
         var callbackUrl = "https://example.com/webhook";
         var callbackPayload = new Dictionary<string, string>
         {
