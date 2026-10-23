@@ -67,7 +67,7 @@ public class DidwwClient
     public Repository.ReadOnlyRepository<SupportingDocumentTemplate> SupportingDocumentTemplates() => new(_httpClient, _serializerSettings, _baseUrl, "supporting_document_templates");
 
     // Singleton
-    public Repository.SingletonRepository<Balance> Balance() => new(_httpClient, _serializerSettings, _baseUrl, "balance");
+    public Repository.BalanceRepository Balance() => new(_httpClient, _serializerSettings, _baseUrl, "balance");
 
     // CRUD repositories
     public Repository.Repository<Did> Dids() => new(_httpClient, _serializerSettings, _baseUrl, "dids");

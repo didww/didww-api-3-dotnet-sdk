@@ -4,9 +4,7 @@ using Newtonsoft.Json;
 
 namespace Didww.Api3.Resource;
 
-public interface IProofEntity { }
-
-public class Identity : BaseResource, IProofEntity
+public class Identity : BaseResource
 {
     public override string Type => "identities";
 
