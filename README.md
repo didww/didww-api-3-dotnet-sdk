@@ -91,7 +91,7 @@ var client = DidwwClient.NewBuilder()
 | `SetAuthUrl(url)` | Token service of the environment | Token service base URL. |
 | `SetVoiceInPricesUrl(url)`, `SetVoiceOutPricesUrl(url)`, `SetSmsPricesUrl(url)` | Price hosts of the environment | Price service base URLs, with or without the `/v3` suffix. |
 
-The API key is sent only to the token service. An overridden URL, for example to send the traffic through a proxy, does not change the token audiences (see [Authentication](#authentication)). `Build()` throws an `ArgumentNullException` without credentials, and an `ArgumentException` for an empty API key or one with a character outside printable ASCII (a control character other than tab, such as a trailing newline, or a non-ASCII character, such as a non-breaking space), an invalid API version, an undefined scope or environment value, or a URL that is not an absolute http or https URL.
+The API key is sent only to the token service. An overridden URL, for example to send the traffic through a proxy, does not change the token audiences (see [Authentication](#authentication)). `Build()` throws an `ArgumentNullException` without credentials, and an `ArgumentException` for an empty API key or one with a character outside printable ASCII (a control character other than tab, such as a trailing newline, or a non-ASCII character, such as a non-breaking space), an invalid API version, an undefined scope or environment value, or a URL that is not an absolute http or https URL or has a query or fragment.
 
 ### Environments
 

@@ -443,7 +443,7 @@ public class DidwwClient
     private static void ValidateUrl(string name, string url)
     {
         if (!DidwwHttp.IsHttpUrl(url))
-            throw new ArgumentException($"{name} URL must be an http or https URL, got \"{url}\"");
+            throw new ArgumentException($"{name} URL must be an http or https URL without a query or fragment, got \"{url}\"");
     }
 
     public class Builder

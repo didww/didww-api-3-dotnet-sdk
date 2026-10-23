@@ -36,11 +36,15 @@ internal static class DidwwHttp
         return trimmed + "/" + path.TrimStart('/');
     }
 
-    /// <summary>Whether <paramref name="url"/> is an absolute http or https URL with a host.</summary>
+    /// <summary>
+    /// Whether <paramref name="url"/> is an absolute http or https URL with a host
+    /// and without a query or fragment, which would swallow the paths appended to it.
+    /// </summary>
     internal static bool IsHttpUrl(string? url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
         (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
-        !string.IsNullOrEmpty(uri.Host);
+        !string.IsNullOrEmpty(uri.Host) &&
+        url!.IndexOfAny(['?', '#']) < 0;
 
     /// <summary>
     /// Whether <paramref name="a"/> and <paramref name="b"/> have the same scheme,

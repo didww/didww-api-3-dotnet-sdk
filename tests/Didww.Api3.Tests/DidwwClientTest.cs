@@ -233,6 +233,9 @@ public class DidwwClientTest
     [InlineData("Voice OUT prices", "ftp://api-prices.example.com")]
     [InlineData("SMS prices", "/v3")]
     [InlineData("API base", "localhost:3000/v3")]
+    [InlineData("Token service", "https://auth.didww.com#custom")]
+    [InlineData("SMS prices", "https://api-prices.example.com/v3?region=eu")]
+    [InlineData("API base", "https://api.example.com/v3?")]
     public void TestUrlValidation(string name, string url)
     {
         var builder = DidwwClient.NewBuilder()
