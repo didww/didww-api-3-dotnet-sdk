@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Didww.Api3.Converter;
 using Didww.Api3.Exception;
@@ -12,6 +13,11 @@ namespace Didww.Api3.Repository;
 
 public class ReadOnlyRepository<T> where T : BaseResource
 {
+    private protected const string JsonApiMediaType = "application/vnd.api+json";
+
+    // Resources called without an access token.
+    private static readonly HashSet<string> PublicEndpoints = new(StringComparer.Ordinal) { "public_keys" };
+
     protected readonly HttpClient HttpClient;
     protected readonly JsonSerializerSettings SerializerSettings;
     protected readonly string BaseUrl;
@@ -35,28 +41,45 @@ public class ReadOnlyRepository<T> where T : BaseResource
         return url;
     }
 
-    public async Task<ApiResponse<List<T>>> ListAsync(QueryParams? queryParams = null)
+    public async Task<ApiResponse<List<T>>> ListAsync(QueryParams? queryParams = null,
+        CancellationToken cancellationToken = default)
     {
         var url = BuildUrl(queryParams: queryParams);
-        var response = await HttpClient.GetAsync(url);
-        await HandleErrorResponseAsync(response);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await SendAsync(HttpMethod.Get, url, null, cancellationToken).ConfigureAwait(false);
         var data = JsonConvert.DeserializeObject<List<T>>(body, SerializerSettings) ?? new List<T>();
         var meta = ExtractMeta(body);
         EnableDirtyTracking(data);
         return new ApiResponse<List<T>>(data, meta);
     }
 
-    public async Task<ApiResponse<T>> FindAsync(string id, QueryParams? queryParams = null)
+    public async Task<ApiResponse<T>> FindAsync(string id, QueryParams? queryParams = null,
+        CancellationToken cancellationToken = default)
     {
         var url = BuildUrl(id, queryParams);
-        var response = await HttpClient.GetAsync(url);
-        await HandleErrorResponseAsync(response);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await SendAsync(HttpMethod.Get, url, null, cancellationToken).ConfigureAwait(false);
         var data = JsonConvert.DeserializeObject<T>(body, SerializerSettings)!;
         var meta = ExtractMeta(body);
         EnableDirtyTracking(data);
         return new ApiResponse<T>(data, meta);
+    }
+
+    /// <summary>
+    /// Sends a JSON:API request and returns the response body, raising
+    /// <see cref="DidwwApiException"/> on a non-success status. The response is disposed.
+    /// </summary>
+    protected async Task<string> SendAsync(HttpMethod method, string url, HttpContent? content,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(method, url) { Content = content };
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonApiMediaType));
+        if (PublicEndpoints.Contains(Endpoint))
+            request.Options.Set(DidwwRequestOptions.Audience, DidwwRequestOptions.NoAudience);
+
+        using var response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+            throw BuildApiException((int)response.StatusCode, body);
+        return body;
     }
 
     protected async Task HandleErrorResponseAsync(HttpResponseMessage response)
@@ -64,7 +87,12 @@ public class ReadOnlyRepository<T> where T : BaseResource
         if (response.IsSuccessStatusCode)
             return;
 
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        throw BuildApiException((int)response.StatusCode, body);
+    }
+
+    private static DidwwApiException BuildApiException(int status, string body)
+    {
         var errors = new List<ApiError>();
         try
         {
@@ -84,9 +112,9 @@ public class ReadOnlyRepository<T> where T : BaseResource
         }
 
         if (errors.Count == 0)
-            throw new DidwwApiException((int)response.StatusCode, body);
+            return new DidwwApiException(status, body);
 
-        throw new DidwwApiException((int)response.StatusCode, errors);
+        return new DidwwApiException(status, errors);
     }
 
     protected Dictionary<string, object>? ExtractMeta(string body)

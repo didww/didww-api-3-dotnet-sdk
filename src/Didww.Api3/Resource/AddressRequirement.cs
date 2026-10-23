@@ -20,9 +20,10 @@ public class AddressRequirement : BaseResource
     [JsonProperty("business_mandatory_fields")] public List<string>? BusinessMandatoryFields { get; set; }
     [JsonProperty("service_description_required")] public bool? ServiceDescriptionRequired { get; set; }
     [JsonProperty("restriction_message")] public string? RestrictionMessage { get; set; }
+    /// <summary>Number type the requirement applies to. Read-only. (API 2026-10-22)</summary>
+    [JsonProperty("number_type")] public NumberType? NumberType { get; set; }
 
     [JsonProperty("country")] public Country? Country { get; set; }
-    [JsonProperty("did_group_type")] public DidGroupType? DidGroupType { get; set; }
     [JsonProperty("personal_permanent_document")] public SupportingDocumentTemplate? PersonalPermanentDocument { get; set; }
     [JsonProperty("business_permanent_document")] public SupportingDocumentTemplate? BusinessPermanentDocument { get; set; }
     [JsonProperty("personal_onetime_document")] public SupportingDocumentTemplate? PersonalOnetimeDocument { get; set; }

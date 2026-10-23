@@ -2,7 +2,7 @@ using Didww.Api3.Examples;
 
 // DIDWW API v3 .NET SDK Examples
 // Set DIDWW_API_KEY environment variable before running.
-// Usage: dotnet run --framework net10.0 [example-name]
+// Usage: dotnet run --framework net10.0 [example-name] [argument]
 // Available examples: balance, countries, regions, did-groups, dids, trunks,
 //   trunk-groups, voice-out-trunks, orders, orders-nanpa, orders-available, orders-capacity,
 //   orders-all-items, orders-reservation, capacity-pools, shared-capacity-groups,
@@ -10,9 +10,12 @@ using Didww.Api3.Examples;
 //   exports, encryption, webhook,
 //   did-history, emergency-requirements, emergency-calling-services,
 //   emergency-verifications, emergency-requirement-validations,
-//   address-verifications, orders-emergency, emergency-scenario, voice-in-trunk-groups
+//   address-verifications, orders-emergency, emergency-scenario, voice-in-trunk-groups,
+//   sms-trunks, sms-trunk-groups, sender-id-verifications, did-sms-routing, exports-sms,
+//   prices-lookup [number], prices-download [dir]
 
 var exampleName = args.Length > 0 ? args[0].ToLower() : "all";
+var exampleArgument = args.Length > 1 ? args[1] : null;
 var client = exampleName != "webhook" ? ExampleClientFactory.Create() : null;
 
 try
@@ -115,6 +118,27 @@ try
         case "voice-in-trunk-sip-registration":
             await VoiceInTrunkSipRegistrationExample.RunAsync(client!);
             break;
+        case "sms-trunks":
+            await SmsTrunksExample.RunAsync(client!);
+            break;
+        case "sms-trunk-groups":
+            await SmsTrunkGroupsExample.RunAsync(client!);
+            break;
+        case "sender-id-verifications":
+            await SenderIdVerificationsExample.RunAsync(client!);
+            break;
+        case "did-sms-routing":
+            await DidSmsRoutingExample.RunAsync(client!);
+            break;
+        case "exports-sms":
+            await ExportsSmsExample.RunAsync(client!);
+            break;
+        case "prices-lookup":
+            await PricesLookupExample.RunAsync(client!, exampleArgument);
+            break;
+        case "prices-download":
+            await PricesDownloadExample.RunAsync(client!, exampleArgument);
+            break;
         case "all":
             await BalanceExample.RunAsync(client!);
             Console.WriteLine();
@@ -153,7 +177,9 @@ try
             Console.WriteLine("  did-history, emergency-requirements, emergency-calling-services,");
             Console.WriteLine("  emergency-verifications, emergency-requirement-validations,");
             Console.WriteLine("  address-verifications, orders-emergency, emergency-scenario,");
-            Console.WriteLine("  voice-in-trunk-groups, all");
+            Console.WriteLine("  voice-in-trunk-groups, sms-trunks, sms-trunk-groups,");
+            Console.WriteLine("  sender-id-verifications, did-sms-routing, exports-sms,");
+            Console.WriteLine("  prices-lookup [number], prices-download [dir], all");
             break;
     }
 }

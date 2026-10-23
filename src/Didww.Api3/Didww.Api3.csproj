@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Didww.Api3</RootNamespace>
     <PackageId>Didww.Api3</PackageId>
-    <Version>3.1.0</Version>
+    <Version>4.0.0</Version>
     <Authors>DIDWW</Authors>
     <Company>DIDWW</Company>
     <Copyright>Copyright (c) DIDWW</Copyright>
@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="JsonApiSerializer" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.21" />
   </ItemGroup>
 
 </Project>

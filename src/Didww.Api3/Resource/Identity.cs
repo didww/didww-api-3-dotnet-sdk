@@ -37,6 +37,14 @@ public class Identity : BaseResource, IProofEntity
     [JsonProperty("company_name")]
     public string? CompanyName { get => _companyName; set => SetProperty(ref _companyName, value); }
 
+    private string? _companyWebsite;
+    /// <summary>
+    /// Website of the company. Rejected on a personal identity; left out of
+    /// the create request while null. (API 2026-10-22)
+    /// </summary>
+    [JsonProperty("company_website")]
+    public string? CompanyWebsite { get => _companyWebsite; set => SetProperty(ref _companyWebsite, value); }
+
     private string? _companyRegNumber;
     [JsonProperty("company_reg_number")]
     public string? CompanyRegNumber { get => _companyRegNumber; set => SetProperty(ref _companyRegNumber, value); }

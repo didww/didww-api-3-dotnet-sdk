@@ -39,8 +39,13 @@ public class DidGroup : BaseResource
     [JsonProperty("city")]
     public City? City { get; set; }
 
-    [JsonProperty("did_group_type")]
-    public DidGroupType? DidGroupType { get; set; }
+    /// <summary>Number type of the group. Read-only. (API 2026-10-22)</summary>
+    [JsonProperty("number_type")]
+    public NumberType? NumberType { get; set; }
+
+    /// <summary>True when numbers of the group are demo numbers. Read-only. (API 2026-10-22)</summary>
+    [JsonProperty("is_demo")]
+    public bool? IsDemo { get; set; }
 
     [JsonProperty("address_requirement")]
     public AddressRequirement? AddressRequirement { get; set; }

@@ -6,7 +6,7 @@ namespace Didww.Api3.Resource;
 /// <summary>
 /// Emergency calling service resource (API 2026-04-16).
 /// Represents an E911/E112 calling service provisioned for a specific
-/// address, country and DID group type. Status transitions through:
+/// address, country and number type. Status transitions through:
 /// new, in process, active, pending update, changes required, canceled.
 /// </summary>
 public class EmergencyCallingService : BaseResource
@@ -52,8 +52,9 @@ public class EmergencyCallingService : BaseResource
     [JsonProperty("country")]
     public Country? Country { get; set; }
 
-    [JsonProperty("did_group_type")]
-    public DidGroupType? DidGroupType { get; set; }
+    /// <summary>Number type the service is provisioned for. Read-only. (API 2026-10-22)</summary>
+    [JsonProperty("number_type")]
+    public NumberType? NumberType { get; set; }
 
     [JsonProperty("order")]
     public Order? Order { get; set; }

@@ -11,11 +11,16 @@
       "is_metered": false,
       "area_name": "Berlin",
       "allow_additional_channels": false,
-      "service_restrictions": "Emergency services only. Voice-out not available."
+      "service_restrictions": "Emergency services only. Voice-out not available.",
+      "number_type": "global",
+      "is_demo": true
     },
     "relationships": {
       "country": {
-        "data": { "type": "countries", "id": "dfd1a0a0-bd53-4f7a-9c8e-d2fc5dd1bf7e" }
+        "data": {
+          "type": "countries",
+          "id": "dfd1a0a0-bd53-4f7a-9c8e-d2fc5dd1bf7e"
+        }
       }
     }
   }

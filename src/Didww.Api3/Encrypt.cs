@@ -84,9 +84,9 @@ public class Encrypt
         _fingerprint = CalculateFingerprint(_publicKeys);
     }
 
-    public async Task ResetAsync()
+    public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _client.PublicKeys().ListAsync();
+        var response = await _client.PublicKeys().ListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         var keys = response.Data;
         _publicKeys = new[] { keys[0].Key!, keys[1].Key! };
         _fingerprint = CalculateFingerprint(_publicKeys);

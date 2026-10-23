@@ -269,4 +269,128 @@ public class DidTest : BaseTest
         didGroup.IsMetered.Should().BeFalse();
         didGroup.AllowAdditionalChannels.Should().BeFalse();
     }
+
+    private const string SmsDidId = "9df99644-f1a5-4a3c-99a4-559d758eb96b";
+    private const string SmsTrunkId = "1a2b3c4d-0002-4a5b-8c6d-7e8f9a0b1c02";
+    private const string SmsTrunkGroupId = "2b3c4d5e-0001-4b6c-9d7e-8f9a0b1c2d01";
+
+    [Fact]
+    public async Task TestFindDidWithSmsTrunkKeepsRouting()
+    {
+        // The response carries "sms_trunk": {data: {...}} and
+        // "sms_trunk_group": {data: null}. Reading it must not clear the trunk.
+        StubGet("dids/" + SmsDidId, "dids/show_with_sms_trunk.json");
+
+        var queryParams = new QueryParams().Include("sms_trunk");
+        var did = (await Client.Dids().FindAsync(SmsDidId, queryParams)).Data;
+
+        did.SmsTrunk.Should().NotBeNull();
+        did.SmsTrunk!.Id.Should().Be(SmsTrunkId);
+        did.SmsTrunk.Name.Should().Be("http_in trunk");
+        var config = did.SmsTrunk.Configuration.Should()
+            .BeOfType<Didww.Api3.Resource.Configuration.SmsTrunkConfiguration.HttpInConfiguration>().Subject;
+        config.Url.Should().Be("https://example.com/sms");
+        did.SmsTrunkGroup.Should().BeNull();
+        did.HasDirtyFields.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TestFindDidWithSmsTrunkGroupKeepsRouting()
+    {
+        // The response carries "sms_trunk": {data: null} before
+        // "sms_trunk_group": {data: {...}}.
+        StubGet("dids/" + SmsDidId, "dids/show_with_sms_trunk_group.json");
+
+        var queryParams = new QueryParams().Include("sms_trunk_group");
+        var did = (await Client.Dids().FindAsync(SmsDidId, queryParams)).Data;
+
+        did.SmsTrunkGroup.Should().NotBeNull();
+        did.SmsTrunkGroup!.Id.Should().Be(SmsTrunkGroupId);
+        did.SmsTrunkGroup.Name.Should().Be("Inbound SMS");
+        did.SmsTrunk.Should().BeNull();
+        did.HasDirtyFields.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TestUpdateLoadedDidWithSmsTrunkDoesNotSendRouting()
+    {
+        StubGet("dids/" + SmsDidId, "dids/show_with_sms_trunk.json");
+        StubPatch("dids/" + SmsDidId, "dids/show_with_sms_trunk.json");
+
+        var did = (await Client.Dids().FindAsync(SmsDidId)).Data;
+        did.Description = "routing untouched";
+
+        await Client.Dids().UpdateAsync(did);
+
+        var body = WireMock.LogEntries
+            .Single(e => e.RequestMessage.Method == "PATCH")
+            .RequestMessage.Body;
+        body.Should().Contain("routing untouched");
+        body.Should().NotContain("sms_trunk");
+    }
+
+    [Fact]
+    public async Task TestUpdateDidAssignSmsTrunkUnassignsGroup()
+    {
+        StubPatch("dids/" + SmsDidId, "dids/update_assign_sms_trunk_request.json", "dids/show_with_sms_trunk.json");
+
+        var did = Did.Build(SmsDidId);
+        did.SmsTrunk = SmsTrunk.Build(SmsTrunkId);
+
+        var updated = (await Client.Dids().UpdateAsync(did)).Data;
+
+        updated.SmsTrunk.Should().NotBeNull();
+        updated.SmsTrunk!.Id.Should().Be(SmsTrunkId);
+        updated.SmsTrunkGroup.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TestUpdateDidAssignSmsTrunkGroupUnassignsTrunk()
+    {
+        StubPatch("dids/" + SmsDidId, "dids/update_assign_sms_trunk_group_request.json", "dids/show_with_sms_trunk_group.json");
+
+        var did = Did.Build(SmsDidId);
+        did.SmsTrunkGroup = SmsTrunkGroup.Build(SmsTrunkGroupId);
+
+        var updated = (await Client.Dids().UpdateAsync(did)).Data;
+
+        updated.SmsTrunkGroup.Should().NotBeNull();
+        updated.SmsTrunkGroup!.Id.Should().Be(SmsTrunkGroupId);
+        updated.SmsTrunk.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TestUpdateDidUnassignSmsTrunkSendsNullData()
+    {
+        // Request body: "sms_trunk": {"data": null}, the group is left alone.
+        StubPatch("dids/" + SmsDidId, "dids/update_unassign_sms_trunk_request.json", "dids/update.json");
+
+        var did = Did.Build(SmsDidId);
+        did.SmsTrunk = null;
+
+        await Client.Dids().UpdateAsync(did);
+    }
+
+    [Fact]
+    public async Task TestUpdateDidUnassignSmsTrunkGroupSendsNullData()
+    {
+        StubPatch("dids/" + SmsDidId, "dids/update_unassign_sms_trunk_group_request.json", "dids/update.json");
+
+        var did = Did.Build(SmsDidId);
+        did.SmsTrunkGroup = null;
+
+        await Client.Dids().UpdateAsync(did);
+    }
+
+    [Fact]
+    public async Task TestUpdateDidUnassignSmsRouting()
+    {
+        StubPatch("dids/" + SmsDidId, "dids/update_unassign_sms_request.json", "dids/update.json");
+
+        var did = Did.Build(SmsDidId);
+        did.SmsTrunk = null;
+        did.SmsTrunkGroup = null;
+
+        await Client.Dids().UpdateAsync(did);
+    }
 }

@@ -130,4 +130,64 @@ public class IdentityTest : BaseTest
 
         await Client.Identities().DeleteAsync(id);
     }
+
+    private static Identity NewBusinessIdentity() => new()
+    {
+        FirstName = "John",
+        LastName = "Doe",
+        PhoneNumber = "123456789",
+        IdNumber = "ABC1234",
+        BirthDate = new DateOnly(1970, 1, 1),
+        CompanyName = "Test Company Limited",
+        CompanyRegNumber = "543221",
+        VatId = "GB1234",
+        Description = "test identity",
+        PersonalTaxId = "987654321",
+        IdentityType = IdentityType.Business,
+        ExternalReferenceId = "111",
+        Country = Country.Build("1f6fc2bd-f081-4202-9b1a-d9cb88d942b9")
+    };
+
+    [Fact]
+    public async Task TestCreateIdentityOmitsNullCompanyWebsite()
+    {
+        // The request fixture has no company_website key: a null value is left out.
+        StubPost("identities", "identities/create_request.json", "identities/create.json");
+
+        var identity = NewBusinessIdentity();
+        identity.CompanyWebsite.Should().BeNull();
+
+        await Client.Identities().CreateAsync(identity);
+
+        WireMock.LogEntries
+            .Single(e => e.RequestMessage.Method == "POST" && e.RequestMessage.Path == "/v3/identities")
+            .RequestMessage.Body.Should().NotContain("company_website");
+    }
+
+    [Fact]
+    public async Task TestCreateIdentityWithCompanyWebsite()
+    {
+        StubPost("identities", "identities/create_with_company_website_request.json", "identities/create.json");
+
+        var identity = NewBusinessIdentity();
+        identity.CompanyWebsite = "https://www.example.org";
+
+        var response = await Client.Identities().CreateAsync(identity);
+
+        response.Data.Id.Should().Be("e96ae7d1-11d5-42bc-a5c5-211f3c3788ae");
+    }
+
+    [Fact]
+    public async Task TestUpdateIdentityCompanyWebsite()
+    {
+        StubPatch("identities/e96ae7d1-11d5-42bc-a5c5-211f3c3788ae",
+            "identities/update_company_website_request.json", "identities/update_company_website.json");
+
+        var identity = Identity.Build("e96ae7d1-11d5-42bc-a5c5-211f3c3788ae");
+        identity.CompanyWebsite = "https://www.example.org";
+
+        var updated = (await Client.Identities().UpdateAsync(identity)).Data;
+
+        updated.CompanyWebsite.Should().Be("https://www.example.org");
+    }
 }
