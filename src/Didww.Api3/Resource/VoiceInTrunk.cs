@@ -92,6 +92,12 @@ public class VoiceInTrunk : BaseResource
     }
 
     private Pop? _pop;
+    /// <summary>
+    /// DIDWW point of presence the trunk is served from, or null to let DIDWW
+    /// choose. To clear it, set it to null on a built or loaded resource: the
+    /// PATCH sends <c>"pop": null</c>. (API 2026-10-22: an attribute, no
+    /// longer a relationship)
+    /// </summary>
     [JsonProperty("pop")]
     public Pop? Pop
     {

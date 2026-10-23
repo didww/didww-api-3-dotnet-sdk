@@ -1,3 +1,4 @@
+using Didww.Api3.Resource.Enums;
 using Newtonsoft.Json;
 
 namespace Didww.Api3.Resource;
@@ -40,8 +41,9 @@ public class EmergencyRequirement : BaseResource
     [JsonProperty("country")]
     public Country? Country { get; set; }
 
-    [JsonProperty("did_group_type")]
-    public DidGroupType? DidGroupType { get; set; }
+    /// <summary>Number type the requirement applies to. Read-only. (API 2026-10-22)</summary>
+    [JsonProperty("number_type")]
+    public NumberType? NumberType { get; set; }
 
     /// <summary>Resource-level meta. Contains setup_price and monthly_price, decimal strings.</summary>
     [JsonProperty("meta")]

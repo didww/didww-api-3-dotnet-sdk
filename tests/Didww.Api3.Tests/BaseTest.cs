@@ -1,4 +1,5 @@
 using System.Net;
+using WireMock;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -8,20 +9,58 @@ namespace Didww.Api3.Tests;
 
 public abstract class BaseTest : IDisposable
 {
+    /// <summary>The access token granted by the stubbed token service.</summary>
+    protected const string TestAccessToken = "test-access-token";
+
     protected WireMockServer WireMock { get; }
     protected DidwwClient Client { get; }
 
     protected BaseTest()
     {
         WireMock = WireMockServer.Start();
+        StubToken();
 
-        var baseUrl = WireMock.Url + "/v3";
-        Client = DidwwClient.NewBuilder()
-            .SetCredentials(new DidwwCredentials("test-api-key", DidwwEnvironment.Sandbox))
-            .SetBaseUrl(baseUrl)
-            .SetTimeout(TimeSpan.FromSeconds(5))
-            .Build();
+        Client = NewClientBuilder().Build();
     }
+
+    /// <summary>
+    /// A builder whose JSON:API, token service and prices URLs all point at the
+    /// WireMock server, with logging disabled.
+    /// </summary>
+    protected DidwwClient.Builder NewClientBuilder() => DidwwClient.NewBuilder()
+        .SetCredentials(new DidwwCredentials("test-api-key", DidwwEnvironment.Sandbox))
+        .SetBaseUrl(WireMock.Url + "/v3")
+        .SetAuthUrl(WireMock.Url!)
+        .SetVoiceInPricesUrl(WireMock.Url!)
+        .SetVoiceOutPricesUrl(WireMock.Url!)
+        .SetSmsPricesUrl(WireMock.Url!)
+        .SetLogger(null)
+        .SetTimeout(TimeSpan.FromSeconds(5));
+
+    /// <summary>
+    /// Serves POST /token with <paramref name="accessToken"/>, echoing the
+    /// requested audience and API version, scope "full" and expires_in 900.
+    /// </summary>
+    protected void StubToken(string accessToken = TestAccessToken)
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/token").UsingPost()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(request => FakeAuthServer.TokenJson(request.Body, accessToken))
+        );
+    }
+
+    /// <summary>The number of token requests received.</summary>
+    protected int MintCount => WireMock.LogEntries.Count(e => e.RequestMessage.Path == "/token");
+
+    /// <summary>The requests received on <paramref name="path"/>, in order.</summary>
+    protected List<IRequestMessage> RequestsTo(string path) => WireMock.LogEntries
+        .Where(e => e.RequestMessage.Path == path)
+        .Select(e => e.RequestMessage)
+        .ToList();
 
     protected string LoadFixture(string path)
     {

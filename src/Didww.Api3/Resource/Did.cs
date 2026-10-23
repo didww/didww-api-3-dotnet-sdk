@@ -104,6 +104,54 @@ public class Did : BaseResource
         }
     }
 
+    private SmsTrunk? _smsTrunk;
+    /// <summary>
+    /// SMS trunk inbound messages for this DID are delivered to.
+    /// Assigning a trunk also unassigns <see cref="SmsTrunkGroup"/>
+    /// (the PATCH sends <c>sms_trunk_group: {data: null}</c>). To unassign,
+    /// set to null on a built or loaded resource: the PATCH sends
+    /// <c>sms_trunk: {data: null}</c> and leaves the group alone.
+    /// (API 2026-10-22)
+    /// </summary>
+    [JsonProperty("sms_trunk")]
+    public SmsTrunk? SmsTrunk
+    {
+        get => _smsTrunk;
+        set
+        {
+            SetProperty(ref _smsTrunk, value);
+            if (value != null)
+            {
+                _smsTrunkGroup = null;
+                MarkDirty("smsTrunkGroup");
+            }
+        }
+    }
+
+    private SmsTrunkGroup? _smsTrunkGroup;
+    /// <summary>
+    /// SMS trunk group inbound messages for this DID are delivered to.
+    /// Assigning a group also unassigns <see cref="SmsTrunk"/>
+    /// (the PATCH sends <c>sms_trunk: {data: null}</c>). To unassign,
+    /// set to null on a built or loaded resource: the PATCH sends
+    /// <c>sms_trunk_group: {data: null}</c> and leaves the trunk alone.
+    /// (API 2026-10-22)
+    /// </summary>
+    [JsonProperty("sms_trunk_group")]
+    public SmsTrunkGroup? SmsTrunkGroup
+    {
+        get => _smsTrunkGroup;
+        set
+        {
+            SetProperty(ref _smsTrunkGroup, value);
+            if (value != null)
+            {
+                _smsTrunk = null;
+                MarkDirty("smsTrunk");
+            }
+        }
+    }
+
     private CapacityPool? _capacityPool;
     [JsonProperty("capacity_pool")]
     public CapacityPool? CapacityPool { get => _capacityPool; set => SetProperty(ref _capacityPool, value); }

@@ -1,6 +1,10 @@
 namespace Didww.Api3.Exception;
 
-public class DidwwApiException : System.Exception
+/// <summary>
+/// An error answer of the JSON:API (a non-success status), with the parsed
+/// JSON:API error objects when the body carries them.
+/// </summary>
+public class DidwwApiException : DidwwException
 {
     public int HttpStatus { get; }
     public IReadOnlyList<ApiError> Errors { get; }

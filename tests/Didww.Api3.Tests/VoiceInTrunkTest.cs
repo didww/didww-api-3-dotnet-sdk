@@ -5,6 +5,7 @@ using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 using JsonApiSerializer;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -15,7 +16,7 @@ public class VoiceInTrunkTest : BaseTest
     {
         StubGet("voice_in_trunks", "voice_in_trunks/index.json");
 
-        var queryParams = new QueryParams().Include("trunk_group", "pop");
+        var queryParams = new QueryParams().Include("voice_in_trunk_group");
         var response = await Client.VoiceInTrunks().ListAsync(queryParams);
         var trunks = response.Data;
 
@@ -27,6 +28,8 @@ public class VoiceInTrunkTest : BaseTest
         first.Priority.Should().Be(1);
         first.Weight.Should().Be(65535);
         first.CliFormat.Should().Be(CliFormat.E164);
+        first.Pop.Should().BeNull();
+        trunks[1].Pop.Should().Be(Pop.Fra);
     }
 
     [Fact]
@@ -589,5 +592,72 @@ public class VoiceInTrunkTest : BaseTest
         output.Should().NotContain("srv-user-xyz");
         output.Should().NotContain("srv-pass-xyz");
         output.Should().Contain("[FILTERED]");
+    }
+
+    [Fact]
+    public async Task TestCreateVoiceInTrunkWithPop()
+    {
+        StubPost("voice_in_trunks", "voice_in_trunks/create_with_pop_request.json", "voice_in_trunks/create_with_pop.json");
+
+        var trunk = new VoiceInTrunk
+        {
+            Name = "hello, test pstn trunk",
+            Configuration = new PstnConfiguration { Dst = "558540420024" },
+            Pop = Pop.Fra
+        };
+
+        var created = (await Client.VoiceInTrunks().CreateAsync(trunk)).Data;
+
+        created.Id.Should().Be("41b94706-325e-4704-a433-d65105758836");
+        created.Pop.Should().Be(Pop.Fra);
+    }
+
+    [Fact]
+    public async Task TestCreateVoiceInTrunkOmitsNullPop()
+    {
+        StubPost("voice_in_trunks", "voice_in_trunks/create.json");
+
+        var trunk = new VoiceInTrunk
+        {
+            Name = "hello, test pstn trunk",
+            Configuration = new PstnConfiguration { Dst = "558540420024" }
+        };
+
+        await Client.VoiceInTrunks().CreateAsync(trunk);
+
+        var body = WireMock.LogEntries
+            .Single(e => e.RequestMessage.Method == "POST" && e.RequestMessage.Path == "/v3/voice_in_trunks")
+            .RequestMessage.Body;
+        body.Should().NotContain("\"pop\"");
+    }
+
+    [Fact]
+    public async Task TestUpdateVoiceInTrunkClearPop()
+    {
+        StubPatch("voice_in_trunks/41b94706-325e-4704-a433-d65105758836",
+            "voice_in_trunks/update_clear_pop_request.json", "voice_in_trunks/create.json");
+
+        var trunk = VoiceInTrunk.Build("41b94706-325e-4704-a433-d65105758836");
+        trunk.Pop = null;
+
+        await Client.VoiceInTrunks().UpdateAsync(trunk);
+
+        var body = RequestsTo("/v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836").Should().ContainSingle()
+            .Subject.Body!;
+        JObject.Parse(body).SelectToken("data.attributes")!.ToString(Formatting.None).Should().Be("{\"pop\":null}");
+    }
+
+    [Theory]
+    [InlineData("\"NYC\"", Pop.Nyc)]
+    [InlineData("\"FRA\"", Pop.Fra)]
+    [InlineData("\"LAC\"", Pop.Lac)]
+    [InlineData("\"MIA\"", Pop.Mia)]
+    [InlineData("\"SG\"", Pop.Sg)]
+    [InlineData("\"HK\"", Pop.Hk)]
+    [InlineData("\"AMS\"", Pop.Ams)]
+    public void TestPopWireValues(string json, Pop expected)
+    {
+        JsonConvert.DeserializeObject<Pop>(json).Should().Be(expected);
+        JsonConvert.SerializeObject(expected).Should().Be(json);
     }
 }

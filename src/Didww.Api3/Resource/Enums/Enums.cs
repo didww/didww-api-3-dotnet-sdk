@@ -62,7 +62,9 @@ public enum ExportStatus
 public enum ExportType
 {
     [System.Runtime.Serialization.EnumMember(Value = "cdr_in")] CdrIn,
-    [System.Runtime.Serialization.EnumMember(Value = "cdr_out")] CdrOut
+    [System.Runtime.Serialization.EnumMember(Value = "cdr_out")] CdrOut,
+    [System.Runtime.Serialization.EnumMember(Value = "sms_in")] SmsIn,
+    [System.Runtime.Serialization.EnumMember(Value = "sms_out")] SmsOut
 }
 
 [JsonConverter(typeof(TolerantStringEnumConverter))]
@@ -185,6 +187,86 @@ public enum DidHistoryMethod
     [System.Runtime.Serialization.EnumMember(Value = "api3")] Api3,
     [System.Runtime.Serialization.EnumMember(Value = "staff")] Staff,
     [System.Runtime.Serialization.EnumMember(Value = "user_panel")] UserPanel
+}
+
+/// <summary>
+/// Number type of a DID group, address requirement, emergency requirement or
+/// emergency calling service. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum NumberType
+{
+    [System.Runtime.Serialization.EnumMember(Value = "local")] Local,
+    [System.Runtime.Serialization.EnumMember(Value = "national")] National,
+    [System.Runtime.Serialization.EnumMember(Value = "mobile")] Mobile,
+    [System.Runtime.Serialization.EnumMember(Value = "toll_free")] TollFree,
+    [System.Runtime.Serialization.EnumMember(Value = "shared_cost")] SharedCost,
+    [System.Runtime.Serialization.EnumMember(Value = "global")] Global
+}
+
+/// <summary>
+/// DIDWW point of presence a Voice IN trunk is served from. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum Pop
+{
+    [System.Runtime.Serialization.EnumMember(Value = "NYC")] Nyc,
+    [System.Runtime.Serialization.EnumMember(Value = "FRA")] Fra,
+    [System.Runtime.Serialization.EnumMember(Value = "LAC")] Lac,
+    [System.Runtime.Serialization.EnumMember(Value = "MIA")] Mia,
+    [System.Runtime.Serialization.EnumMember(Value = "SG")] Sg,
+    [System.Runtime.Serialization.EnumMember(Value = "HK")] Hk,
+    [System.Runtime.Serialization.EnumMember(Value = "AMS")] Ams
+}
+
+/// <summary>
+/// Lifecycle state of a sender ID verification. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SenderIdVerificationStatus
+{
+    [System.Runtime.Serialization.EnumMember(Value = "active")] Active,
+    [System.Runtime.Serialization.EnumMember(Value = "changes_required")] ChangesRequired,
+    [System.Runtime.Serialization.EnumMember(Value = "closed")] Closed,
+    [System.Runtime.Serialization.EnumMember(Value = "closing_in_process")] ClosingInProcess,
+    [System.Runtime.Serialization.EnumMember(Value = "in_process")] InProcess,
+    [System.Runtime.Serialization.EnumMember(Value = "new")] New
+}
+
+/// <summary>
+/// Kind of sender a sender ID verification covers. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SenderType
+{
+    [System.Runtime.Serialization.EnumMember(Value = "alphanumeric")] Alphanumeric,
+    [System.Runtime.Serialization.EnumMember(Value = "carrier")] Carrier,
+    [System.Runtime.Serialization.EnumMember(Value = "long_code")] LongCode,
+    [System.Runtime.Serialization.EnumMember(Value = "short_code")] ShortCode,
+    [System.Runtime.Serialization.EnumMember(Value = "toll_free")] TollFree
+}
+
+/// <summary>
+/// HTTP method of an <c>http_in</c> SMS trunk configuration. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SmsHttpMethod
+{
+    [System.Runtime.Serialization.EnumMember(Value = "get")] Get,
+    [System.Runtime.Serialization.EnumMember(Value = "post")] Post,
+    [System.Runtime.Serialization.EnumMember(Value = "put")] Put
+}
+
+/// <summary>
+/// Body encoding of an <c>http_in</c> SMS trunk configuration. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SmsBodyType
+{
+    [System.Runtime.Serialization.EnumMember(Value = "json")] Json,
+    [System.Runtime.Serialization.EnumMember(Value = "html_multipart")] HtmlMultipart,
+    [System.Runtime.Serialization.EnumMember(Value = "html_url_encoded")] HtmlUrlEncoded,
+    [System.Runtime.Serialization.EnumMember(Value = "raw")] Raw
 }
 
 // Integer-based enums

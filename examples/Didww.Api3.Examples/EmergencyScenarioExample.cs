@@ -10,7 +10,7 @@ namespace Didww.Api3.Examples;
 // Steps:
 //   0. Find an address -> find available DID with emergency feature in that country -> order it -> wait.
 //   1. Find the newly ordered DID with emergency feature that is not yet emergency-enabled.
-//   2. Get emergency requirements for that DID's country + did_group_type.
+//   2. Get emergency requirements for that DID's country + number_type.
 //   3. Find an existing identity on the account.
 //   4. Find an existing address on the account.
 //   5. Validate the (requirement, address, identity) triple.
@@ -102,7 +102,7 @@ public static class EmergencyScenarioExample
         var didParams = new QueryParams()
             .Filter("did_group.features", "emergency")
             .Filter("emergency_enabled", "false")
-            .Include("did_group", "did_group.country", "did_group.did_group_type", "emergency_calling_service")
+            .Include("did_group", "did_group.country", "emergency_calling_service")
             .Sort("-created_at")
             .Page(1, 10);
         var didResponse = await client.Dids().ListAsync(didParams);
@@ -117,27 +117,27 @@ public static class EmergencyScenarioExample
 
         var didGroup = did.DidGroup;
         var country = didGroup?.Country;
-        var dgt = didGroup?.DidGroupType;
+        var numberType = didGroup?.NumberType;
 
         Console.WriteLine($"  DID:            {did.Number} ({did.Id})");
         Console.WriteLine($"  DID Group:      {didGroup?.Id}");
         Console.WriteLine($"  Country:        {country?.Name} ({country?.Id})");
-        Console.WriteLine($"  DID Group Type: {dgt?.Name} ({dgt?.Id})");
+        Console.WriteLine($"  Number Type:    {numberType}");
 
         // === Step 2: Get emergency requirements ===
-        Console.WriteLine("\n--- Step 2: Get emergency requirements for country + did_group_type ---");
+        Console.WriteLine("\n--- Step 2: Get emergency requirements for country + number_type ---");
         var reqParams = new QueryParams();
         if (country != null)
             reqParams.Filter("country.id", country.Id!);
-        if (dgt != null)
-            reqParams.Filter("did_group_type.id", dgt.Id!);
+        if (numberType != null)
+            reqParams.Filter("number_type", EnumWire.Value(numberType.Value));
 
         var reqResponse = await client.EmergencyRequirements().ListAsync(reqParams);
         var requirement = reqResponse.Data.FirstOrDefault();
 
         if (requirement == null)
         {
-            Console.WriteLine($"No emergency requirements found for country {country?.Name} / {dgt?.Name}.");
+            Console.WriteLine($"No emergency requirements found for country {country?.Name} / {numberType}.");
             return;
         }
 
@@ -232,7 +232,7 @@ public static class EmergencyScenarioExample
             if (ecs != null)
             {
                 var ecsParams = new QueryParams()
-                    .Include("country", "did_group_type", "dids");
+                    .Include("country", "dids");
                 var service = await client.EmergencyCallingServices()
                     .FindAsync(ecs.Id!, ecsParams);
                 var svc = service.Data;
@@ -241,7 +241,7 @@ public static class EmergencyScenarioExample
                 Console.WriteLine($"  Reference:      {svc.Reference}");
                 Console.WriteLine($"  Status:         {svc.Status}");
                 Console.WriteLine($"  Country:        {svc.Country?.Name}");
-                Console.WriteLine($"  DID Group Type: {svc.DidGroupType?.Name}");
+                Console.WriteLine($"  Number Type:    {svc.NumberType}");
                 if (svc.Dids != null && svc.Dids.Count > 0)
                     Console.WriteLine($"  Attached DIDs:  {string.Join(", ", svc.Dids.Select(d => d.Number))}");
             }

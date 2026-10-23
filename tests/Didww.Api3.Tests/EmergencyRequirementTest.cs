@@ -1,3 +1,4 @@
+using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 
 namespace Didww.Api3.Tests;
@@ -46,6 +47,7 @@ public class EmergencyRequirementTest : BaseTest
         requirement.AddressAreaLevel.Should().Be("area");
         requirement.PersonalAreaLevel.Should().BeNull();
         requirement.BusinessAreaLevel.Should().Be("world_wide");
+        requirement.NumberType.Should().Be(NumberType.TollFree);
         requirement.EstimateSetupTime.Should().Be("7-14 days");
         requirement.RequirementRestrictionMessage.Should()
             .Be("Additional compliance review is required for this country.");
