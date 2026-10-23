@@ -261,6 +261,47 @@ public class SmsTrunkTest : BaseTest
         RequestBody("POST", "/v3/sms_trunks").Should().NotContain("ignored");
     }
 
+    private sealed class CustomHttpOutConfiguration : HttpOutConfiguration;
+
+    private sealed class CustomSmppEsmeConfiguration : SmppEsmeConfiguration;
+
+    [Fact]
+    public async Task TestCreateTrunkWithDerivedConfigurationDoesNotSendCredentials()
+    {
+        StubPost("sms_trunks", "sms_trunks/create_http_out_request.json", "sms_trunks/create_http_out.json");
+        StubPost("sms_trunks", "sms_trunks/create_smpp_esme_request.json", "sms_trunks/create_smpp_esme.json");
+
+        await Client.SmsTrunks().CreateAsync(new SmsTrunk
+        {
+            Name = "http_out trunk",
+            Configuration = new CustomHttpOutConfiguration
+            {
+                CallbackUrl = "https://example.com/sms/status",
+                AllowedIps = new List<string> { "203.0.113.10" },
+                AuthName = "ignored-name",
+                AuthPassword = "ignored-password"
+            }
+        });
+        await Client.SmsTrunks().CreateAsync(new SmsTrunk
+        {
+            Name = "smpp_esme trunk",
+            Configuration = new CustomSmppEsmeConfiguration
+            {
+                AllowedIps = new List<string> { "203.0.113.10" },
+                ServerLocation = SmppServerLocations.Nyc,
+                SystemId = "ignored-id",
+                Password = "ignored-password"
+            }
+        });
+
+        var bodies = WireMock.LogEntries
+            .Where(e => e.RequestMessage.Method == "POST" && e.RequestMessage.Path == "/v3/sms_trunks")
+            .Select(e => e.RequestMessage.Body ?? "")
+            .ToList();
+        bodies.Should().HaveCount(2);
+        bodies.Should().AllSatisfy(body => body.Should().NotContain("ignored"));
+    }
+
     [Fact]
     public async Task TestCreateSmppSmscTrunk()
     {

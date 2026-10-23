@@ -23,10 +23,11 @@ public class SmsTrunkConfigurationConverter : JsonConverter<SmsTrunkConfiguratio
         ["smpp_smsc"] = typeof(SmppSmscConfiguration),
     };
 
-    private static readonly Dictionary<Type, string[]> ReadOnlyAttributes = new()
+    private static string[] ReadOnlyAttributes(SmsTrunkConfigurationBase value) => value switch
     {
-        [typeof(HttpOutConfiguration)] = ["auth_name", "auth_password"],
-        [typeof(SmppEsmeConfiguration)] = ["system_id", "password"],
+        HttpOutConfiguration => ["auth_name", "auth_password"],
+        SmppEsmeConfiguration => ["system_id", "password"],
+        _ => [],
     };
 
     public override SmsTrunkConfigurationBase? ReadJson(JsonReader reader, Type objectType,
@@ -68,10 +69,9 @@ public class SmsTrunkConfigurationConverter : JsonConverter<SmsTrunkConfiguratio
         }
 
         var wrapper = PolymorphicJsonHelper.Serialize(value, value.ConfigurationType, serializer);
-        if (ReadOnlyAttributes.TryGetValue(value.GetType(), out var readOnly) &&
-            wrapper["attributes"] is JObject attributes)
+        if (wrapper["attributes"] is JObject attributes)
         {
-            foreach (var name in readOnly)
+            foreach (var name in ReadOnlyAttributes(value))
                 attributes.Remove(name);
         }
 
