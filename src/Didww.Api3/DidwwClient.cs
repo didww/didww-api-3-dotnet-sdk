@@ -37,7 +37,7 @@ public class DidwwClient
         $"didww-dotnet-sdk/{typeof(DidwwClient).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
 
     private const int MaxErrorBodySize = 1 << 20;
-    private static readonly Regex ApiVersionPattern = new("^[0-9]{4}-[0-9]{2}-[0-9]{2}\\z", RegexOptions.CultureInvariant);
+    private static readonly Regex ApiVersionPattern = new("^[0-9]{4}-[0-9]{2}-[0-9]{2}\\z", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
 
     private readonly DidwwCredentials _credentials;
     private readonly HttpClient _httpClient;

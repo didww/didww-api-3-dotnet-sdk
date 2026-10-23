@@ -5,6 +5,7 @@ using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 using JsonApiSerializer;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -640,6 +641,10 @@ public class VoiceInTrunkTest : BaseTest
         trunk.Pop = null;
 
         await Client.VoiceInTrunks().UpdateAsync(trunk);
+
+        var body = RequestsTo("/v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836").Should().ContainSingle()
+            .Subject.Body!;
+        JObject.Parse(body).SelectToken("data.attributes")!.ToString(Formatting.None).Should().Be("{\"pop\":null}");
     }
 
     [Theory]

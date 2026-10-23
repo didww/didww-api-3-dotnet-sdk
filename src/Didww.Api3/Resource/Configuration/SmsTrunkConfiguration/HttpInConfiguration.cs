@@ -53,9 +53,15 @@ public class HttpInConfiguration : SmsTrunkConfigurationBase
     // The wire payload is unaffected.
     public override string ToString()
     {
-        var headers = Headers == null ? "null" : Headers.Count == 0 ? "{}" : Redact.Mask("headers");
         return $"HttpInConfiguration(Url={Url ?? "null"}, HttpMethod={HttpMethod?.ToString() ?? "null"}, " +
-               $"Headers={headers}, BodyType={BodyType?.ToString() ?? "null"}, " +
+               $"Headers={RedactedHeaders()}, BodyType={BodyType?.ToString() ?? "null"}, " +
                $"FollowRedirect={FollowRedirect?.ToString() ?? "null"}, ValidateHttpsCertificate={ValidateHttpsCertificate?.ToString() ?? "null"})";
+    }
+
+    private string RedactedHeaders()
+    {
+        if (Headers == null)
+            return "null";
+        return Headers.Count == 0 ? "{}" : Redact.Mask("headers");
     }
 }

@@ -103,7 +103,7 @@ internal sealed class TokenProvider
         {
             if (!_inflight.TryGetValue(key, out flight!))
             {
-                flight = Task.Run(() => FlyAsync(key, audience));
+                flight = Task.Run(() => FlyAsync(key, audience), CancellationToken.None);
                 _ = flight.ContinueWith(static t => _ = t.Exception, CancellationToken.None,
                     TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                     TaskScheduler.Default);
@@ -138,7 +138,8 @@ internal sealed class TokenProvider
             DidwwToken? token;
             try
             {
-                token = await Observed(_store.GetAsync(key, cts.Token).AsTask()).WaitAsync(cts.Token).ConfigureAwait(false);
+                var read = Observed(_store.GetAsync(key, cts.Token).AsTask());
+                token = await read.WaitAsync(cts.Token).ConfigureAwait(false);
             }
             catch (System.Exception e)
             {
@@ -151,7 +152,8 @@ internal sealed class TokenProvider
 
             try
             {
-                await Observed(_store.DeleteAsync(key, cts.Token).AsTask()).WaitAsync(cts.Token).ConfigureAwait(false);
+                var delete = Observed(_store.DeleteAsync(key, cts.Token).AsTask());
+                await delete.WaitAsync(cts.Token).ConfigureAwait(false);
             }
             catch (System.Exception e)
             {
@@ -211,8 +213,8 @@ internal sealed class TokenProvider
     {
         try
         {
-            var token = await Observed(_store.GetAsync(key, cancellationToken).AsTask()).WaitAsync(cancellationToken)
-                .ConfigureAwait(false);
+            var read = Observed(_store.GetAsync(key, cancellationToken).AsTask());
+            var token = await read.WaitAsync(cancellationToken).ConfigureAwait(false);
             return string.IsNullOrEmpty(token?.AccessToken) ? null : token;
         }
         catch (System.Exception e)
@@ -252,7 +254,8 @@ internal sealed class TokenProvider
         using var cts = new CancellationTokenSource(StoreTimeout);
         try
         {
-            var token = await Observed(_store.GetAsync(key, cts.Token).AsTask()).WaitAsync(cts.Token).ConfigureAwait(false);
+            var read = Observed(_store.GetAsync(key, cts.Token).AsTask());
+            var token = await read.WaitAsync(cts.Token).ConfigureAwait(false);
             return string.IsNullOrEmpty(token?.AccessToken) ? null : token;
         }
         catch (System.Exception e)
@@ -278,8 +281,8 @@ internal sealed class TokenProvider
 
         try
         {
-            await Observed(_store.SetAsync(key, token, TimeSpan.FromSeconds(token.ExpiresIn), cts.Token).AsTask())
-                .WaitAsync(cts.Token).ConfigureAwait(false);
+            var write = Observed(_store.SetAsync(key, token, TimeSpan.FromSeconds(token.ExpiresIn), cts.Token).AsTask());
+            await write.WaitAsync(cts.Token).ConfigureAwait(false);
         }
         catch (System.Exception e)
         {
@@ -327,8 +330,10 @@ internal sealed class TokenProvider
         if (!Uri.TryCreate(_authUrl + "/token", UriKind.Absolute, out var tokenUri))
             throw new DidwwAuthException(DidwwAuthErrorKind.ConnectionError, errorDescription: "invalid token service URL");
 
-        for (var attempt = 1; ; attempt++)
+        var attempt = 0;
+        while (true)
         {
+            attempt++;
             TokenResponse? response = null;
             System.Exception? failure = null;
             try

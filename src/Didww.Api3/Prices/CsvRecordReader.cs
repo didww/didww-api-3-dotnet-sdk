@@ -95,51 +95,7 @@ internal sealed class CsvRecordReader
                 _field.Append('\n');
 
             foreach (var c in line)
-            {
-                switch (_state)
-                {
-                    case State.FieldStart:
-                        if (c == '"')
-                        {
-                            _state = State.Quoted;
-                            break;
-                        }
-                        _state = State.Unquoted;
-                        goto case State.Unquoted;
-
-                    case State.Unquoted:
-                        if (c == ',')
-                            EndField();
-                        else if (c == '"')
-                            throw Error(lineNumber, "bare \" in non-quoted field");
-                        else
-                            _field.Append(c);
-                        break;
-
-                    case State.Quoted:
-                        if (c == '"')
-                            _state = State.QuoteInQuoted;
-                        else
-                            _field.Append(c);
-                        break;
-
-                    case State.QuoteInQuoted:
-                        if (c == '"')
-                        {
-                            _field.Append('"');
-                            _state = State.Quoted;
-                        }
-                        else if (c == ',')
-                        {
-                            EndField();
-                        }
-                        else
-                        {
-                            throw Error(lineNumber, "extraneous or missing \" in quoted-field");
-                        }
-                        break;
-                }
-            }
+                Accept(c, lineNumber);
 
             if (_state == State.Quoted)
             {
@@ -148,6 +104,71 @@ internal sealed class CsvRecordReader
             }
             EndField();
             return true;
+        }
+
+        private void Accept(char c, int lineNumber)
+        {
+            switch (_state)
+            {
+                case State.FieldStart:
+                    AcceptAtFieldStart(c, lineNumber);
+                    break;
+                case State.Unquoted:
+                    AcceptUnquoted(c, lineNumber);
+                    break;
+                case State.Quoted:
+                    AcceptQuoted(c);
+                    break;
+                case State.QuoteInQuoted:
+                    AcceptQuoteInQuoted(c, lineNumber);
+                    break;
+            }
+        }
+
+        private void AcceptAtFieldStart(char c, int lineNumber)
+        {
+            if (c == '"')
+            {
+                _state = State.Quoted;
+                return;
+            }
+            _state = State.Unquoted;
+            AcceptUnquoted(c, lineNumber);
+        }
+
+        private void AcceptUnquoted(char c, int lineNumber)
+        {
+            if (c == ',')
+                EndField();
+            else if (c == '"')
+                throw Error(lineNumber, "bare \" in non-quoted field");
+            else
+                _field.Append(c);
+        }
+
+        private void AcceptQuoted(char c)
+        {
+            if (c == '"')
+                _state = State.QuoteInQuoted;
+            else
+                _field.Append(c);
+        }
+
+        private void AcceptQuoteInQuoted(char c, int lineNumber)
+        {
+            if (c == '"')
+            {
+                _field.Append('"');
+                _state = State.Quoted;
+            }
+            else if (c == ',')
+            {
+                EndField();
+            }
+            else
+            {
+                throw Error(lineNumber, "extraneous or missing \" in quoted-field");
+            }
         }
 
         private void EndField()

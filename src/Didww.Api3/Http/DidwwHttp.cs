@@ -70,7 +70,7 @@ internal static class DidwwHttp
                     cancellationToken).ConfigureAwait(false);
                 if (read == 0)
                     break;
-                buffer.Write(chunk, 0, read);
+                await buffer.WriteAsync(chunk.AsMemory(0, read), CancellationToken.None).ConfigureAwait(false);
             }
             return buffer.ToArray();
         }

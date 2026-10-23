@@ -4,6 +4,7 @@ using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 using Didww.Api3.Resource.Enums;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -94,6 +95,11 @@ public class SenderIdVerificationTest : BaseTest
         verification.SenderIds = new List<string> { "12125550199" };
 
         await Client.SenderIdVerifications().UpdateAsync(verification);
+
+        var body = RequestsTo("/v3/sender_id_verifications/" + VerificationId)
+            .Should().ContainSingle(r => r.Method == "PATCH").Subject.Body!;
+        JObject.Parse(body).SelectToken("data.attributes")!.ToString(Newtonsoft.Json.Formatting.None)
+            .Should().Be("{\"name\":\"ACME notifications\"}");
     }
 
     [Fact]
@@ -107,6 +113,11 @@ public class SenderIdVerificationTest : BaseTest
         verification.SmsTrunk = SmsTrunk.Build(HttpOutTrunkId);
 
         await Client.SenderIdVerifications().UpdateAsync(verification);
+
+        var body = RequestsTo("/v3/sender_id_verifications/" + VerificationId)
+            .Should().ContainSingle(r => r.Method == "PATCH").Subject.Body!;
+        JObject.Parse(body).SelectToken("data.relationships.sms_trunk.data.id")!.Value<string>()
+            .Should().Be(HttpOutTrunkId);
     }
 
     [Fact]
@@ -121,6 +132,11 @@ public class SenderIdVerificationTest : BaseTest
         verification.SmsTrunk = null;
 
         await Client.SenderIdVerifications().UpdateAsync(verification);
+
+        var body = RequestsTo("/v3/sender_id_verifications/" + VerificationId)
+            .Should().ContainSingle(r => r.Method == "PATCH").Subject.Body!;
+        JObject.Parse(body).SelectToken("data.relationships.sms_trunk")!.ToString(Newtonsoft.Json.Formatting.None)
+            .Should().Be("{\"data\":null}");
     }
 
     [Fact]

@@ -50,7 +50,7 @@ public static class SmsTrunksExample
             Console.WriteLine("\n=== Updating HTTP IN Trunk ===");
             var update = SmsTrunk.Build(created.Id!);
             update.Name = "DotNet HTTP IN " + suffix + " (v2)";
-            update.Configuration = new HttpInConfiguration { Url = "https://example.com/sms/v2" };
+            update.Configuration = new HttpInConfiguration { Url = "https://example.com/sms-v2" };
             try
             {
                 var updated = (await client.SmsTrunks().UpdateAsync(update)).Data;

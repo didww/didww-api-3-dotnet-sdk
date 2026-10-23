@@ -15,9 +15,6 @@ public class ReadOnlyRepository<T> where T : BaseResource
 {
     private protected const string JsonApiMediaType = "application/vnd.api+json";
 
-    // Resources called without an access token.
-    private static readonly HashSet<string> PublicEndpoints = new(StringComparer.Ordinal) { "public_keys" };
-
     protected readonly HttpClient HttpClient;
     protected readonly JsonSerializerSettings SerializerSettings;
     protected readonly string BaseUrl;
@@ -72,7 +69,7 @@ public class ReadOnlyRepository<T> where T : BaseResource
     {
         using var request = new HttpRequestMessage(method, url) { Content = content };
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonApiMediaType));
-        if (PublicEndpoints.Contains(Endpoint))
+        if (RepositoryConstants.PublicEndpoints.Contains(Endpoint))
             request.Options.Set(DidwwRequestOptions.Audience, DidwwRequestOptions.NoAudience);
 
         using var response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -190,4 +187,11 @@ public class ReadOnlyRepository<T> where T : BaseResource
         foreach (var prop in GetDeclaredProperties(resource))
             action(prop);
     }
+}
+
+// Non-generic so that every ReadOnlyRepository<T> shares one instance.
+internal static class RepositoryConstants
+{
+    // Resources called without an access token.
+    internal static readonly HashSet<string> PublicEndpoints = new(StringComparer.Ordinal) { "public_keys" };
 }

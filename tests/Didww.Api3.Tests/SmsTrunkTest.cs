@@ -388,6 +388,11 @@ public class SmsTrunkTest : BaseTest
         trunk.SmsTrunkGroup = null;
 
         await Client.SmsTrunks().UpdateAsync(trunk);
+
+        var relationships = JObject.Parse(RequestBody("PATCH", "/v3/sms_trunks/" + HttpInId))
+            .SelectToken("data.relationships")!;
+        relationships["sms_trunk_group"]!.ToString(Newtonsoft.Json.Formatting.None).Should().Be("{\"data\":null}");
+        relationships.SelectToken("outgoing_dids.data").Should().BeOfType<JArray>().Which.Should().BeEmpty();
     }
 
     [Fact]
@@ -432,6 +437,12 @@ public class SmsTrunkTest : BaseTest
         });
 
         await Client.SmsTrunks().UpdateAsync(trunk);
+
+        var attributes = JObject.Parse(RequestBody("PATCH", "/v3/sms_trunks/" + HttpInId))
+            .SelectToken("data.attributes.configuration.attributes")!;
+        attributes["http_method"]!.Value<string>().Should().Be("get");
+        attributes["body_type"]!.Type.Should().Be(JTokenType.Null);
+        attributes["body"]!.Type.Should().Be(JTokenType.Null);
     }
 
     [Fact]
@@ -440,6 +451,8 @@ public class SmsTrunkTest : BaseTest
         StubDelete("sms_trunks/" + HttpInId);
 
         await Client.SmsTrunks().DeleteAsync(HttpInId);
+
+        RequestsTo("/v3/sms_trunks/" + HttpInId).Should().ContainSingle().Which.Method.Should().Be("DELETE");
     }
 
     [Fact]

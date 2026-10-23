@@ -3,6 +3,7 @@ using Didww.Api3.Http;
 using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -121,6 +122,10 @@ public class SmsTrunkGroupTest : BaseTest
         group.SmsTrunks = new List<SmsTrunk>();
 
         await Client.SmsTrunkGroups().UpdateAsync(group);
+
+        var body = RequestsTo("/v3/sms_trunk_groups/" + GroupId).Should().ContainSingle().Subject.Body!;
+        JObject.Parse(body).SelectToken("data.relationships.sms_trunks.data")
+            .Should().BeOfType<JArray>().Which.Should().BeEmpty();
     }
 
     [Fact]
@@ -129,6 +134,8 @@ public class SmsTrunkGroupTest : BaseTest
         StubDelete("sms_trunk_groups/" + GroupId);
 
         await Client.SmsTrunkGroups().DeleteAsync(GroupId);
+
+        RequestsTo("/v3/sms_trunk_groups/" + GroupId).Should().ContainSingle().Which.Method.Should().Be("DELETE");
     }
 
     [Fact]

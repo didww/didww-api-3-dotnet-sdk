@@ -35,7 +35,13 @@ internal sealed class BearerTokenHandler : DelegatingHandler
         var hasAudience = request.Options.TryGetValue(DidwwRequestOptions.Audience, out var audienceOption);
         PrepareRequest(request, jsonApi: !hasAudience);
 
-        var audience = hasAudience ? audienceOption : IsPublicEndpoint(request.RequestUri) ? null : TokenAudience.Api;
+        string? audience;
+        if (hasAudience)
+            audience = audienceOption;
+        else if (IsPublicEndpoint(request.RequestUri))
+            audience = null;
+        else
+            audience = TokenAudience.Api;
         if (string.IsNullOrEmpty(audience))
         {
             request.Headers.Authorization = null;

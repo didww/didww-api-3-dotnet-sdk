@@ -48,7 +48,6 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
     private const int TempFileAttempts = 10;
     private const int MaxErrorBodySize = 1 << 20;
     private const int CopyBufferSize = 81920;
-    private static readonly TimeSpan MaxUnavailableRetryAfter = TimeSpan.FromSeconds(60);
 
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerSettings _serializerSettings;
@@ -222,8 +221,10 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
     // any new file (0666 minus the umask on Unix), not the 0600 of a temp file.
     private static (FileStream Stream, string Path) CreateTempFile(string path)
     {
-        for (var attempt = 1; ; attempt++)
+        var attempt = 0;
+        while (true)
         {
+            attempt++;
             var tempPath = $"{path}.{Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8))}.tmp";
             try
             {
@@ -244,8 +245,10 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
         Stream? destination, CancellationToken cancellationToken)
     {
         var uri = new Uri(DidwwHttp.JoinV3(_baseUrl, FilePath));
-        for (var attempt = 1; ; attempt++)
+        var attempt = 0;
+        while (true)
         {
+            attempt++;
             TimeSpan wait;
             using (var request = NewRequest(method, uri))
             {
@@ -264,12 +267,9 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
                     return NewPriceFile(response, written);
                 }
 
-                if (status == 503 && response.Headers.RetryAfter?.Delta is { } retryAfter &&
-                    retryAfter >= TimeSpan.Zero && retryAfter <= MaxUnavailableRetryAfter &&
-                    attempt <= MaxUnavailableRetries)
+                if (UnavailableRetryWait(response, attempt) is { } retryWait)
                 {
-                    var atLeastOneSecond = retryAfter < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1) : retryAfter;
-                    wait = TokenProvider.SpreadRetryAfter(atLeastOneSecond, NextDouble);
+                    wait = retryWait;
                 }
                 else
                 {
@@ -280,6 +280,20 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
             }
             await Delay(wait, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    // The wait before retrying a 503 answer whose Retry-After is at most a
+    // minute, or null when the answer is not retried.
+    private TimeSpan? UnavailableRetryWait(HttpResponseMessage response, int attempt)
+    {
+        if ((int)response.StatusCode == 503 && response.Headers.RetryAfter?.Delta is { } retryAfter &&
+            retryAfter >= TimeSpan.Zero && retryAfter <= PricesServiceConstants.MaxUnavailableRetryAfter &&
+            attempt <= MaxUnavailableRetries)
+        {
+            var atLeastOneSecond = retryAfter < TimeSpan.FromSeconds(1) ? TimeSpan.FromSeconds(1) : retryAfter;
+            return TokenProvider.SpreadRetryAfter(atLeastOneSecond, NextDouble);
+        }
+        return null;
     }
 
     private HttpRequestMessage NewRequest(HttpMethod method, Uri uri)
@@ -397,7 +411,7 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
         {
             throw new DidwwClientException($"Failed to parse price lookup: {e.Message}", e);
         }
-        if (rows == null || rows.Count == 0 || rows.Any(row => row == null))
+        if (rows == null || rows.Count == 0 || rows.Contains(null!))
             throw new DidwwClientException("Failed to parse price lookup: the answer holds no prices");
 
         var totalRecords = 0;
@@ -522,4 +536,10 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
         }
         return errors;
     }
+}
+
+// Non-generic so that every PricesService<TPrice> shares one instance.
+internal static class PricesServiceConstants
+{
+    internal static readonly TimeSpan MaxUnavailableRetryAfter = TimeSpan.FromSeconds(60);
 }

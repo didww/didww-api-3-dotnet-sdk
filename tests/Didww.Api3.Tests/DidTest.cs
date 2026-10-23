@@ -2,6 +2,7 @@ using Didww.Api3.Http;
 using Didww.Api3.Resource;
 using Didww.Api3.Resource.Enums;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -369,6 +370,11 @@ public class DidTest : BaseTest
         did.SmsTrunk = null;
 
         await Client.Dids().UpdateAsync(did);
+
+        var body = RequestsTo("/v3/dids/" + SmsDidId).Should().ContainSingle().Subject.Body!;
+        var relationships = JObject.Parse(body).SelectToken("data.relationships")!;
+        relationships["sms_trunk"]!.ToString(Newtonsoft.Json.Formatting.None).Should().Be("{\"data\":null}");
+        relationships["sms_trunk_group"].Should().BeNull();
     }
 
     [Fact]
@@ -380,6 +386,11 @@ public class DidTest : BaseTest
         did.SmsTrunkGroup = null;
 
         await Client.Dids().UpdateAsync(did);
+
+        var body = RequestsTo("/v3/dids/" + SmsDidId).Should().ContainSingle().Subject.Body!;
+        var relationships = JObject.Parse(body).SelectToken("data.relationships")!;
+        relationships["sms_trunk_group"]!.ToString(Newtonsoft.Json.Formatting.None).Should().Be("{\"data\":null}");
+        relationships["sms_trunk"].Should().BeNull();
     }
 
     [Fact]
@@ -392,5 +403,10 @@ public class DidTest : BaseTest
         did.SmsTrunkGroup = null;
 
         await Client.Dids().UpdateAsync(did);
+
+        var body = RequestsTo("/v3/dids/" + SmsDidId).Should().ContainSingle().Subject.Body!;
+        var relationships = JObject.Parse(body).SelectToken("data.relationships")!;
+        relationships["sms_trunk"]!.ToString(Newtonsoft.Json.Formatting.None).Should().Be("{\"data\":null}");
+        relationships["sms_trunk_group"]!.ToString(Newtonsoft.Json.Formatting.None).Should().Be("{\"data\":null}");
     }
 }
