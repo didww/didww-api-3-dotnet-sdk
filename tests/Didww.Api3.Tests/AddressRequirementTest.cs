@@ -15,6 +15,8 @@ public class AddressRequirementTest : BaseTest
 
         requirements.Should().NotBeEmpty();
         requirements[0].NumberType.Should().Be(NumberType.Local);
+        requirements[0].PersonalMandatoryFields.Should().Equal("country");
+        requirements[0].BusinessMandatoryFields.Should().BeEmpty();
         requirements[1].NumberType.Should().Be(NumberType.Mobile);
     }
 
@@ -28,5 +30,8 @@ public class AddressRequirementTest : BaseTest
 
         requirement.Id.Should().Be("25d12afe-1ec6-4fe3-9621-b250dd1fb959");
         requirement.NumberType.Should().Be(NumberType.Local);
+        requirement.PersonalMandatoryFields.Should().Equal("birth_date", "country", "personal_tax_id");
+        requirement.BusinessMandatoryFields.Should().Equal("id_number", "tax_id", "country", "company_reg_number", "personal_tax_id");
+        requirement.AddressProofTypes.Should().ContainSingle().Which.EntityType.Should().Be("address");
     }
 }

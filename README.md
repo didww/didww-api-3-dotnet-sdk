@@ -253,6 +253,8 @@ var balance = (await client.Balance().FindAsync()).Data;
 
 `DidGroup`, `AddressRequirement`, `EmergencyRequirement` and `EmergencyCallingService` carry a `NumberType`, one of the `NumberType` values (`Local`, `National`, `Mobile`, `TollFree`, `SharedCost`, `Global`). `DidGroup.IsDemo` flags demo groups. `NumberType` replaces the `DidGroupType` resource and the `did_group_type` relationship, which API `2026-10-22` no longer has. The `pops` resource is gone too: a Voice IN trunk carries its point of presence in the `Pop` attribute (see [Voice In Trunks](#voice-in-trunks)).
 
+The mandatory fields of `AddressRequirement` (`PersonalMandatoryFields`, `BusinessMandatoryFields`) and of `EmergencyRequirement` (`AddressMandatoryFields`, `PersonalMandatoryFields`, `BusinessMandatoryFields`) list the fields as the API spells them, such as `birth_date`, `id_number`, `country` or `area`, and are empty when nothing is mandatory. `tax_id` stands for `Identity.VatId`. `ProofType.EntityType` is `address`, `business` or `personal`.
+
 ### DIDs
 
 ```csharp
@@ -307,7 +309,8 @@ var sipConfig = new SipConfiguration
     Username = "myuser",
     Host = "203.0.113.1",
     Port = 5060,
-    CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729 },
+    Codecs = new List<Codec> { Codec.Pcma, Codec.Pcmu, Codec.TelephoneEvent },
+    IceMode = IceMode.Accept,
     TransportProtocolId = TransportProtocol.UDP,
     SstRefreshMethodId = SstRefreshMethod.INVITE,
     MediaEncryptionMode = MediaEncryptionMode.Disabled
@@ -339,7 +342,9 @@ await client.VoiceInTrunks().UpdateAsync(existingTrunk);
 await client.VoiceInTrunks().DeleteAsync("trunk-uuid");
 ```
 
-`Pop` is a plain attribute, one of the `Pop` values (`Nyc`, `Fra`, `Lac`, `Mia`, `Sg`, `Hk`, `Ams`). Leave it `null` to let DIDWW choose; setting it to `null` on a built or fetched trunk sends `"pop": null`. It is no longer a relationship and cannot be included.
+`Codecs` lists the codecs offered on calls to the trunk by name, in priority order: the first has the highest priority. It replaces `codec_ids`; the names are the `Codec` values. Left out, the trunk offers `pcmu`, `pcma`, `g729`, `g723` and `telephone_event`. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` take `Disabled` (the default), `Accept` or `Initiate`.
+
+`Pop` is a plain attribute, one of the `Pop` values (`Nyc`, `Fra`, `Lac`, `Mia`, `Sg`, `Hk`, `Ams`: `nyc`, `fra`, `lac`, `mia`, `sg`, `hk`, `ams`). Leave it `null` to let DIDWW choose; setting it to `null` on a built or fetched trunk sends `"pop": null`. It is no longer a relationship and cannot be included.
 
 ```csharp
 var popUpdate = VoiceInTrunk.Build("trunk-uuid");
@@ -399,6 +404,8 @@ var group = new VoiceInTrunkGroup
 await client.VoiceInTrunkGroups().CreateAsync(group);
 ```
 
+A Voice In trunk group cannot be deleted while DIDs are routed to it or to one of its trunks (422): unroute those DIDs, or route them elsewhere, first.
+
 ### Voice Out Trunks
 
 Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three types are supported:
@@ -409,6 +416,7 @@ Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three ty
 
 ```csharp
 using Didww.Api3.Resource.Configuration.AuthenticationMethod;
+using Didww.Api3.Resource.Enums;
 
 // NOTE: 203.0.113.0/24 is RFC 5737 TEST-NET-3 documentation space.
 // Replace with the real CIDR of your SIP infrastructure.
@@ -420,11 +428,14 @@ var trunk = new VoiceOutTrunk
     AuthenticationMethod = new CredentialsAndIpAuthenticationMethod
     {
         AllowedSipIps = new List<string> { "203.0.113.0/24" },
-    }
+    },
+    Codecs = new List<VoiceOutCodec> { VoiceOutCodec.Opus, VoiceOutCodec.Pcma, VoiceOutCodec.TelephoneEvent }
 };
 var response = await client.VoiceOutTrunks().CreateAsync(trunk);
 // response.Data.AuthenticationMethod as CredentialsAndIpAuthenticationMethod -- Username/Password server-generated
 ```
+
+`Codecs` lists the codecs offered on calls from the trunk by name, in priority order: the first has the highest priority. The names are the `VoiceOutCodec` values, which differ from the `Codec` values of an inbound SIP trunk. Left out, the trunk offers `pcma`, `pcmu` and `telephone_event`. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` take `Disabled`, `Accept` (the default) or `Initiate`.
 
 ### SMS Trunks
 
@@ -670,7 +681,7 @@ var smsOut = (await client.Exports().CreateAsync(new Export
     {
         { "from", "2026-10-01 00:00:00" }, // inclusive
         { "to", "2026-10-02 00:00:00" },   // exclusive
-        { "service_type", "a2p" },
+        { "service_type", ExportServiceTypes.A2p },
         { "sms_trunk.id", new List<string> { "sms-trunk-uuid" } }
     }
 })).Data;
@@ -693,7 +704,9 @@ The export downloads send the token only to the origin (scheme, host and port) o
 
 - `sms_in` and `sms_out`: `source_address_eq`, `source_address_cont`, `destination_address_eq`, `destination_address_cont`, `status`, `sms_id`, `sms_trunk.id` (a string or a list of strings);
 - `sms_in` only: `trunk_type`, one or more of the `ExportTrunkTypes` values;
-- `sms_out` only: `service_type` (`a2p` or `p2p`) and `sender_id_verification.id` (a string or a list of strings).
+- `sms_out` only: `service_type`, one of the `ExportServiceTypes` values, and `sender_id_verification.id` (a string or a list of strings).
+
+Filter values are lowercase: `service_type` is `a2p` or `p2p`, `trunk_type` is one or more of `smpp_smsc`, `smpp_esme`, `sms_to_email` and `http_in`, and `status` is `success`, `failed` or `queued` for `sms_in`, and `routing_error`, `in_progress`, `queued`, `failed` or `success` for `sms_out`.
 
 The doc comment of `Export.Filters` lists the keys of every type.
 
@@ -814,7 +827,7 @@ Console.WriteLine(file.NotModified
 await using (var stream = File.OpenRead(path))
 {
     await foreach (var row in PriceFileReader.ReadRowsAsync(stream))
-        Console.WriteLine($"{row["Destination"]}: {row["Rate (USD, excl. VAT)"]}");
+        Console.WriteLine($"{row["Destination"]}: {row["Rate"]}");
 }
 
 // Lower-level calls
@@ -827,10 +840,11 @@ file = await prices.DownloadAsync(destinationStream); // any writable Stream
 ```
 
 - `FetchAsync(path)` sends the modification time of the file at `path` as `If-Modified-Since`, when the file is there; an unchanged price file is answered 304 and the file is kept. A file written by `DownloadToFileAsync` or `FetchAsync` gets the `Last-Modified` of the response as its modification time, so the date matches the copy on disk. `FetchAsync` trusts the modification time of any file at `path`: a file copied or changed by other means can be answered 304 and kept, so replace such a file with `DownloadToFileAsync`.
-- `DownloadToFileAsync` and `FetchAsync` stream the body into a temp file next to `path`, unique to the call, which gets the mode of a new file (`0666` minus the umask on Unix) and replaces `path` atomically only on a 200. A 304 or an error leaves an existing file untouched, the temp file is always removed, and concurrent downloads to one path do not mix their bytes. On Windows the replacement fails while `path` is open without `FileShare.Delete`.
+- `DownloadToFileAsync` and `FetchAsync` stream the body into a temp file `.didww-<16 hex digits>.tmp` in the directory of `path`, unique to the call, which gets the mode of a new file (`0666` minus the umask on Unix) and replaces `path` atomically only on a 200. A 304 or an error leaves an existing file untouched, the temp file is always removed, and concurrent downloads to one path do not mix their bytes. On Windows the replacement fails while `path` is open without `FileShare.Delete`.
 - `DownloadAsync(destination, ifModifiedSince)` writes the body into `destination` only on a 200, as it arrives, so after a transfer error `destination` may hold part of it. An exception of `destination` propagates as is.
 - `HeadAsync` and the downloads return a `PriceFile`: `StatusCode`, `LastModified` (`null` when absent), `ContentLength`, `FileName`, `BytesWritten` and `NotModified`.
-- `PriceFileReader.ReadRows(stream)` and `ReadRowsAsync(stream)` gunzip a downloaded file and return each row as a dictionary keyed by the header line, as served (for example `Rate (USD, excl. VAT)`). A UTF-8 byte order mark is skipped. The input is a single gzip member, as the prices services serve it. Input that is not gzip, gzip data cut short (an empty input included), or a row whose field count differs from the header, throws an `InvalidDataException`. The rows are read lazily, so rows before the error have already been returned; the stream is left open.
+- `PriceFileReader.ReadRows(stream)` and `ReadRowsAsync(stream)` gunzip a downloaded file and return each row as a dictionary keyed by the header line, as served. A UTF-8 byte order mark is skipped. The input is a single gzip member, as the prices services serve it. Input that is not gzip, gzip data cut short (an empty input included), or a row whose field count differs from the header, throws an `InvalidDataException`. The rows are read lazily, so rows before the error have already been returned; the stream is left open.
+- The columns, prices in USD with VAT excluded. Voice IN: `Country`, `Src country name`, `Source type`, `Destination`, `Rate`, `Connection fee`, `Initial interval`, `Next interval` and `Reject calls`. Voice OUT: `Category`, `Country`, `Network`, `Prefix` (one prefix per row), `Rate`, `Connection fee`, `Initial increment`, `Recurring increment`, `Reject calls`, `Next rate`, `Next connection fee`, `Next initial increment`, `Next recurring increment`, `Effective date` and `Comment`. SMS OUT: `Source prefix`, `Destination prefix`, `Country`, `MCC`, `MCC name`, `MNC`, `MNC name`, `Reject SMS` (`true` or `false`) and `Price`. SMS IN: `Source prefix`, `Source number length min`, `Source number length max`, `Destination prefix`, `Destination number length min`, `Destination number length max`, `Country` and `Price`.
 - Only `Last-Modified` and `If-Modified-Since` are used. The service sends no `ETag`, and the SDK never sends `If-None-Match`, which would make the service ignore `If-Modified-Since`.
 - A 503 on a price file is retried up to 2 times when its `Retry-After` is 60 seconds or less, after waiting that long (at least 1 s) plus a small random delay so that clients do not retry in step. Otherwise it throws `DidwwPricesErrorKind.ServiceUnavailable` with `RetryAfter`. Lookups are not retried.
 - A 404 `price_not_found` throws `PriceNotFound`; any other 404, `price_plan_not_assigned` included, and any 404 on `HeadAsync`, which has no body, throws `PricePlanNotAssigned`. `DidwwPricesException.Code` holds the code of the answer, or `price_plan_not_assigned` for a 404 without one.
@@ -941,12 +955,25 @@ catch (DidwwClientException e)
 
 | Exception | Thrown for |
 |-----------|------------|
-| `DidwwApiException` | An error status of the JSON:API repositories and of `DownloadExportAsync`, with `HttpStatus` and `Errors`. |
-| `DidwwClientException` | A failure on the client side: an error status of `UploadEncryptedFileAsync`, an upload or price lookup answer that cannot be parsed, a refused export URL, a broken export download, `UpdateAsync` on a resource without an `Id`. |
+| `DidwwApiException` | An error status of the JSON:API repositories, `DownloadExportAsync` and `UploadEncryptedFileAsync`, with `HttpStatus`, `Errors` and `RetryAfter`. |
+| `DidwwClientException` | A failure on the client side: an upload or price lookup answer that cannot be parsed, a refused export URL, a broken export download, `UpdateAsync` on a resource without an `Id`. |
 | `DidwwAuthException` | The token service, from any call that needs a new token. |
 | `DidwwPricesException` | The prices services. |
 
-`DidwwApiException` also reports the authentication failures of the API: a 401 still answered after the token was replaced once (`HttpStatus` 401), and a 403 such as `insufficient_scope` for a write with a `Read` token, which is never retried. `UploadEncryptedFileAsync` reports any error status, including a 401 after the retry and a 403, as a `DidwwClientException` whose `Message` holds the HTTP status. `DownloadExportAsync` does not follow redirects: any status other than 200, such as a 3xx or a 204, throws a `DidwwApiException`, and a redirect followed by a custom handler throws a `DidwwClientException`.
+`DidwwApiException` also reports the authentication failures of the API: a 401 still answered after the token was replaced once (`HttpStatus` 401), and a 403 such as `insufficient_scope` for a write with a `Read` token, which is never retried. `DownloadExportAsync` does not follow redirects: any status other than 200, such as a 3xx or a 204, throws a `DidwwApiException`, and a redirect followed by a custom handler throws a `DidwwClientException`.
+
+A 429 (`too_many_requests`) means the request budget of the account for the current window is spent. The repositories, `DownloadExportAsync` and `UploadEncryptedFileAsync` throw it as a `DidwwApiException` with `HttpStatus` 429 and `RetryAfter`, the `Retry-After` of the response (`null` when it is missing or not a number of seconds). The SDK does not retry it, as a write may not be safe to send twice: wait `RetryAfter` before sending the request again.
+
+```csharp
+try
+{
+    await client.Dids().ListAsync();
+}
+catch (DidwwApiException e) when (e.HttpStatus == 429)
+{
+    Console.WriteLine($"API rate limit, retry after {e.RetryAfter}");
+}
+```
 
 The token service and prices errors carry a `Kind`, which `catch ... when` tells apart:
 
@@ -1151,14 +1178,16 @@ The SDK provides enum types in `Didww.Api3.Resource.Enums`:
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
 `EmergencyCallingServiceStatus`, `EmergencyVerificationStatus`, `DiversionRelayPolicy`,
-`TransportProtocol`, `Codec`, `RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`,
-`ReroutingDisconnectCode`, `Feature`, `AreaLevel`, `AddressVerificationStatus`, `StirShakenMode`,
-`DidHistoryAction`, `DidHistoryMethod`, `NumberType`, `Pop`, `SenderIdVerificationStatus`, `SenderType`,
-`SmsHttpMethod`, `SmsBodyType`, `VoiceOutPriceCategory`
+`TransportProtocol`, `Codec`, `VoiceOutCodec`, `IceMode`, `RtcpMuxMode`, `RtcpFeedbackMode`,
+`RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`, `ReroutingDisconnectCode`, `Feature`, `AreaLevel`,
+`AddressVerificationStatus`, `StirShakenMode`, `DidHistoryAction`, `DidHistoryMethod`, `NumberType`, `Pop`,
+`SenderIdVerificationStatus`, `SenderType`, `SmsHttpMethod`, `SmsBodyType`, `VoiceOutPriceCategory`
 
 \* `ReplaceCli` and `RandomizeCli` require additional account configuration. Contact DIDWW support to enable these values.
 
-`ExportType` includes `SmsIn` and `SmsOut`. The values of the `trunk_type` filter of `sms_in` exports are the constants of `ExportTrunkTypes` (namespace `Didww.Api3.Resource`), and the SMPP server locations those of `SmppServerLocations` (namespace `Didww.Api3.Resource.Configuration.SmsTrunkConfiguration`).
+`Codec` holds the codecs of an inbound SIP trunk (`SipConfiguration.Codecs`) and `VoiceOutCodec` those of a Voice OUT trunk (`VoiceOutTrunk.Codecs`); the two lists differ. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` serve both.
+
+`ExportType` includes `SmsIn` and `SmsOut`. The values of the `trunk_type` filter of `sms_in` exports are the constants of `ExportTrunkTypes`, those of the `service_type` filter of `sms_out` exports the constants of `ExportServiceTypes` (both in namespace `Didww.Api3.Resource`), and the SMPP server locations those of `SmppServerLocations` (namespace `Didww.Api3.Resource.Configuration.SmsTrunkConfiguration`).
 
 ## Development
 

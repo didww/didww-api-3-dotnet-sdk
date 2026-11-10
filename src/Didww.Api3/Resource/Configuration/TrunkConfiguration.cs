@@ -36,8 +36,26 @@ public class SipConfiguration : TrunkConfiguration
     [JsonProperty("port")]
     public int? Port { get; set; }
 
-    [JsonProperty("codec_ids")]
-    public List<Codec>? CodecIds { get; set; }
+    /// <summary>
+    /// Codecs offered on calls to the trunk, in priority order: the first has
+    /// the highest priority. Left out on create, the trunk offers
+    /// <c>pcmu</c>, <c>pcma</c>, <c>g729</c>, <c>g723</c> and <c>telephone_event</c>.
+    /// (API 2026-10-22: replaces <c>codec_ids</c>)
+    /// </summary>
+    [JsonProperty("codecs")]
+    public List<Codec>? Codecs { get; set; }
+
+    /// <summary>ICE on calls to the trunk. Defaults to <see cref="Enums.IceMode.Disabled"/>. (API 2026-10-22)</summary>
+    [JsonProperty("ice_mode")]
+    public IceMode? IceMode { get; set; }
+
+    /// <summary>RTP and RTCP on one port on calls to the trunk. Defaults to <see cref="Enums.RtcpMuxMode.Disabled"/>. (API 2026-10-22)</summary>
+    [JsonProperty("rtcp_mux_mode")]
+    public RtcpMuxMode? RtcpMuxMode { get; set; }
+
+    /// <summary>RTCP feedback (AVPF) on calls to the trunk. Defaults to <see cref="Enums.RtcpFeedbackMode.Disabled"/>. (API 2026-10-22)</summary>
+    [JsonProperty("rtcp_feedback_mode")]
+    public RtcpFeedbackMode? RtcpFeedbackMode { get; set; }
 
     [JsonProperty("rx_dtmf_format_id")]
     public RxDtmfFormat? RxDtmfFormatId { get; set; }

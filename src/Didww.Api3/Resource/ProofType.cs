@@ -10,6 +10,7 @@ public class ProofType : BaseResource
     [JsonProperty("name")]
     public string? Name { get; set; }
 
+    /// <summary>What the document proves: <c>address</c>, <c>business</c> or <c>personal</c>.</summary>
     [JsonProperty("entity_type")]
     public string? EntityType { get; set; }
 }

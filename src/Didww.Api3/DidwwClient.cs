@@ -137,6 +137,10 @@ public class DidwwClient
     public Repository.Repository<VoiceInTrunk> VoiceInTrunks() => new(_httpClient, _serializerSettings, _baseUrl, "voice_in_trunks");
     public Repository.Repository<VoiceInTrunkGroup> VoiceInTrunkGroups() => new(_httpClient, _serializerSettings, _baseUrl, "voice_in_trunk_groups");
     public Repository.Repository<VoiceOutTrunk> VoiceOutTrunks() => new(_httpClient, _serializerSettings, _baseUrl, "voice_out_trunks");
+    /// <summary>
+    /// Rotates the generated credentials of a Voice OUT trunk. Only <c>CreateAsync</c> is supported;
+    /// a trunk with <c>twilio</c> authentication is answered 404.
+    /// </summary>
     public Repository.Repository<VoiceOutTrunkRegenerateCredential> VoiceOutTrunkRegenerateCredentials() => new(_httpClient, _serializerSettings, _baseUrl, "voice_out_trunk_regenerate_credentials");
     public Repository.Repository<DidReservation> DidReservations() => new(_httpClient, _serializerSettings, _baseUrl, "did_reservations");
     public Repository.Repository<CapacityPool> CapacityPools() => new(_httpClient, _serializerSettings, _baseUrl, "capacity_pools");
@@ -190,6 +194,8 @@ public class DidwwClient
     /// Uploads one encrypted file (multipart/form-data) and returns the id of the
     /// created encrypted file. The body is built in memory, so the upload is sent
     /// once more with a new access token when the API refuses the current one.
+    /// An error status throws <see cref="DidwwApiException"/> (see
+    /// <see cref="DidwwApiException.RetryAfter"/>); a 429 is not retried.
     /// </summary>
     public async Task<string> UploadEncryptedFileAsync(byte[] encryptedData, string fileName,
         string fingerprint, string? description = null, CancellationToken cancellationToken = default)
@@ -216,7 +222,7 @@ public class DidwwClient
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
-            throw new DidwwClientException($"Failed to upload encrypted file: HTTP {(int)response.StatusCode} {responseBody}");
+            throw UnexpectedStatusException(response, responseBody);
 
         JToken? idNode;
         try
@@ -258,7 +264,8 @@ public class DidwwClient
     /// elsewhere: a URL on any other origin raises <see cref="DidwwClientException"/>
     /// without a request. Only a 200 answer is written and redirects are not
     /// followed; any other status, including 3xx and 204, raises
-    /// <see cref="DidwwApiException"/>. An exception from <paramref name="destination"/>
+    /// <see cref="DidwwApiException"/> (see <see cref="DidwwApiException.RetryAfter"/>);
+    /// a 429 is not retried. An exception from <paramref name="destination"/>
     /// propagates as is; a broken response body raises <see cref="DidwwClientException"/>.
     /// </remarks>
     public Task DownloadExportAsync(string url, Stream destination, CancellationToken cancellationToken = default)
@@ -332,7 +339,7 @@ public class DidwwClient
             {
                 // The status is what matters; a broken error body is not reported instead of it.
             }
-            throw UnexpectedStatusException((int)response.StatusCode, System.Text.Encoding.UTF8.GetString(errorBody));
+            throw UnexpectedStatusException(response, System.Text.Encoding.UTF8.GetString(errorBody));
         }
 
         var body = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -398,15 +405,17 @@ public class DidwwClient
             $"or the environment URL {environmentUri.Scheme}://{environmentUri.Authority}");
     }
 
-    private static DidwwApiException UnexpectedStatusException(int status, string body)
+    private static DidwwApiException UnexpectedStatusException(HttpResponseMessage response, string body)
     {
+        var status = (int)response.StatusCode;
+        var retryAfter = DidwwHttp.RetryAfterSeconds(response);
         try
         {
             if (JToken.Parse(body) is JObject root && root["errors"] is JArray errorsNode)
             {
                 var errors = errorsNode.OfType<JObject>().Select(e => e.ToObject<ApiError>()!).ToList();
                 if (errors.Count > 0)
-                    return new DidwwApiException(status, errors);
+                    return new DidwwApiException(status, errors, retryAfter);
             }
         }
         catch (JsonException)
@@ -417,7 +426,7 @@ public class DidwwClient
         return new DidwwApiException(status, new List<ApiError>
         {
             new() { Title = "Unexpected status", Detail = body.Length > 0 ? body : null }
-        });
+        }, retryAfter);
     }
 
     private static void ValidateApiKey(string apiKey)

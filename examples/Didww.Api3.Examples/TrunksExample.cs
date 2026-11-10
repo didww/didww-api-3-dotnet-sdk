@@ -14,7 +14,9 @@ public static class TrunksExample
             Username = "myuser",
             Host = "203.0.113.1",
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA }
+            // Codecs in priority order: the first has the highest priority.
+            Codecs = new List<Codec> { Codec.Pcmu, Codec.Pcma, Codec.TelephoneEvent },
+            IceMode = IceMode.Accept
         };
 
         var trunk = new VoiceInTrunk

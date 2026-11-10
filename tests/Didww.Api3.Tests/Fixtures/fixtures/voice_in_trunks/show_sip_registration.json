@@ -17,11 +17,14 @@
           "username": null,
           "host": null,
           "port": null,
-          "codec_ids": [
-            9,
-            10,
-            8
+          "codecs": [
+            "pcmu",
+            "pcma",
+            "g729"
           ],
+          "ice_mode": "disabled",
+          "rtcp_mux_mode": "disabled",
+          "rtcp_feedback_mode": "disabled",
           "rx_dtmf_format_id": 1,
           "tx_dtmf_format_id": 1,
           "resolve_ruri": false,

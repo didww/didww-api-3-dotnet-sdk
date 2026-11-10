@@ -59,7 +59,7 @@ public static class PricesDownloadExample
         var n = 0;
         await foreach (var row in PriceFileReader.ReadRowsAsync(file))
         {
-            Console.WriteLine($"  {row["Country"]} {row["Destination"]} {row["Source type"]}: {row["Rate (USD, excl. VAT)"]}");
+            Console.WriteLine($"  {row["Country"]} {row["Destination"]} {row["Source type"]}: {row["Rate"]}");
             if (++n == FirstRows)
                 break;
         }

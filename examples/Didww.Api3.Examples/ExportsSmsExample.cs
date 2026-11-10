@@ -11,10 +11,13 @@ namespace Didww.Api3.Examples;
 // Filters on SMS exports (Export.Filters):
 //   * "from", "to" (required): "YYYY-MM-DD HH:MM:SS" UTC; from inclusive, to exclusive
 //   * "source_address_eq" / "source_address_cont", "destination_address_eq" /
-//     "destination_address_cont", "status", "sms_id"
+//     "destination_address_cont", "status", "sms_id"; "status" is "success",
+//     "failed" or "queued" for sms_in, and "routing_error", "in_progress",
+//     "queued", "failed" or "success" for sms_out
 //   * "sms_trunk.id": one id or a list of ids
 //   * sms_in only: "trunk_type", one or more of the ExportTrunkTypes values
-//   * sms_out only: "service_type" ("a2p" or "p2p"), "sender_id_verification.id"
+//   * sms_out only: "service_type", one of the ExportServiceTypes values,
+//     "sender_id_verification.id"
 public static class ExportsSmsExample
 {
     public static async Task RunAsync(DidwwClient client)
@@ -34,7 +37,7 @@ public static class ExportsSmsExample
                 {
                     { "from", from },
                     { "to", to },
-                    { "service_type", "a2p" }
+                    { "service_type", ExportServiceTypes.A2p }
                 },
                 ExternalReferenceId = "dotnet-sms-out-" + suffix
             })).Data;
@@ -45,7 +48,7 @@ public static class ExportsSmsExample
             Console.WriteLine($"Error creating SMS-Out export: {ex.Message}");
         }
 
-        Console.WriteLine("\n=== Creating SMS-In Export (HTTP IN and email trunks, yesterday) ===");
+        Console.WriteLine("\n=== Creating SMS-In Export (HTTP IN and SMS to email trunks, yesterday) ===");
         try
         {
             var smsIn = (await client.Exports().CreateAsync(new Export
@@ -55,7 +58,7 @@ public static class ExportsSmsExample
                 {
                     { "from", from },
                     { "to", to },
-                    { "trunk_type", new List<string> { ExportTrunkTypes.HttpIn, ExportTrunkTypes.Email } }
+                    { "trunk_type", new List<string> { ExportTrunkTypes.HttpIn, ExportTrunkTypes.SmsToEmail } }
                 },
                 ExternalReferenceId = "dotnet-sms-in-" + suffix
             })).Data;

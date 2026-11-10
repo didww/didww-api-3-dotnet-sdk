@@ -9,13 +9,12 @@
         "personal_area_level": "country",
         "business_area_level": null,
         "address_mandatory_fields": [
-          "street",
-          "city",
-          "postal_code"
+          "area"
         ],
         "personal_mandatory_fields": [
-          "first_name",
-          "last_name"
+          "birth_date",
+          "id_number",
+          "contact_email"
         ],
         "business_mandatory_fields": [],
         "estimate_setup_time": "7-14 days",

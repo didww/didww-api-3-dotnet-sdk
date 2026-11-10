@@ -47,7 +47,10 @@ public class VoiceInTrunkTest : BaseTest
         config.Username.Should().Be("username");
         config.Host.Should().Be("203.0.113.78");
         config.Port.Should().Be(8060);
-        config.CodecIds.Should().ContainInOrder(Codec.PCMU, Codec.PCMA, Codec.G729);
+        config.Codecs.Should().Equal(Codec.AmrWb, Codec.Pcma, Codec.G726_32, Codec.TelephoneEvent);
+        config.IceMode.Should().Be(IceMode.Accept);
+        config.RtcpMuxMode.Should().Be(RtcpMuxMode.Initiate);
+        config.RtcpFeedbackMode.Should().Be(RtcpFeedbackMode.Accept);
         config.TransportProtocolId.Should().Be(TransportProtocol.UDP);
         config.AuthEnabled.Should().BeTrue();
         config.AuthUser.Should().Be("auth_user");
@@ -124,7 +127,10 @@ public class VoiceInTrunkTest : BaseTest
             Username = "new-username",
             Host = "203.0.113.110",
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729, Codec.G723, Codec.TELEPHONE_EVENT },
+            Codecs = new List<Codec> { Codec.Amr, Codec.Pcmu, Codec.Speex, Codec.TelephoneEvent },
+            IceMode = IceMode.Initiate,
+            RtcpMuxMode = RtcpMuxMode.Accept,
+            RtcpFeedbackMode = RtcpFeedbackMode.Initiate,
             SstRefreshMethodId = SstRefreshMethod.INVITE,
             MediaEncryptionMode = MediaEncryptionMode.Zrtp,
             StirShakenMode = StirShakenMode.Pai,
@@ -169,7 +175,10 @@ public class VoiceInTrunkTest : BaseTest
             Host = "203.0.113.110",
             SstRefreshMethodId = SstRefreshMethod.INVITE,
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729, Codec.G723, Codec.TELEPHONE_EVENT },
+            Codecs = new List<Codec> { Codec.L16, Codec.Gsm, Codec.Pcma },
+            IceMode = IceMode.Accept,
+            RtcpMuxMode = RtcpMuxMode.Accept,
+            RtcpFeedbackMode = RtcpFeedbackMode.Initiate,
             ReroutingDisconnectCodeIds = new List<ReroutingDisconnectCode>
             {
                 ReroutingDisconnectCode.SIP_400_BAD_REQUEST,
@@ -648,16 +657,87 @@ public class VoiceInTrunkTest : BaseTest
     }
 
     [Theory]
-    [InlineData("\"NYC\"", Pop.Nyc)]
-    [InlineData("\"FRA\"", Pop.Fra)]
-    [InlineData("\"LAC\"", Pop.Lac)]
-    [InlineData("\"MIA\"", Pop.Mia)]
-    [InlineData("\"SG\"", Pop.Sg)]
-    [InlineData("\"HK\"", Pop.Hk)]
-    [InlineData("\"AMS\"", Pop.Ams)]
+    [InlineData("\"nyc\"", Pop.Nyc)]
+    [InlineData("\"fra\"", Pop.Fra)]
+    [InlineData("\"lac\"", Pop.Lac)]
+    [InlineData("\"mia\"", Pop.Mia)]
+    [InlineData("\"sg\"", Pop.Sg)]
+    [InlineData("\"hk\"", Pop.Hk)]
+    [InlineData("\"ams\"", Pop.Ams)]
     public void TestPopWireValues(string json, Pop expected)
     {
         JsonConvert.DeserializeObject<Pop>(json).Should().Be(expected);
         JsonConvert.SerializeObject(expected).Should().Be(json);
+    }
+
+    [Theory]
+    [InlineData("\"telephone_event\"", Codec.TelephoneEvent)]
+    [InlineData("\"g723\"", Codec.G723)]
+    [InlineData("\"g729\"", Codec.G729)]
+    [InlineData("\"pcmu\"", Codec.Pcmu)]
+    [InlineData("\"pcma\"", Codec.Pcma)]
+    [InlineData("\"speex\"", Codec.Speex)]
+    [InlineData("\"gsm\"", Codec.Gsm)]
+    [InlineData("\"g726_32\"", Codec.G726_32)]
+    [InlineData("\"g721\"", Codec.G721)]
+    [InlineData("\"g726_24\"", Codec.G726_24)]
+    [InlineData("\"g726_40\"", Codec.G726_40)]
+    [InlineData("\"g726_16\"", Codec.G726_16)]
+    [InlineData("\"l16\"", Codec.L16)]
+    [InlineData("\"amr\"", Codec.Amr)]
+    [InlineData("\"amr_wb\"", Codec.AmrWb)]
+    public void TestCodecWireValues(string json, Codec expected)
+    {
+        JsonConvert.DeserializeObject<Codec>(json).Should().Be(expected);
+        JsonConvert.SerializeObject(expected).Should().Be(json);
+    }
+
+    [Fact]
+    public void TestCodecHasOneMemberPerDocumentedName()
+    {
+        Enum.GetValues<Codec>().Select(c => JsonConvert.SerializeObject(c).Trim('"')).Should().Equal(
+            "telephone_event", "g723", "g729", "pcmu", "pcma", "speex", "gsm", "g726_32", "g721",
+            "g726_24", "g726_40", "g726_16", "l16", "amr", "amr_wb");
+    }
+
+    [Theory]
+    [InlineData("\"disabled\"", IceMode.Disabled, RtcpMuxMode.Disabled, RtcpFeedbackMode.Disabled)]
+    [InlineData("\"accept\"", IceMode.Accept, RtcpMuxMode.Accept, RtcpFeedbackMode.Accept)]
+    [InlineData("\"initiate\"", IceMode.Initiate, RtcpMuxMode.Initiate, RtcpFeedbackMode.Initiate)]
+    public void TestModeWireValues(string json, IceMode ice, RtcpMuxMode mux, RtcpFeedbackMode feedback)
+    {
+        JsonConvert.SerializeObject(ice).Should().Be(json);
+        JsonConvert.SerializeObject(mux).Should().Be(json);
+        JsonConvert.SerializeObject(feedback).Should().Be(json);
+        JsonConvert.DeserializeObject<IceMode>(json).Should().Be(ice);
+        JsonConvert.DeserializeObject<RtcpMuxMode>(json).Should().Be(mux);
+        JsonConvert.DeserializeObject<RtcpFeedbackMode>(json).Should().Be(feedback);
+    }
+
+    [Fact]
+    public void TestModesHaveTheDocumentedValues()
+    {
+        string[] documented = ["disabled", "accept", "initiate"];
+        Enum.GetValues<IceMode>().Select(m => JsonConvert.SerializeObject(m).Trim('"')).Should().Equal(documented);
+        Enum.GetValues<RtcpMuxMode>().Select(m => JsonConvert.SerializeObject(m).Trim('"')).Should().Equal(documented);
+        Enum.GetValues<RtcpFeedbackMode>().Select(m => JsonConvert.SerializeObject(m).Trim('"')).Should().Equal(documented);
+    }
+
+    [Fact]
+    public void TestSipConfigurationHasNoCodecIds()
+    {
+        typeof(SipConfiguration).GetProperty("CodecIds").Should().BeNull();
+
+        var json = JsonConvert.SerializeObject(new SipConfiguration { Codecs = new List<Codec> { Codec.Pcma } });
+
+        json.Should().Be("{\"codecs\":[\"pcma\"]}");
+    }
+
+    [Fact]
+    public void TestSipConfigurationSendsNoDefaultCodecsOrModes()
+    {
+        var json = JsonConvert.SerializeObject(new SipConfiguration { Username = "u" });
+
+        json.Should().Be("{\"username\":\"u\"}");
     }
 }
