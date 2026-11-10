@@ -15,7 +15,7 @@ public static class DidTrunkAssignmentExample
             Username = "example-user",
             Host = "203.0.113.10",
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA }
+            Codecs = new List<Codec> { Codec.Pcmu, Codec.Pcma }
         };
 
         var trunk = new VoiceInTrunk

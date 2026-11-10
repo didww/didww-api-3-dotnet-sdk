@@ -16,7 +16,17 @@ public class AddressRequirement : BaseResource
     [JsonProperty("personal_proof_qty")] public int? PersonalProofQty { get; set; }
     [JsonProperty("business_proof_qty")] public int? BusinessProofQty { get; set; }
     [JsonProperty("address_proof_qty")] public int? AddressProofQty { get; set; }
+    /// <summary>
+    /// Identity fields that must be filled in for a personal identity, among
+    /// <c>birth_date</c>, <c>country</c>, <c>birth_country</c>, <c>id_number</c>,
+    /// <c>personal_tax_id</c> and <c>contact_email</c>. Empty when none are.
+    /// </summary>
     [JsonProperty("personal_mandatory_fields")] public List<string>? PersonalMandatoryFields { get; set; }
+    /// <summary>
+    /// Identity fields that must be filled in for a business identity, among
+    /// <c>id_number</c>, <c>tax_id</c> (<see cref="Identity.VatId"/>), <c>country</c>,
+    /// <c>company_reg_number</c>, <c>personal_tax_id</c> and <c>contact_email</c>. Empty when none are.
+    /// </summary>
     [JsonProperty("business_mandatory_fields")] public List<string>? BusinessMandatoryFields { get; set; }
     [JsonProperty("service_description_required")] public bool? ServiceDescriptionRequired { get; set; }
     [JsonProperty("restriction_message")] public string? RestrictionMessage { get; set; }

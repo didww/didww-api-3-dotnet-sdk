@@ -22,8 +22,8 @@ public class EmergencyRequirementTest : BaseTest
         first.AddressAreaLevel.Should().Be("city");
         first.PersonalAreaLevel.Should().Be("country");
         first.BusinessAreaLevel.Should().BeNull();
-        first.AddressMandatoryFields.Should().BeEquivalentTo(new[] { "street", "city", "postal_code" });
-        first.PersonalMandatoryFields.Should().BeEquivalentTo(new[] { "first_name", "last_name" });
+        first.AddressMandatoryFields.Should().Equal("area");
+        first.PersonalMandatoryFields.Should().Equal("birth_date", "id_number", "contact_email");
         first.BusinessMandatoryFields.Should().BeEmpty();
         first.EstimateSetupTime.Should().Be("7-14 days");
         first.RequirementRestrictionMessage.Should().BeNull();
@@ -47,6 +47,9 @@ public class EmergencyRequirementTest : BaseTest
         requirement.AddressAreaLevel.Should().Be("area");
         requirement.PersonalAreaLevel.Should().BeNull();
         requirement.BusinessAreaLevel.Should().Be("world_wide");
+        requirement.AddressMandatoryFields.Should().Equal("area");
+        requirement.PersonalMandatoryFields.Should().BeEmpty();
+        requirement.BusinessMandatoryFields.Should().Equal("id_number", "tax_id", "company_reg_number", "birth_date");
         requirement.NumberType.Should().Be(NumberType.TollFree);
         requirement.EstimateSetupTime.Should().Be("7-14 days");
         requirement.RequirementRestrictionMessage.Should()

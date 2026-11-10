@@ -9,8 +9,8 @@ namespace Didww.Api3.Prices;
 /// Reads a price file as downloaded (gzipped CSV), one row at a time.
 /// </summary>
 /// <remarks>
-/// Each row is keyed by the header line, as is (for example
-/// <c>Rate (USD, excl. VAT)</c>); a UTF-8 byte order mark is skipped and a
+/// Each row is keyed by the header line, as is (for example <c>Rate</c> or
+/// <c>Connection fee</c>); a UTF-8 byte order mark is skipped and a
 /// file with only a header has no rows. The input is a single gzip member, as
 /// the prices services serve it. Input that is not gzip, gzip data cut short
 /// (an empty input included), or a row whose field count differs from the

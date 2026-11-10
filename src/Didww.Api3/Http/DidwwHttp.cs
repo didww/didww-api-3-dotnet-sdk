@@ -60,6 +60,10 @@ internal static class DidwwHttp
     internal static bool WasRedirected(HttpResponseMessage response, Uri? sentUri) =>
         sentUri != null && response.RequestMessage?.RequestUri is { } finalUri && finalUri != sentUri;
 
+    /// <summary>The Retry-After of <paramref name="response"/> when given in seconds, otherwise null.</summary>
+    internal static TimeSpan? RetryAfterSeconds(HttpResponseMessage response) =>
+        response.Headers.RetryAfter?.Delta is { } delta && delta >= TimeSpan.Zero ? delta : null;
+
     /// <summary>Reads at most <paramref name="limit"/> bytes of the body.</summary>
     internal static async Task<byte[]> ReadLimitedAsync(HttpContent content, int limit, CancellationToken cancellationToken)
     {

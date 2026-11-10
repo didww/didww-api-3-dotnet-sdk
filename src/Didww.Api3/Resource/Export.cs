@@ -46,11 +46,13 @@ public class Export : BaseResource
     /// <item><description><see cref="Enums.ExportType.SmsIn"/> and <see cref="Enums.ExportType.SmsOut"/>:
     /// <c>source_address_eq</c>, <c>source_address_cont</c>, <c>destination_address_eq</c>,
     /// <c>destination_address_cont</c>, <c>status</c>, <c>sms_id</c>, <c>sms_trunk.id</c>
-    /// (a string or a list of strings);</description></item>
+    /// (a string or a list of strings); <c>status</c> is <c>success</c>, <c>failed</c> or
+    /// <c>queued</c> for <c>sms_in</c>, and <c>routing_error</c>, <c>in_progress</c>,
+    /// <c>queued</c>, <c>failed</c> or <c>success</c> for <c>sms_out</c>;</description></item>
     /// <item><description><see cref="Enums.ExportType.SmsIn"/> only: <c>trunk_type</c>
     /// (a string or a list of strings, see <see cref="ExportTrunkTypes"/>);</description></item>
     /// <item><description><see cref="Enums.ExportType.SmsOut"/> only: <c>service_type</c>
-    /// (<c>a2p</c> or <c>p2p</c>) and <c>sender_id_verification.id</c> (a string or a list of strings).</description></item>
+    /// (see <see cref="ExportServiceTypes"/>) and <c>sender_id_verification.id</c> (a string or a list of strings).</description></item>
     /// </list>
     /// Exports created with earlier API versions may also return <c>year</c>, <c>month</c> and <c>day</c>.
     /// </summary>
@@ -69,8 +71,17 @@ public class Export : BaseResource
 /// </summary>
 public static class ExportTrunkTypes
 {
-    public const string SmppSmsc = "SMPP SMSC";
-    public const string SmppEsme = "SMPP ESME";
-    public const string Email = "Email";
-    public const string HttpIn = "HTTP IN";
+    public const string SmppSmsc = "smpp_smsc";
+    public const string SmppEsme = "smpp_esme";
+    public const string SmsToEmail = "sms_to_email";
+    public const string HttpIn = "http_in";
+}
+
+/// <summary>
+/// Values of the <c>service_type</c> filter of an <c>sms_out</c> export. (API 2026-10-22)
+/// </summary>
+public static class ExportServiceTypes
+{
+    public const string A2p = "a2p";
+    public const string P2p = "p2p";
 }

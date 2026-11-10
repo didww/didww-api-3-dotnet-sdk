@@ -210,13 +210,13 @@ public enum NumberType
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum Pop
 {
-    [System.Runtime.Serialization.EnumMember(Value = "NYC")] Nyc,
-    [System.Runtime.Serialization.EnumMember(Value = "FRA")] Fra,
-    [System.Runtime.Serialization.EnumMember(Value = "LAC")] Lac,
-    [System.Runtime.Serialization.EnumMember(Value = "MIA")] Mia,
-    [System.Runtime.Serialization.EnumMember(Value = "SG")] Sg,
-    [System.Runtime.Serialization.EnumMember(Value = "HK")] Hk,
-    [System.Runtime.Serialization.EnumMember(Value = "AMS")] Ams
+    [System.Runtime.Serialization.EnumMember(Value = "nyc")] Nyc,
+    [System.Runtime.Serialization.EnumMember(Value = "fra")] Fra,
+    [System.Runtime.Serialization.EnumMember(Value = "lac")] Lac,
+    [System.Runtime.Serialization.EnumMember(Value = "mia")] Mia,
+    [System.Runtime.Serialization.EnumMember(Value = "sg")] Sg,
+    [System.Runtime.Serialization.EnumMember(Value = "hk")] Hk,
+    [System.Runtime.Serialization.EnumMember(Value = "ams")] Ams
 }
 
 /// <summary>
@@ -269,24 +269,86 @@ public enum SmsBodyType
     [System.Runtime.Serialization.EnumMember(Value = "raw")] Raw
 }
 
-// Integer-based enums
+/// <summary>
+/// Codec of an inbound SIP trunk (<see cref="Configuration.SipConfiguration.Codecs"/>).
+/// A Voice OUT trunk has its own list, <see cref="VoiceOutCodec"/>. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum Codec
 {
-    TELEPHONE_EVENT = 6,
-    G723 = 7,
-    G729 = 8,
-    PCMU = 9,
-    PCMA = 10,
-    SPEEX = 12,
-    GSM = 13,
-    G726_32 = 14,
-    G721 = 15,
-    G726_24 = 16,
-    G726_40 = 17,
-    G726_16 = 18,
-    L16 = 19
+    [System.Runtime.Serialization.EnumMember(Value = "telephone_event")] TelephoneEvent,
+    [System.Runtime.Serialization.EnumMember(Value = "g723")] G723,
+    [System.Runtime.Serialization.EnumMember(Value = "g729")] G729,
+    [System.Runtime.Serialization.EnumMember(Value = "pcmu")] Pcmu,
+    [System.Runtime.Serialization.EnumMember(Value = "pcma")] Pcma,
+    [System.Runtime.Serialization.EnumMember(Value = "speex")] Speex,
+    [System.Runtime.Serialization.EnumMember(Value = "gsm")] Gsm,
+    [System.Runtime.Serialization.EnumMember(Value = "g726_32")] G726_32,
+    [System.Runtime.Serialization.EnumMember(Value = "g721")] G721,
+    [System.Runtime.Serialization.EnumMember(Value = "g726_24")] G726_24,
+    [System.Runtime.Serialization.EnumMember(Value = "g726_40")] G726_40,
+    [System.Runtime.Serialization.EnumMember(Value = "g726_16")] G726_16,
+    [System.Runtime.Serialization.EnumMember(Value = "l16")] L16,
+    [System.Runtime.Serialization.EnumMember(Value = "amr")] Amr,
+    [System.Runtime.Serialization.EnumMember(Value = "amr_wb")] AmrWb
 }
 
+/// <summary>
+/// Codec of a Voice OUT trunk (<see cref="VoiceOutTrunk.Codecs"/>). An inbound
+/// SIP trunk has its own list, <see cref="Codec"/>. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum VoiceOutCodec
+{
+    [System.Runtime.Serialization.EnumMember(Value = "telephone_event")] TelephoneEvent,
+    [System.Runtime.Serialization.EnumMember(Value = "g723")] G723,
+    [System.Runtime.Serialization.EnumMember(Value = "g729")] G729,
+    [System.Runtime.Serialization.EnumMember(Value = "pcmu")] Pcmu,
+    [System.Runtime.Serialization.EnumMember(Value = "pcma")] Pcma,
+    [System.Runtime.Serialization.EnumMember(Value = "gsm")] Gsm,
+    [System.Runtime.Serialization.EnumMember(Value = "g722")] G722,
+    [System.Runtime.Serialization.EnumMember(Value = "opus")] Opus,
+    [System.Runtime.Serialization.EnumMember(Value = "amr")] Amr,
+    [System.Runtime.Serialization.EnumMember(Value = "amr_wb")] AmrWb
+}
+
+/// <summary>
+/// ICE (Interactive Connectivity Establishment) on the calls of a trunk: not
+/// used, accepted when the other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum IceMode
+{
+    [System.Runtime.Serialization.EnumMember(Value = "disabled")] Disabled,
+    [System.Runtime.Serialization.EnumMember(Value = "accept")] Accept,
+    [System.Runtime.Serialization.EnumMember(Value = "initiate")] Initiate
+}
+
+/// <summary>
+/// RTP and RTCP multiplexed on one port on the calls of a trunk: not used,
+/// accepted when the other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum RtcpMuxMode
+{
+    [System.Runtime.Serialization.EnumMember(Value = "disabled")] Disabled,
+    [System.Runtime.Serialization.EnumMember(Value = "accept")] Accept,
+    [System.Runtime.Serialization.EnumMember(Value = "initiate")] Initiate
+}
+
+/// <summary>
+/// RTCP feedback (AVPF) on the calls of a trunk: not used, accepted when the
+/// other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum RtcpFeedbackMode
+{
+    [System.Runtime.Serialization.EnumMember(Value = "disabled")] Disabled,
+    [System.Runtime.Serialization.EnumMember(Value = "accept")] Accept,
+    [System.Runtime.Serialization.EnumMember(Value = "initiate")] Initiate
+}
+
+// Integer-based enums
 public enum RxDtmfFormat
 {
     RFC_2833 = 1,

@@ -50,6 +50,10 @@ public class Identity : BaseResource, IProofEntity
     public string? CompanyRegNumber { get => _companyRegNumber; set => SetProperty(ref _companyRegNumber, value); }
 
     private string? _vatId;
+    /// <summary>
+    /// VAT identification number, listed as <c>tax_id</c> in the mandatory fields
+    /// of <see cref="AddressRequirement"/> and <see cref="EmergencyRequirement"/>.
+    /// </summary>
     [JsonProperty("vat_id")]
     public string? VatId { get => _vatId; set => SetProperty(ref _vatId, value); }
 

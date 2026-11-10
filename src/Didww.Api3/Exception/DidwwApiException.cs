@@ -4,23 +4,37 @@ namespace Didww.Api3.Exception;
 /// An error answer of the JSON:API (a non-success status), with the parsed
 /// JSON:API error objects when the body carries them.
 /// </summary>
+/// <remarks>
+/// A 429 (<c>too_many_requests</c>) means the request budget of the account
+/// for the current window is spent. The SDK does not retry it, as a write may
+/// not be safe to send twice: wait <see cref="RetryAfter"/> before sending the
+/// request again.
+/// </remarks>
 public class DidwwApiException : DidwwException
 {
     public int HttpStatus { get; }
     public IReadOnlyList<ApiError> Errors { get; }
 
-    public DidwwApiException(int httpStatus, IList<ApiError> errors)
+    /// <summary>
+    /// The Retry-After of the answer, when given in seconds; null when it is
+    /// missing or not a number of seconds.
+    /// </summary>
+    public TimeSpan? RetryAfter { get; }
+
+    public DidwwApiException(int httpStatus, IList<ApiError> errors, TimeSpan? retryAfter = null)
         : base(BuildMessage(httpStatus, errors))
     {
         HttpStatus = httpStatus;
         Errors = errors?.AsReadOnly() ?? new List<ApiError>().AsReadOnly();
+        RetryAfter = retryAfter;
     }
 
-    public DidwwApiException(int httpStatus, string message)
+    public DidwwApiException(int httpStatus, string message, TimeSpan? retryAfter = null)
         : base(message)
     {
         HttpStatus = httpStatus;
         Errors = new List<ApiError>().AsReadOnly();
+        RetryAfter = retryAfter;
     }
 
     private static string BuildMessage(int httpStatus, IList<ApiError>? errors)

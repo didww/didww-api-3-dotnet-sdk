@@ -16,7 +16,7 @@ public static class TrunkGroupsExample
         {
             Host = "sip-a.example.com",
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA },
+            Codecs = new List<Codec> { Codec.Pcmu, Codec.Pcma },
             TransportProtocolId = TransportProtocol.UDP
         };
         var trunkA = new VoiceInTrunk { Name = "Group Trunk A " + suffix, Configuration = sipA };
@@ -27,7 +27,7 @@ public static class TrunkGroupsExample
         {
             Host = "sip-b.example.com",
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU },
+            Codecs = new List<Codec> { Codec.Pcmu },
             TransportProtocolId = TransportProtocol.UDP
         };
         var trunkB = new VoiceInTrunk { Name = "Group Trunk B " + suffix, Configuration = sipB };

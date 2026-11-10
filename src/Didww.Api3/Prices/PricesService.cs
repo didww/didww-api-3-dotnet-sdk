@@ -145,11 +145,11 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
 
     /// <summary>
     /// Downloads the price file to <paramref name="path"/>. The file is written
-    /// to a temporary file next to <paramref name="path"/>, which replaces it
-    /// only when the download succeeds, so a failed download leaves an existing
-    /// file as it was. The new file gets the default mode of a new file (0666
-    /// minus the umask on Unix) and the Last-Modified of the answer as its
-    /// modification time.
+    /// to a temporary file <c>.didww-&lt;16 hex digits&gt;.tmp</c> in the directory
+    /// of <paramref name="path"/>, which replaces it only when the download
+    /// succeeds, so a failed download leaves an existing file as it was. The new
+    /// file gets the default mode of a new file (0666 minus the umask on Unix)
+    /// and the Last-Modified of the answer as its modification time.
     /// </summary>
     /// <remarks>
     /// Exceptions of the file system (a missing directory, the temporary file,
@@ -217,15 +217,20 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
         }
     }
 
-    // Creates a new file next to path with a random suffix. Its mode is that of
-    // any new file (0666 minus the umask on Unix), not the 0600 of a temp file.
+    // Creates a new file .didww-<16 hex digits>.tmp in the directory of path, a
+    // name that fits any file system whatever the length of the file name. Its
+    // mode is that of any new file (0666 minus the umask on Unix), not the 0600
+    // of a temp file.
     private static (FileStream Stream, string Path) CreateTempFile(string path)
     {
+        var fullPath = Path.GetFullPath(path);
+        var directory = Path.GetDirectoryName(fullPath) ?? fullPath;
         var attempt = 0;
         while (true)
         {
             attempt++;
-            var tempPath = $"{path}.{Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8))}.tmp";
+            var tempPath = Path.Combine(directory,
+                $".didww-{Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8))}.tmp");
             try
             {
                 var stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None,
@@ -445,7 +450,7 @@ public sealed class PricesService<TPrice> where TPrice : BaseResource
         var errors = ParseErrors(await ReadErrorBodyAsync(response.Content, cancellationToken, readToken)
             .ConfigureAwait(false));
         var code = errors.Count > 0 ? errors[0].Code : null;
-        var retryAfter = response.Headers.RetryAfter?.Delta is { } delta && delta >= TimeSpan.Zero ? delta : (TimeSpan?)null;
+        var retryAfter = DidwwHttp.RetryAfterSeconds(response);
 
         DidwwPricesErrorKind kind;
         switch (status)

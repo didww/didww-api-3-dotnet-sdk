@@ -30,7 +30,7 @@ public class ExportTypesTest : BaseTest
         created.ExportType.Should().Be(ExportType.SmsIn);
         created.Status.Should().Be(ExportStatus.Pending);
         created.Filters.Should().ContainKey("trunk_type");
-        ((JArray)created.Filters!["trunk_type"]).ToObject<List<string>>().Should().Equal("SMPP SMSC", "HTTP IN");
+        ((JArray)created.Filters!["trunk_type"]).ToObject<List<string>>().Should().Equal("smpp_smsc", "http_in");
         created.Filters["destination_address_eq"].Should().Be("12125550100");
     }
 
@@ -51,7 +51,7 @@ public class ExportTypesTest : BaseTest
                     "b2c3d4e5-0000-4000-8000-000000000001",
                     "b2c3d4e5-0000-4000-8000-000000000003"
                 },
-                ["service_type"] = "a2p",
+                ["service_type"] = ExportServiceTypes.A2p,
                 ["sender_id_verification.id"] = "c3d4e5f6-0000-4000-8000-000000000002"
             }
         };
@@ -78,9 +78,18 @@ public class ExportTypesTest : BaseTest
     [Fact]
     public void TestExportTrunkTypeValues()
     {
-        ExportTrunkTypes.SmppSmsc.Should().Be("SMPP SMSC");
-        ExportTrunkTypes.SmppEsme.Should().Be("SMPP ESME");
-        ExportTrunkTypes.Email.Should().Be("Email");
-        ExportTrunkTypes.HttpIn.Should().Be("HTTP IN");
+        ExportTrunkTypes.SmppSmsc.Should().Be("smpp_smsc");
+        ExportTrunkTypes.SmppEsme.Should().Be("smpp_esme");
+        ExportTrunkTypes.SmsToEmail.Should().Be("sms_to_email");
+        ExportTrunkTypes.HttpIn.Should().Be("http_in");
+        typeof(ExportTrunkTypes).GetFields().Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void TestExportServiceTypeValues()
+    {
+        ExportServiceTypes.A2p.Should().Be("a2p");
+        ExportServiceTypes.P2p.Should().Be("p2p");
+        typeof(ExportServiceTypes).GetFields().Should().HaveCount(2);
     }
 }

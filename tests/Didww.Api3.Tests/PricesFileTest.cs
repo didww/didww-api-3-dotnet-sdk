@@ -497,13 +497,36 @@ public class PricesFileTest : IDisposable
         using var server = ServeFile();
         var client = server.NewClient();
         var path = _dir.File("voice_in_prices.csv.gz");
-        File.WriteAllText(path + ".tmp", "concurrent download");
+        var other = _dir.File(".didww-0123456789abcdef.tmp");
+        File.WriteAllText(other, "concurrent download");
 
         await client.VoiceInPrices().DownloadToFileAsync(path);
 
         File.ReadAllBytes(path).Should().Equal(Fixture);
-        File.ReadAllText(path + ".tmp").Should().Be("concurrent download");
-        _dir.Entries().Should().Equal("voice_in_prices.csv.gz", "voice_in_prices.csv.gz.tmp");
+        File.ReadAllText(other).Should().Be("concurrent download");
+        _dir.Entries().Should().Equal(".didww-0123456789abcdef.tmp", "voice_in_prices.csv.gz");
+    }
+
+    [Theory]
+    [InlineData(22)]
+    [InlineData(250)]
+    public async Task TestPriceFileDownloadToFileTempName(int nameLength)
+    {
+        var name = new string('p', nameLength - ".csv.gz".Length) + ".csv.gz";
+        var tempNames = new List<string>();
+        using var server = new PricesServer((_, request) =>
+        {
+            tempNames.AddRange(_dir.Entries());
+            return PricesServer.PriceFile(request, Fixture);
+        });
+        var client = server.NewClient();
+        var path = _dir.File(name);
+
+        await client.VoiceInPrices().DownloadToFileAsync(path);
+
+        tempNames.Should().ContainSingle().Which.Should().MatchRegex("^\\.didww-[0-9a-f]{16}\\.tmp$");
+        File.ReadAllBytes(path).Should().Equal(Fixture);
+        _dir.Entries().Should().Equal(name);
     }
 
     [Fact]

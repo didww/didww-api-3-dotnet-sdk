@@ -25,8 +25,9 @@ public static class EmergencyRequirementsExample
             Console.WriteLine($"  Number Type: {req.NumberType}");
             Console.WriteLine($"  Identity type required: {req.IdentityType}");
             Console.WriteLine($"  Address area level: {req.AddressAreaLevel}");
-            if (req.AddressMandatoryFields != null)
-                Console.WriteLine($"  Address mandatory fields: {string.Join(", ", req.AddressMandatoryFields)}");
+            Console.WriteLine($"  Address mandatory fields: {string.Join(", ", req.AddressMandatoryFields ?? [])}");
+            Console.WriteLine($"  Personal mandatory fields: {string.Join(", ", req.PersonalMandatoryFields ?? [])}");
+            Console.WriteLine($"  Business mandatory fields: {string.Join(", ", req.BusinessMandatoryFields ?? [])}");
             Console.WriteLine($"  Estimated setup time: {req.EstimateSetupTime}");
             if (req.RequirementRestrictionMessage != null)
                 Console.WriteLine($"  Restriction: {req.RequirementRestrictionMessage}");

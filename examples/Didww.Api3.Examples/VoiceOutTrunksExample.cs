@@ -33,6 +33,8 @@ public static class VoiceOutTrunksExample
             Console.WriteLine($"    External Reference ID: {t.ExternalReferenceId}");
             Console.WriteLine($"    Emergency Enable All: {t.EmergencyEnableAll}");
             Console.WriteLine($"    RTP Timeout: {t.RtpTimeout}");
+            Console.WriteLine($"    Codecs: {string.Join(", ", t.Codecs ?? [])}");
+            Console.WriteLine($"    ICE / RTCP-mux / RTCP feedback: {t.IceMode} / {t.RtcpMuxMode} / {t.RtcpFeedbackMode}");
             Console.WriteLine();
         }
 
@@ -52,7 +54,10 @@ public static class VoiceOutTrunksExample
             DefaultDstAction = DefaultDstAction.AllowAll,
             OnCliMismatchAction = OnCliMismatchAction.RejectCall,
             ExternalReferenceId = "dotnet-example-" + suffix,
-            RtpTimeout = 60
+            RtpTimeout = 60,
+            // Codecs in priority order: the first has the highest priority.
+            Codecs = new List<VoiceOutCodec> { VoiceOutCodec.Opus, VoiceOutCodec.Pcma, VoiceOutCodec.TelephoneEvent },
+            IceMode = IceMode.Accept
         };
 
         var response = await client.VoiceOutTrunks().CreateAsync(trunk);
@@ -66,6 +71,7 @@ public static class VoiceOutTrunksExample
             Console.WriteLine($"    Password: {createdCai.Password}");
         }
         Console.WriteLine($"    Status: {created.Status}");
+        Console.WriteLine($"    Codecs: {string.Join(", ", created.Codecs ?? [])}");
         Console.WriteLine($"    External Reference: {created.ExternalReferenceId}");
 
         // Update trunk - change allowed IPs and tech prefix

@@ -75,7 +75,7 @@ public class ReadOnlyRepository<T> where T : BaseResource
         using var response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
-            throw BuildApiException((int)response.StatusCode, body);
+            throw BuildApiException(response, body);
         return body;
     }
 
@@ -85,11 +85,13 @@ public class ReadOnlyRepository<T> where T : BaseResource
             return;
 
         var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        throw BuildApiException((int)response.StatusCode, body);
+        throw BuildApiException(response, body);
     }
 
-    private static DidwwApiException BuildApiException(int status, string body)
+    private static DidwwApiException BuildApiException(HttpResponseMessage response, string body)
     {
+        var status = (int)response.StatusCode;
+        var retryAfter = DidwwHttp.RetryAfterSeconds(response);
         var errors = new List<ApiError>();
         try
         {
@@ -109,9 +111,9 @@ public class ReadOnlyRepository<T> where T : BaseResource
         }
 
         if (errors.Count == 0)
-            return new DidwwApiException(status, body);
+            return new DidwwApiException(status, body, retryAfter);
 
-        return new DidwwApiException(status, errors);
+        return new DidwwApiException(status, errors, retryAfter);
     }
 
     protected Dictionary<string, object>? ExtractMeta(string body)

@@ -45,8 +45,8 @@ public class PricesFileReaderTest
             ["Src country name"] = "",
             ["Source type"] = "cellular",
             ["Destination"] = "44800",
-            ["Rate (USD, excl. VAT)"] = "",
-            ["Connection fee (USD, excl. VAT)"] = "",
+            ["Rate"] = "",
+            ["Connection fee"] = "",
             ["Initial interval"] = "60",
             ["Next interval"] = "60",
             ["Reject calls"] = "true"
@@ -61,7 +61,7 @@ public class PricesFileReaderTest
 
         var rows = await ReadAllAsync(stream);
 
-        rows.Should().HaveCount(4);
+        rows.Should().HaveCount(5);
         rows[0].Should().Equal(new Dictionary<string, string>
         {
             ["Category"] = "International",
@@ -70,8 +70,8 @@ public class PricesFileReaderTest
             ["Prefix"] = "4930",
             ["Rate"] = "0.0045",
             ["Connection fee"] = "0.0",
-            ["Initial Increment"] = "1",
-            ["Recurring Increment"] = "1",
+            ["Initial increment"] = "1",
+            ["Recurring increment"] = "1",
             ["Reject calls"] = "false",
             ["Next rate"] = "0.005",
             ["Next connection fee"] = "0.0",
@@ -81,10 +81,10 @@ public class PricesFileReaderTest
             ["Comment"] = "Increase and Billing increment change"
         });
         rows[1]["Category"].Should().Be("Origin based");
-        rows[2]["Prefix"].Should().Be("99950,99951,99952");
-        rows[3]["Network"].Should().Be("New Breakout");
-        rows[3]["Rate"].Should().Be("");
-        rows[3]["Reject calls"].Should().Be("true");
+        rows.Select(row => row["Prefix"]).Should().Equal("4930", "493", "99950", "99951", "4915");
+        rows[4]["Network"].Should().Be("New Breakout");
+        rows[4]["Rate"].Should().Be("");
+        rows[4]["Reject calls"].Should().Be("true");
     }
 
     [Fact]
@@ -172,9 +172,9 @@ public class PricesFileReaderTest
     }
 
     [Theory]
-    [InlineData("voice_in_prices.csv.gz")]
-    [InlineData("voice_out_prices.csv.gz")]
-    public async Task TestReadRowsReadsIntactGzipToTheEnd(string fixture)
+    [InlineData("voice_in_prices.csv.gz", 4)]
+    [InlineData("voice_out_prices.csv.gz", 5)]
+    public async Task TestReadRowsReadsIntactGzipToTheEnd(string fixture, int count)
     {
         using var stream = Fixture(fixture);
 
@@ -182,8 +182,8 @@ public class PricesFileReaderTest
         stream.Position = 0;
         var asyncRows = await ReadAllAsync(stream);
 
-        rows.Should().HaveCount(4);
-        asyncRows.Should().HaveCount(4);
+        rows.Should().HaveCount(count);
+        asyncRows.Should().HaveCount(count);
     }
 
     [Theory]
@@ -201,7 +201,7 @@ public class PricesFileReaderTest
     [Fact]
     public void TestReadRowsQuotedFields()
     {
-        const string csv = "\"Prefix\",\"Rate (USD, excl. VAT)\",Comment\r\n" +
+        const string csv = "\"Prefix\",\"Rate\",Comment\r\n" +
                            "\"99950,99951\",0.25,\"say \"\"hi\"\"\"\r\n" +
                            "\r\n" +
                            "49,,\"two\r\nlines\"\r\n" +
@@ -213,11 +213,11 @@ public class PricesFileReaderTest
         rows[0].Should().Equal(new Dictionary<string, string>
         {
             ["Prefix"] = "99950,99951",
-            ["Rate (USD, excl. VAT)"] = "0.25",
+            ["Rate"] = "0.25",
             ["Comment"] = "say \"hi\""
         });
         rows[1]["Comment"].Should().Be("two\nlines");
-        rows[1]["Rate (USD, excl. VAT)"].Should().Be("");
+        rows[1]["Rate"].Should().Be("");
         rows[2]["Prefix"].Should().Be(" 1 ", "spaces are kept");
         rows[2]["Comment"].Should().Be("last", "the last line needs no line end");
     }

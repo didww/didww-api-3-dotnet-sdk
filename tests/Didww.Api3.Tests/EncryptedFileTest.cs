@@ -113,8 +113,10 @@ public class EncryptedFileTest : BaseTest
         var act = () => Client.UploadEncryptedFileAsync(
             "data"u8.ToArray(), "test.pdf", "fp123");
 
-        await act.Should().ThrowAsync<DidwwClientException>()
-            .WithMessage("*422*");
+        var e = (await act.Should().ThrowAsync<DidwwApiException>().WithMessage("*422*")).Which;
+        e.HttpStatus.Should().Be(422);
+        e.Errors.Should().ContainSingle().Which.Detail.Should().Be("Validation failed");
+        e.RetryAfter.Should().BeNull();
     }
 
     [Fact]
@@ -174,7 +176,7 @@ public class EncryptedFileTest : BaseTest
         var act = () => client.UploadEncryptedFileAsync("encrypted-content"u8.ToArray(), "sample.pdf.enc",
             "fingerprint-123", "sample.pdf");
 
-        await act.Should().ThrowAsync<DidwwClientException>().WithMessage("*HTTP 401*");
+        (await act.Should().ThrowAsync<DidwwApiException>().WithMessage("*HTTP 401*")).Which.HttpStatus.Should().Be(401);
         server.ApiRequests.Should().HaveCount(2);
         server.Mints.Should().Be(2);
     }

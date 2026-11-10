@@ -25,13 +25,14 @@
           "username": "username",
           "host": "203.0.113.110",
           "port": 5060,
-          "codec_ids": [
-            9,
-            10,
-            8,
-            7,
-            6
+          "codecs": [
+            "l16",
+            "gsm",
+            "pcma"
           ],
+          "ice_mode": "accept",
+          "rtcp_mux_mode": "accept",
+          "rtcp_feedback_mode": "initiate",
           "rx_dtmf_format_id": 1,
           "tx_dtmf_format_id": 1,
           "resolve_ruri": false,
