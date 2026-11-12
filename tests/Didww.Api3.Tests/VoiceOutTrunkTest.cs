@@ -1,8 +1,10 @@
+using System.Reflection;
 using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration.AuthenticationMethod;
 using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -229,6 +231,26 @@ public class VoiceOutTrunkTest : BaseTest
     }
 
     [Fact]
+    public async Task TestUpdateSendsBackCodecsTheSdkDoesNotKnow()
+    {
+        var id = "425ce763-a3a9-49b4-af5b-ada1a65c8864";
+        StubGet($"voice_out_trunks/{id}", "voice_out_trunks/show_unknown_media_values.json");
+        StubPatch($"voice_out_trunks/{id}", "voice_out_trunks/show_unknown_media_values.json");
+
+        var trunk = (await Client.VoiceOutTrunks().FindAsync(id)).Data;
+        trunk.Codecs.Should().Equal(new VoiceOutCodec("evs"), VoiceOutCodec.Pcma);
+        trunk.IceMode.Should().Be(new IceMode("require"));
+        trunk.RtcpMuxMode.Should().Be(new RtcpMuxMode("require"));
+        trunk.RtcpFeedbackMode.Should().Be(new RtcpFeedbackMode("require"));
+
+        trunk.Codecs = trunk.Codecs!.Append(VoiceOutCodec.Opus).ToList();
+        await Client.VoiceOutTrunks().UpdateAsync(trunk);
+
+        var sent = JObject.Parse(RequestsTo($"/v3/voice_out_trunks/{id}").Single(r => r.Method == "PATCH").Body!);
+        sent.SelectToken("data.attributes.codecs")!.ToObject<string[]>().Should().Equal("evs", "pcma", "opus");
+    }
+
+    [Fact]
     public async Task TestUpdateVoiceOutTrunkReassignAuthenticationMethod()
     {
         StubPatch("voice_out_trunks/425ce763-a3a9-49b4-af5b-ada1a65c8864",
@@ -301,17 +323,22 @@ public class VoiceOutTrunkTest : BaseTest
         await Client.VoiceOutTrunks().UpdateAsync(trunk);
     }
 
+    public static TheoryData<string, VoiceOutCodec> VoiceOutCodecWireValues => new()
+    {
+        { "\"telephone_event\"", VoiceOutCodec.TelephoneEvent },
+        { "\"g723\"", VoiceOutCodec.G723 },
+        { "\"g729\"", VoiceOutCodec.G729 },
+        { "\"pcmu\"", VoiceOutCodec.Pcmu },
+        { "\"pcma\"", VoiceOutCodec.Pcma },
+        { "\"gsm\"", VoiceOutCodec.Gsm },
+        { "\"g722\"", VoiceOutCodec.G722 },
+        { "\"opus\"", VoiceOutCodec.Opus },
+        { "\"amr\"", VoiceOutCodec.Amr },
+        { "\"amr_wb\"", VoiceOutCodec.AmrWb },
+    };
+
     [Theory]
-    [InlineData("\"telephone_event\"", VoiceOutCodec.TelephoneEvent)]
-    [InlineData("\"g723\"", VoiceOutCodec.G723)]
-    [InlineData("\"g729\"", VoiceOutCodec.G729)]
-    [InlineData("\"pcmu\"", VoiceOutCodec.Pcmu)]
-    [InlineData("\"pcma\"", VoiceOutCodec.Pcma)]
-    [InlineData("\"gsm\"", VoiceOutCodec.Gsm)]
-    [InlineData("\"g722\"", VoiceOutCodec.G722)]
-    [InlineData("\"opus\"", VoiceOutCodec.Opus)]
-    [InlineData("\"amr\"", VoiceOutCodec.Amr)]
-    [InlineData("\"amr_wb\"", VoiceOutCodec.AmrWb)]
+    [MemberData(nameof(VoiceOutCodecWireValues))]
     public void TestVoiceOutCodecWireValues(string json, VoiceOutCodec expected)
     {
         JsonConvert.DeserializeObject<VoiceOutCodec>(json).Should().Be(expected);
@@ -321,7 +348,9 @@ public class VoiceOutTrunkTest : BaseTest
     [Fact]
     public void TestVoiceOutCodecHasOneMemberPerDocumentedName()
     {
-        Enum.GetValues<VoiceOutCodec>().Select(c => JsonConvert.SerializeObject(c).Trim('"')).Should().Equal(
+        typeof(VoiceOutCodec).GetProperties(BindingFlags.Public | BindingFlags.Static)
+            .Where(property => property.PropertyType == typeof(VoiceOutCodec))
+            .Select(property => property.GetValue(null)!.ToString()).Should().BeEquivalentTo(
             "telephone_event", "g723", "g729", "pcmu", "pcma", "gsm", "g722", "opus", "amr", "amr_wb");
     }
 

@@ -272,80 +272,95 @@ public enum SmsBodyType
 /// <summary>
 /// Codec of an inbound SIP trunk (<see cref="Configuration.SipConfiguration.Codecs"/>).
 /// A Voice OUT trunk has its own list, <see cref="VoiceOutCodec"/>. (API 2026-10-22)
+/// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
-[JsonConverter(typeof(TolerantStringEnumConverter))]
-public enum Codec
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct Codec(string Value) : IStringValue
 {
-    [System.Runtime.Serialization.EnumMember(Value = "telephone_event")] TelephoneEvent,
-    [System.Runtime.Serialization.EnumMember(Value = "g723")] G723,
-    [System.Runtime.Serialization.EnumMember(Value = "g729")] G729,
-    [System.Runtime.Serialization.EnumMember(Value = "pcmu")] Pcmu,
-    [System.Runtime.Serialization.EnumMember(Value = "pcma")] Pcma,
-    [System.Runtime.Serialization.EnumMember(Value = "speex")] Speex,
-    [System.Runtime.Serialization.EnumMember(Value = "gsm")] Gsm,
-    [System.Runtime.Serialization.EnumMember(Value = "g726_32")] G726_32,
-    [System.Runtime.Serialization.EnumMember(Value = "g721")] G721,
-    [System.Runtime.Serialization.EnumMember(Value = "g726_24")] G726_24,
-    [System.Runtime.Serialization.EnumMember(Value = "g726_40")] G726_40,
-    [System.Runtime.Serialization.EnumMember(Value = "g726_16")] G726_16,
-    [System.Runtime.Serialization.EnumMember(Value = "l16")] L16,
-    [System.Runtime.Serialization.EnumMember(Value = "amr")] Amr,
-    [System.Runtime.Serialization.EnumMember(Value = "amr_wb")] AmrWb
+    public static Codec TelephoneEvent { get; } = new("telephone_event");
+    public static Codec G723 { get; } = new("g723");
+    public static Codec G729 { get; } = new("g729");
+    public static Codec Pcmu { get; } = new("pcmu");
+    public static Codec Pcma { get; } = new("pcma");
+    public static Codec Speex { get; } = new("speex");
+    public static Codec Gsm { get; } = new("gsm");
+    public static Codec G726_32 { get; } = new("g726_32");
+    public static Codec G721 { get; } = new("g721");
+    public static Codec G726_24 { get; } = new("g726_24");
+    public static Codec G726_40 { get; } = new("g726_40");
+    public static Codec G726_16 { get; } = new("g726_16");
+    public static Codec L16 { get; } = new("l16");
+    public static Codec Amr { get; } = new("amr");
+    public static Codec AmrWb { get; } = new("amr_wb");
+
+    public override string ToString() => Value;
 }
 
 /// <summary>
 /// Codec of a Voice OUT trunk (<see cref="VoiceOutTrunk.Codecs"/>). An inbound
 /// SIP trunk has its own list, <see cref="Codec"/>. (API 2026-10-22)
+/// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
-[JsonConverter(typeof(TolerantStringEnumConverter))]
-public enum VoiceOutCodec
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct VoiceOutCodec(string Value) : IStringValue
 {
-    [System.Runtime.Serialization.EnumMember(Value = "telephone_event")] TelephoneEvent,
-    [System.Runtime.Serialization.EnumMember(Value = "g723")] G723,
-    [System.Runtime.Serialization.EnumMember(Value = "g729")] G729,
-    [System.Runtime.Serialization.EnumMember(Value = "pcmu")] Pcmu,
-    [System.Runtime.Serialization.EnumMember(Value = "pcma")] Pcma,
-    [System.Runtime.Serialization.EnumMember(Value = "gsm")] Gsm,
-    [System.Runtime.Serialization.EnumMember(Value = "g722")] G722,
-    [System.Runtime.Serialization.EnumMember(Value = "opus")] Opus,
-    [System.Runtime.Serialization.EnumMember(Value = "amr")] Amr,
-    [System.Runtime.Serialization.EnumMember(Value = "amr_wb")] AmrWb
+    public static VoiceOutCodec TelephoneEvent { get; } = new("telephone_event");
+    public static VoiceOutCodec G723 { get; } = new("g723");
+    public static VoiceOutCodec G729 { get; } = new("g729");
+    public static VoiceOutCodec Pcmu { get; } = new("pcmu");
+    public static VoiceOutCodec Pcma { get; } = new("pcma");
+    public static VoiceOutCodec Gsm { get; } = new("gsm");
+    public static VoiceOutCodec G722 { get; } = new("g722");
+    public static VoiceOutCodec Opus { get; } = new("opus");
+    public static VoiceOutCodec Amr { get; } = new("amr");
+    public static VoiceOutCodec AmrWb { get; } = new("amr_wb");
+
+    public override string ToString() => Value;
 }
 
 /// <summary>
 /// ICE (Interactive Connectivity Establishment) on the calls of a trunk: not
 /// used, accepted when the other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
-[JsonConverter(typeof(TolerantStringEnumConverter))]
-public enum IceMode
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct IceMode(string Value) : IStringValue
 {
-    [System.Runtime.Serialization.EnumMember(Value = "disabled")] Disabled,
-    [System.Runtime.Serialization.EnumMember(Value = "accept")] Accept,
-    [System.Runtime.Serialization.EnumMember(Value = "initiate")] Initiate
+    public static IceMode Disabled { get; } = new("disabled");
+    public static IceMode Accept { get; } = new("accept");
+    public static IceMode Initiate { get; } = new("initiate");
+
+    public override string ToString() => Value;
 }
 
 /// <summary>
 /// RTP and RTCP multiplexed on one port on the calls of a trunk: not used,
 /// accepted when the other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
-[JsonConverter(typeof(TolerantStringEnumConverter))]
-public enum RtcpMuxMode
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct RtcpMuxMode(string Value) : IStringValue
 {
-    [System.Runtime.Serialization.EnumMember(Value = "disabled")] Disabled,
-    [System.Runtime.Serialization.EnumMember(Value = "accept")] Accept,
-    [System.Runtime.Serialization.EnumMember(Value = "initiate")] Initiate
+    public static RtcpMuxMode Disabled { get; } = new("disabled");
+    public static RtcpMuxMode Accept { get; } = new("accept");
+    public static RtcpMuxMode Initiate { get; } = new("initiate");
+
+    public override string ToString() => Value;
 }
 
 /// <summary>
 /// RTCP feedback (AVPF) on the calls of a trunk: not used, accepted when the
 /// other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
-[JsonConverter(typeof(TolerantStringEnumConverter))]
-public enum RtcpFeedbackMode
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct RtcpFeedbackMode(string Value) : IStringValue
 {
-    [System.Runtime.Serialization.EnumMember(Value = "disabled")] Disabled,
-    [System.Runtime.Serialization.EnumMember(Value = "accept")] Accept,
-    [System.Runtime.Serialization.EnumMember(Value = "initiate")] Initiate
+    public static RtcpFeedbackMode Disabled { get; } = new("disabled");
+    public static RtcpFeedbackMode Accept { get; } = new("accept");
+    public static RtcpFeedbackMode Initiate { get; } = new("initiate");
+
+    public override string ToString() => Value;
 }
 
 // Integer-based enums
