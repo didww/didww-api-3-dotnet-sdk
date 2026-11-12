@@ -1177,8 +1177,7 @@ The SDK provides enum types in `Didww.Api3.Resource.Enums`:
 
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
-`EmergencyCallingServiceStatus`, `EmergencyVerificationStatus`, `DiversionRelayPolicy`,
-`TransportProtocol`, `Codec`, `VoiceOutCodec`, `IceMode`, `RtcpMuxMode`, `RtcpFeedbackMode`,
+`EmergencyCallingServiceStatus`, `EmergencyVerificationStatus`, `DiversionRelayPolicy`, `TransportProtocol`,
 `RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`, `ReroutingDisconnectCode`, `Feature`, `AreaLevel`,
 `AddressVerificationStatus`, `StirShakenMode`, `DidHistoryAction`, `DidHistoryMethod`, `NumberType`, `Pop`,
 `SenderIdVerificationStatus`, `SenderType`, `SmsHttpMethod`, `SmsBodyType`, `VoiceOutPriceCategory`
@@ -1186,6 +1185,8 @@ The SDK provides enum types in `Didww.Api3.Resource.Enums`:
 \* `ReplaceCli` and `RandomizeCli` require additional account configuration. Contact DIDWW support to enable these values.
 
 `Codec` holds the codecs of an inbound SIP trunk (`SipConfiguration.Codecs`) and `VoiceOutCodec` those of a Voice OUT trunk (`VoiceOutTrunk.Codecs`); the two lists differ. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` serve both.
+
+These five, in the same namespace, are value types rather than enums, as the API adds codecs and modes over time. Each known value is a static property, such as `Codec.Pcmu`, and `Value` is its API name. A value this version of the SDK does not know is kept as read, such as `new Codec("evs")`, and sent back unchanged on update. Compare them with `==`; they are not constants, so match them with `if` or a `when` clause instead of `case Codec.Pcmu:`.
 
 `ExportType` includes `SmsIn` and `SmsOut`. The values of the `trunk_type` filter of `sms_in` exports are the constants of `ExportTrunkTypes`, those of the `service_type` filter of `sms_out` exports the constants of `ExportServiceTypes` (both in namespace `Didww.Api3.Resource`), and the SMPP server locations those of `SmppServerLocations` (namespace `Didww.Api3.Resource.Configuration.SmsTrunkConfiguration`).
 

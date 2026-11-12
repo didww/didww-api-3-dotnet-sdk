@@ -1,3 +1,4 @@
+using System.Reflection;
 using Didww.Api3.Http;
 using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration;
@@ -670,22 +671,27 @@ public class VoiceInTrunkTest : BaseTest
         JsonConvert.SerializeObject(expected).Should().Be(json);
     }
 
+    public static TheoryData<string, Codec> CodecWireValues => new()
+    {
+        { "\"telephone_event\"", Codec.TelephoneEvent },
+        { "\"g723\"", Codec.G723 },
+        { "\"g729\"", Codec.G729 },
+        { "\"pcmu\"", Codec.Pcmu },
+        { "\"pcma\"", Codec.Pcma },
+        { "\"speex\"", Codec.Speex },
+        { "\"gsm\"", Codec.Gsm },
+        { "\"g726_32\"", Codec.G726_32 },
+        { "\"g721\"", Codec.G721 },
+        { "\"g726_24\"", Codec.G726_24 },
+        { "\"g726_40\"", Codec.G726_40 },
+        { "\"g726_16\"", Codec.G726_16 },
+        { "\"l16\"", Codec.L16 },
+        { "\"amr\"", Codec.Amr },
+        { "\"amr_wb\"", Codec.AmrWb },
+    };
+
     [Theory]
-    [InlineData("\"telephone_event\"", Codec.TelephoneEvent)]
-    [InlineData("\"g723\"", Codec.G723)]
-    [InlineData("\"g729\"", Codec.G729)]
-    [InlineData("\"pcmu\"", Codec.Pcmu)]
-    [InlineData("\"pcma\"", Codec.Pcma)]
-    [InlineData("\"speex\"", Codec.Speex)]
-    [InlineData("\"gsm\"", Codec.Gsm)]
-    [InlineData("\"g726_32\"", Codec.G726_32)]
-    [InlineData("\"g721\"", Codec.G721)]
-    [InlineData("\"g726_24\"", Codec.G726_24)]
-    [InlineData("\"g726_40\"", Codec.G726_40)]
-    [InlineData("\"g726_16\"", Codec.G726_16)]
-    [InlineData("\"l16\"", Codec.L16)]
-    [InlineData("\"amr\"", Codec.Amr)]
-    [InlineData("\"amr_wb\"", Codec.AmrWb)]
+    [MemberData(nameof(CodecWireValues))]
     public void TestCodecWireValues(string json, Codec expected)
     {
         JsonConvert.DeserializeObject<Codec>(json).Should().Be(expected);
@@ -695,15 +701,20 @@ public class VoiceInTrunkTest : BaseTest
     [Fact]
     public void TestCodecHasOneMemberPerDocumentedName()
     {
-        Enum.GetValues<Codec>().Select(c => JsonConvert.SerializeObject(c).Trim('"')).Should().Equal(
+        DeclaredValues<Codec>().Should().BeEquivalentTo(
             "telephone_event", "g723", "g729", "pcmu", "pcma", "speex", "gsm", "g726_32", "g721",
             "g726_24", "g726_40", "g726_16", "l16", "amr", "amr_wb");
     }
 
+    public static TheoryData<string, IceMode, RtcpMuxMode, RtcpFeedbackMode> ModeWireValues => new()
+    {
+        { "\"disabled\"", IceMode.Disabled, RtcpMuxMode.Disabled, RtcpFeedbackMode.Disabled },
+        { "\"accept\"", IceMode.Accept, RtcpMuxMode.Accept, RtcpFeedbackMode.Accept },
+        { "\"initiate\"", IceMode.Initiate, RtcpMuxMode.Initiate, RtcpFeedbackMode.Initiate },
+    };
+
     [Theory]
-    [InlineData("\"disabled\"", IceMode.Disabled, RtcpMuxMode.Disabled, RtcpFeedbackMode.Disabled)]
-    [InlineData("\"accept\"", IceMode.Accept, RtcpMuxMode.Accept, RtcpFeedbackMode.Accept)]
-    [InlineData("\"initiate\"", IceMode.Initiate, RtcpMuxMode.Initiate, RtcpFeedbackMode.Initiate)]
+    [MemberData(nameof(ModeWireValues))]
     public void TestModeWireValues(string json, IceMode ice, RtcpMuxMode mux, RtcpFeedbackMode feedback)
     {
         JsonConvert.SerializeObject(ice).Should().Be(json);
@@ -718,10 +729,80 @@ public class VoiceInTrunkTest : BaseTest
     public void TestModesHaveTheDocumentedValues()
     {
         string[] documented = ["disabled", "accept", "initiate"];
-        Enum.GetValues<IceMode>().Select(m => JsonConvert.SerializeObject(m).Trim('"')).Should().Equal(documented);
-        Enum.GetValues<RtcpMuxMode>().Select(m => JsonConvert.SerializeObject(m).Trim('"')).Should().Equal(documented);
-        Enum.GetValues<RtcpFeedbackMode>().Select(m => JsonConvert.SerializeObject(m).Trim('"')).Should().Equal(documented);
+        DeclaredValues<IceMode>().Should().BeEquivalentTo(documented);
+        DeclaredValues<RtcpMuxMode>().Should().BeEquivalentTo(documented);
+        DeclaredValues<RtcpFeedbackMode>().Should().BeEquivalentTo(documented);
     }
+
+    [Fact]
+    public void TestCodecAndModesKeepAValueTheSdkDoesNotKnow()
+    {
+        JsonConvert.DeserializeObject<Codec>("\"evs\"").Should().Be(new Codec("evs"));
+        JsonConvert.SerializeObject(new Codec("evs")).Should().Be("\"evs\"");
+        JsonConvert.DeserializeObject<IceMode?>("\"require\"").Should().Be(new IceMode("require"));
+        JsonConvert.DeserializeObject<RtcpMuxMode?>("\"require\"").Should().Be(new RtcpMuxMode("require"));
+        JsonConvert.DeserializeObject<RtcpFeedbackMode?>("\"require\"").Should().Be(new RtcpFeedbackMode("require"));
+    }
+
+    [Fact]
+    public void TestModeReadsNullAsNull()
+    {
+        JsonConvert.DeserializeObject<IceMode?>("null").Should().BeNull();
+    }
+
+    [Fact]
+    public void TestCodecSendsBackANullItAlsoRead()
+    {
+        var config = JsonConvert.DeserializeObject<SipConfiguration>("{\"codecs\":[null,\"pcmu\"]}")!;
+
+        config.Codecs.Should().Equal(default(Codec), Codec.Pcmu);
+        JsonConvert.SerializeObject(new SipConfiguration { Codecs = config.Codecs }).Should().Be("{\"codecs\":[null,\"pcmu\"]}");
+    }
+
+    [Fact]
+    public void TestCodecRejectsANonStringValue()
+    {
+        var read = () => JsonConvert.DeserializeObject<Codec>("1");
+
+        read.Should().Throw<JsonSerializationException>().WithMessage("Unexpected token Integer for Codec, expected a string.");
+    }
+
+    [Fact]
+    public void TestModeRejectsANonStringValue()
+    {
+        var read = () => JsonConvert.DeserializeObject<IceMode?>("1");
+
+        read.Should().Throw<JsonSerializationException>().WithMessage("Unexpected token Integer for IceMode, expected a string.");
+    }
+
+    [Fact]
+    public async Task TestUpdateSendsBackCodecsAndModesTheSdkDoesNotKnow()
+    {
+        var id = "a80006b6-4183-4865-8b99-7ebbd359a762";
+        StubGet($"voice_in_trunks/{id}", "voice_in_trunks/show_unknown_media_values.json");
+        StubPatch($"voice_in_trunks/{id}", "voice_in_trunks/show_unknown_media_values.json");
+
+        var config = (SipConfiguration)(await Client.VoiceInTrunks().FindAsync(id)).Data.Configuration!;
+        config.Codecs.Should().Equal(new Codec("evs"), Codec.Pcmu);
+        config.IceMode.Should().Be(new IceMode("require"));
+
+        config.Host = "203.0.113.111";
+        var trunk = VoiceInTrunk.Build(id);
+        trunk.Configuration = config;
+        await Client.VoiceInTrunks().UpdateAsync(trunk);
+
+        var sent = JObject.Parse(RequestsTo($"/v3/voice_in_trunks/{id}").Single(r => r.Method == "PATCH").Body!);
+        var attributes = sent.SelectToken("data.attributes.configuration.attributes")!;
+        attributes["codecs"]!.ToObject<string[]>().Should().Equal("evs", "pcmu");
+        attributes["ice_mode"]!.Value<string>().Should().Be("require");
+        attributes["rtcp_mux_mode"]!.Value<string>().Should().Be("require");
+        attributes["rtcp_feedback_mode"]!.Value<string>().Should().Be("require");
+    }
+
+    private static IEnumerable<string> DeclaredValues<T>() => typeof(T)
+        .GetProperties(BindingFlags.Public | BindingFlags.Static)
+        .Where(property => property.PropertyType == typeof(T))
+        .Select(property => property.GetValue(null)!.ToString()!);
 
     [Fact]
     public void TestSipConfigurationHasNoCodecIds()
