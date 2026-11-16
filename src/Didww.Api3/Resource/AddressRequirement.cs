@@ -30,7 +30,7 @@ public class AddressRequirement : BaseResource
     [JsonProperty("business_mandatory_fields")] public List<string>? BusinessMandatoryFields { get; set; }
     [JsonProperty("service_description_required")] public bool? ServiceDescriptionRequired { get; set; }
     [JsonProperty("restriction_message")] public string? RestrictionMessage { get; set; }
-    /// <summary>Number type the requirement applies to. Read-only. (API 2026-10-22)</summary>
+    /// <summary>Number type the requirement applies to. Read-only. (API 2026-11-19)</summary>
     [JsonProperty("number_type")] public NumberType? NumberType { get; set; }
 
     [JsonProperty("country")] public Country? Country { get; set; }

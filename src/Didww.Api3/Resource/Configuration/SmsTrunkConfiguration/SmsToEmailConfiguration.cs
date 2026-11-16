@@ -5,7 +5,7 @@ namespace Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 /// <summary>
 /// Inbound messages are forwarded as email. <see cref="SendTo"/>,
 /// <see cref="Subject"/> and <see cref="Message"/> are required when the
-/// trunk is created. (API 2026-10-22)
+/// trunk is created. (API 2026-11-19)
 /// </summary>
 public class SmsToEmailConfiguration : SmsTrunkConfigurationBase
 {

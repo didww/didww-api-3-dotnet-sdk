@@ -13,7 +13,7 @@ public class BearerTokenHandlerTest : IDisposable
     private const string UnauthorizedBody =
         """{"errors":[{"title":"Unauthorized","detail":"Authorization failed","code":"401","status":"401"}]}""";
 
-    private const string ApiMintBody = """{"aud":["api.didww.com"],"api_version":"2026-10-22"}""";
+    private const string ApiMintBody = """{"aud":["api.didww.com"],"api_version":"2026-11-19"}""";
 
     private readonly FakeAuthServer _server = new();
 
@@ -221,7 +221,7 @@ public class BearerTokenHandlerTest : IDisposable
         sent.Headers.Should().NotContainKey("Accept");
         sent.Headers["If-Modified-Since"].Should().Be("Wed, 14 Oct 2026 06:00:00 GMT");
         sent.Authorization.Should().Be("Bearer token-1");
-        AssertJsonEquals(_server.MintBody(0), """{"aud":["api-vin.didww.com"],"api_version":"2026-10-22"}""");
+        AssertJsonEquals(_server.MintBody(0), """{"aud":["api-vin.didww.com"],"api_version":"2026-11-19"}""");
     }
 
     [Fact]

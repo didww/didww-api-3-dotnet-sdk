@@ -98,8 +98,8 @@ public class TokenProviderTest : IDisposable
         vin.AccessToken.Should().NotBe(api.AccessToken);
         vin.Audience.Should().Equal(VoiceIn);
         _server.Mints.Should().Be(2);
-        AssertJsonEquals(_server.MintBody(0), """{"aud":["api.didww.com"],"api_version":"2026-10-22"}""");
-        AssertJsonEquals(_server.MintBody(1), """{"aud":["api-vin.didww.com"],"api_version":"2026-10-22"}""");
+        AssertJsonEquals(_server.MintBody(0), """{"aud":["api.didww.com"],"api_version":"2026-11-19"}""");
+        AssertJsonEquals(_server.MintBody(1), """{"aud":["api-vin.didww.com"],"api_version":"2026-11-19"}""");
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class TokenProviderTest : IDisposable
     public async Task TestTokenCachedForGrantedLifetime()
     {
         _server.Mint = (_, _, _) => Task.FromResult(FakeAuthServer.Json(200,
-            """{"access_token":"t","token_type":"Bearer","expires_in":300,"aud":["api.didww.com"],"scope":"full","api_version":"2026-10-22"}"""));
+            """{"access_token":"t","token_type":"Bearer","expires_in":300,"aud":["api.didww.com"],"scope":"full","api_version":"2026-11-19"}"""));
         var keys = new List<string>();
         var ttls = new List<TimeSpan>();
         var store = new DelegatingTokenStore();
@@ -159,12 +159,12 @@ public class TokenProviderTest : IDisposable
 
         var key = Provider().CacheKey(Api);
 
-        key.Should().Be("didww:token:v1:2e1c5435f0e67f91d34497fabf69840a945923a47982fad172c353b3f26be539");
+        key.Should().Be("didww:token:v1:7f410b6b26861d5df39c9b3d800faec7f2feefa0c6949246c8d0cd3580714f57");
         key.Should().MatchRegex("^didww:token:v1:[0-9a-f]{64}$");
         key.Should().NotContain("key-1");
         Provider(configure: b => b.SetAuthUrl("https://auth.example.com/")).CacheKey(Api).Should().Be(key);
         Provider(configure: b => b.SetScope(DidwwScope.Read)).CacheKey(Api)
-            .Should().Be("didww:token:v1:7b0667b745747b7de833d43c46a3cd1e3e630384fe8595b7789f5074cb6617c0");
+            .Should().Be("didww:token:v1:43ca2813b91c18a4c65fab02f84a44c8f2af66ee558b9424ce53950085671fba");
         Provider().CacheKey(TokenAudience.Sms).Should().NotBe(key);
         Provider(configure: b => b.SetApiVersion("2099-01-01")).CacheKey(Api).Should().NotBe(key);
         Provider(configure: b => b.SetAuthUrl("https://auth-sandbox.example.com")).CacheKey(Api).Should().NotBe(key);
@@ -790,8 +790,8 @@ public class TokenProviderTest : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"access_token":"t","token_type":"Bearer","expires_in":900,"aud":["api-sms.didww.com"],"scope":"full","api_version":"2026-10-22"}""")]
-    [InlineData("""{"access_token":"","token_type":"Bearer","expires_in":900,"aud":["api.didww.com"],"scope":"full","api_version":"2026-10-22"}""")]
+    [InlineData("""{"access_token":"t","token_type":"Bearer","expires_in":900,"aud":["api-sms.didww.com"],"scope":"full","api_version":"2026-11-19"}""")]
+    [InlineData("""{"access_token":"","token_type":"Bearer","expires_in":900,"aud":["api.didww.com"],"scope":"full","api_version":"2026-11-19"}""")]
     [InlineData("""{"access_token":"t","token_type":"Bearer","expires_in":900,"aud":"api.didww.com"}""")]
     [InlineData("ok")]
     public async Task TestTokenInvalidGrant(string body)
@@ -833,7 +833,7 @@ public class TokenProviderTest : IDisposable
         var token = await client.Tokens.GetTokenAsync(Api, CancellationToken.None);
 
         token.AccessToken.Should().Be("t");
-        logger.Text.Should().Contain("Warning: DIDWW token api_version mismatch: requested 2026-10-22, granted 2099-01-01");
+        logger.Text.Should().Contain("Warning: DIDWW token api_version mismatch: requested 2026-11-19, granted 2099-01-01");
     }
 
     [Fact]
@@ -868,7 +868,7 @@ public class TokenProviderTest : IDisposable
         await client.Tokens.GetTokenAsync(Api, CancellationToken.None);
 
         logger.Text.Should().Contain(
-            "Debug: DIDWW token minted: aud api.didww.com, scope full, api_version 2026-10-22, expires_in 900");
+            "Debug: DIDWW token minted: aud api.didww.com, scope full, api_version 2026-11-19, expires_in 900");
         logger.Text.Should().NotContain("token-1");
         logger.Text.Should().NotContain(client.Credentials.ApiKey);
     }

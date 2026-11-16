@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource.Prices;
 
 /// <summary>
-/// A row of a Voice OUT price lookup (API 2026-10-22). Prices and fees are in
+/// A row of a Voice OUT price lookup (API 2026-11-19). Prices and fees are in
 /// USD. When <see cref="RejectCalls"/> is true the price fields are null: the
 /// calls are refused, which is still an answer. The <c>Next*</c> members and
 /// <see cref="EffectiveAt"/> announce a scheduled price change. The row ID stays

@@ -13,7 +13,7 @@ public class DidwwTokenTest
         ExpiresIn = 900,
         Audience = new[] { "api.didww.com" },
         Scope = "full",
-        ApiVersion = "2026-10-22",
+        ApiVersion = "2026-11-19",
         MintedAt = new DateTimeOffset(2026, 10, 22, 12, 0, 0, TimeSpan.Zero)
     };
 
@@ -25,7 +25,7 @@ public class DidwwTokenTest
         text.Should().NotContain("secret-access-token");
         text.Should().Contain("[FILTERED]");
         text.Should().Contain("api.didww.com");
-        text.Should().Contain("2026-10-22");
+        text.Should().Contain("2026-11-19");
         new List<DidwwToken> { TestToken() }.Aggregate("", (s, t) => s + t).Should().NotContain("secret-access-token");
     }
 
@@ -46,7 +46,7 @@ public class DidwwTokenTest
     {
         var json = System.Text.Json.JsonSerializer.Serialize(TestToken());
         json.Should().Contain("\"access_token\":\"secret-access-token\"");
-        json.Should().Contain("\"api_version\":\"2026-10-22\"");
+        json.Should().Contain("\"api_version\":\"2026-11-19\"");
 
         var decoded = System.Text.Json.JsonSerializer.Deserialize<DidwwToken>(json)!;
 
@@ -65,6 +65,6 @@ public class DidwwTokenTest
         token.ExpiresIn.Should().Be(900);
         token.Audience.Should().Equal("api.didww.com");
         token.Scope.Should().Be("full");
-        token.ApiVersion.Should().Be("2026-10-22");
+        token.ApiVersion.Should().Be("2026-11-19");
     }
 }

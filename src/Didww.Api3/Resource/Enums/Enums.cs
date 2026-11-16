@@ -191,7 +191,7 @@ public enum DidHistoryMethod
 
 /// <summary>
 /// Number type of a DID group, address requirement, emergency requirement or
-/// emergency calling service. (API 2026-10-22)
+/// emergency calling service. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum NumberType
@@ -205,7 +205,7 @@ public enum NumberType
 }
 
 /// <summary>
-/// DIDWW point of presence a Voice IN trunk is served from. (API 2026-10-22)
+/// DIDWW point of presence a Voice IN trunk is served from. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum Pop
@@ -220,7 +220,7 @@ public enum Pop
 }
 
 /// <summary>
-/// Lifecycle state of a sender ID verification. (API 2026-10-22)
+/// Lifecycle state of a sender ID verification. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum SenderIdVerificationStatus
@@ -234,7 +234,7 @@ public enum SenderIdVerificationStatus
 }
 
 /// <summary>
-/// Kind of sender a sender ID verification covers. (API 2026-10-22)
+/// Kind of sender a sender ID verification covers. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum SenderType
@@ -247,7 +247,7 @@ public enum SenderType
 }
 
 /// <summary>
-/// HTTP method of an <c>http_in</c> SMS trunk configuration. (API 2026-10-22)
+/// HTTP method of an <c>http_in</c> SMS trunk configuration. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum SmsHttpMethod
@@ -258,7 +258,7 @@ public enum SmsHttpMethod
 }
 
 /// <summary>
-/// Body encoding of an <c>http_in</c> SMS trunk configuration. (API 2026-10-22)
+/// Body encoding of an <c>http_in</c> SMS trunk configuration. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum SmsBodyType
@@ -271,7 +271,7 @@ public enum SmsBodyType
 
 /// <summary>
 /// Codec of an inbound SIP trunk (<see cref="Configuration.SipConfiguration.Codecs"/>).
-/// A Voice OUT trunk has its own list, <see cref="VoiceOutCodec"/>. (API 2026-10-22)
+/// A Voice OUT trunk has its own list, <see cref="VoiceOutCodec"/>. (API 2026-11-19)
 /// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
 [JsonConverter(typeof(StringValueConverter))]
@@ -298,7 +298,7 @@ public readonly record struct Codec(string Value) : IStringValue
 
 /// <summary>
 /// Codec of a Voice OUT trunk (<see cref="VoiceOutTrunk.Codecs"/>). An inbound
-/// SIP trunk has its own list, <see cref="Codec"/>. (API 2026-10-22)
+/// SIP trunk has its own list, <see cref="Codec"/>. (API 2026-11-19)
 /// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
 [JsonConverter(typeof(StringValueConverter))]
@@ -320,7 +320,7 @@ public readonly record struct VoiceOutCodec(string Value) : IStringValue
 
 /// <summary>
 /// ICE (Interactive Connectivity Establishment) on the calls of a trunk: not
-/// used, accepted when the other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// used, accepted when the other side offers it, or initiated by DIDWW. (API 2026-11-19)
 /// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
 [JsonConverter(typeof(StringValueConverter))]
@@ -335,7 +335,7 @@ public readonly record struct IceMode(string Value) : IStringValue
 
 /// <summary>
 /// RTP and RTCP multiplexed on one port on the calls of a trunk: not used,
-/// accepted when the other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// accepted when the other side offers it, or initiated by DIDWW. (API 2026-11-19)
 /// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
 [JsonConverter(typeof(StringValueConverter))]
@@ -350,7 +350,7 @@ public readonly record struct RtcpMuxMode(string Value) : IStringValue
 
 /// <summary>
 /// RTCP feedback (AVPF) on the calls of a trunk: not used, accepted when the
-/// other side offers it, or initiated by DIDWW. (API 2026-10-22)
+/// other side offers it, or initiated by DIDWW. (API 2026-11-19)
 /// A value the server adds later is kept as read and sent back unchanged.
 /// </summary>
 [JsonConverter(typeof(StringValueConverter))]

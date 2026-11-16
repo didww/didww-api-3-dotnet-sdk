@@ -6,7 +6,7 @@ namespace Didww.Api3.Converter;
 
 /// <summary>
 /// JSON:API-style polymorphic converter for SmsTrunk.configuration
-/// (API 2026-10-22). Reads and writes <c>{"type": ..., "attributes": {...}}</c>.
+/// (API 2026-11-19). Reads and writes <c>{"type": ..., "attributes": {...}}</c>.
 /// Unknown wire types are wrapped in <see cref="GenericSmsTrunkConfiguration"/>
 /// and written back verbatim, explicit nulls included. Read-only attributes of
 /// the typed configurations (the generated credentials of <c>http_out</c> and

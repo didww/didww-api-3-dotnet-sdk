@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource;
 
 /// <summary>
-/// Group of SMS trunks (API 2026-10-22). Deleting a group also deletes its trunks.
+/// Group of SMS trunks (API 2026-11-19). Deleting a group also deletes its trunks.
 /// </summary>
 public class SmsTrunkGroup : BaseResource
 {

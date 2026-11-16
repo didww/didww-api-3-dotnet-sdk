@@ -5,7 +5,7 @@ namespace Didww.Api3.Resource;
 
 /// <summary>
 /// Verification request for a sender identity used for outbound messages
-/// (API 2026-10-22). Only <see cref="Name"/> and <see cref="SmsTrunk"/> can
+/// (API 2026-11-19). Only <see cref="Name"/> and <see cref="SmsTrunk"/> can
 /// be changed; verifications are listed, read and updated, but not created or
 /// deleted through the API. A closed verification cannot be updated.
 /// </summary>

@@ -5,7 +5,7 @@ using Didww.Api3.Resource.Enums;
 
 namespace Didww.Api3.Examples;
 
-// CRUD for SMS trunks (2026-10-22): lists trunks, creates an HTTP IN trunk,
+// CRUD for SMS trunks (2026-11-19): lists trunks, creates an HTTP IN trunk,
 // updates its configuration, regenerates the credentials of an HTTP OUT trunk,
 // and deletes both trunks.
 //

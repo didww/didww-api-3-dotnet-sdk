@@ -5,7 +5,7 @@ using Didww.Api3.Resource.Enums;
 
 namespace Didww.Api3.Examples;
 
-// CRUD for SMS trunk groups (2026-10-22): creates two inbound SMS trunks, puts
+// CRUD for SMS trunk groups (2026-11-19): creates two inbound SMS trunks, puts
 // them in a group, lists groups, and deletes the group.
 //
 // A group spreads a DID's inbound messages over its trunks by their priority

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource.Prices;
 
 /// <summary>
-/// A row of an SMS IN price lookup (API 2026-10-22). The price is in USD. The
+/// A row of an SMS IN price lookup (API 2026-11-19). The price is in USD. The
 /// row ID is derived from the row content and changes with the price, so it
 /// does not track a destination over time.
 /// </summary>

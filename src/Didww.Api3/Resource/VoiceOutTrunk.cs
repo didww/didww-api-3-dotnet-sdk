@@ -60,23 +60,23 @@ public class VoiceOutTrunk : BaseResource
     /// <summary>
     /// Codecs offered on calls from the trunk, in priority order: the first has
     /// the highest priority. Left out on create, the trunk offers <c>pcma</c>,
-    /// <c>pcmu</c> and <c>telephone_event</c>. (API 2026-10-22)
+    /// <c>pcmu</c> and <c>telephone_event</c>. (API 2026-11-19)
     /// </summary>
     [JsonProperty("codecs")]
     public List<VoiceOutCodec>? Codecs { get => _codecs; set => SetProperty(ref _codecs, value); }
 
     private IceMode? _iceMode;
-    /// <summary>ICE on calls from the trunk. Defaults to <see cref="Enums.IceMode.Accept"/>. (API 2026-10-22)</summary>
+    /// <summary>ICE on calls from the trunk. Defaults to <see cref="Enums.IceMode.Accept"/>. (API 2026-11-19)</summary>
     [JsonProperty("ice_mode")]
     public IceMode? IceMode { get => _iceMode; set => SetProperty(ref _iceMode, value); }
 
     private RtcpMuxMode? _rtcpMuxMode;
-    /// <summary>RTP and RTCP on one port on calls from the trunk. Defaults to <see cref="Enums.RtcpMuxMode.Accept"/>. (API 2026-10-22)</summary>
+    /// <summary>RTP and RTCP on one port on calls from the trunk. Defaults to <see cref="Enums.RtcpMuxMode.Accept"/>. (API 2026-11-19)</summary>
     [JsonProperty("rtcp_mux_mode")]
     public RtcpMuxMode? RtcpMuxMode { get => _rtcpMuxMode; set => SetProperty(ref _rtcpMuxMode, value); }
 
     private RtcpFeedbackMode? _rtcpFeedbackMode;
-    /// <summary>RTCP feedback (AVPF) on calls from the trunk. Defaults to <see cref="Enums.RtcpFeedbackMode.Accept"/>. (API 2026-10-22)</summary>
+    /// <summary>RTCP feedback (AVPF) on calls from the trunk. Defaults to <see cref="Enums.RtcpFeedbackMode.Accept"/>. (API 2026-11-19)</summary>
     [JsonProperty("rtcp_feedback_mode")]
     public RtcpFeedbackMode? RtcpFeedbackMode { get => _rtcpFeedbackMode; set => SetProperty(ref _rtcpFeedbackMode, value); }
 

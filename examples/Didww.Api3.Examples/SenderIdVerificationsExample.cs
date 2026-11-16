@@ -4,7 +4,7 @@ using Didww.Api3.Resource.Enums;
 
 namespace Didww.Api3.Examples;
 
-// Lists Sender ID verifications (2026-10-22) with their SMS trunks, routes an
+// Lists Sender ID verifications (2026-11-19) with their SMS trunks, routes an
 // active verification's outbound messages through an SMS trunk that sends
 // them, and restores the verification's original trunk.
 //

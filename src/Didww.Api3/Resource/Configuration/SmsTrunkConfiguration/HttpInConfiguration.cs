@@ -11,7 +11,7 @@ namespace Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 /// <c>{SMS_DST_ADDR}</c> and <c>{SMS_TIME}</c>.
 /// <see cref="Url"/> and <see cref="HttpMethod"/> are required when the trunk
 /// is created; <see cref="BodyType"/> and <see cref="Body"/> are required for
-/// post and put and refused for get. (API 2026-10-22)
+/// post and put and refused for get. (API 2026-11-19)
 /// </summary>
 public class HttpInConfiguration : SmsTrunkConfigurationBase
 {

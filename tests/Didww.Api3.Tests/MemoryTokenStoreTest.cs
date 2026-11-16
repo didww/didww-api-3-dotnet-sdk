@@ -12,7 +12,7 @@ public class MemoryTokenStoreTest
         ExpiresIn = 900,
         Audience = new[] { "api.didww.com" },
         Scope = "full",
-        ApiVersion = "2026-10-22"
+        ApiVersion = "2026-11-19"
     };
 
     [Fact]

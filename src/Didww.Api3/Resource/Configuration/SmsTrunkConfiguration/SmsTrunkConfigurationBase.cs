@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 
 /// <summary>
-/// Polymorphic base for SmsTrunk.configuration (API 2026-10-22).
+/// Polymorphic base for SmsTrunk.configuration (API 2026-11-19).
 /// Concrete subtypes:
 ///   - sms_to_email: <see cref="SmsToEmailConfiguration"/>
 ///   - http_in:      <see cref="HttpInConfiguration"/>

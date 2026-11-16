@@ -31,7 +31,7 @@ public class DidwwClient
     /// The API version requested when no other is configured. Earlier versions
     /// are not supported by this major version of the SDK.
     /// </summary>
-    public const string DefaultApiVersion = "2026-10-22";
+    public const string DefaultApiVersion = "2026-11-19";
 
     public static readonly string SdkUserAgent =
         $"didww-dotnet-sdk/{typeof(DidwwClient).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
@@ -164,7 +164,7 @@ public class DidwwClient
     /// <summary>Sender ID verifications. Only <c>ListAsync</c>, <c>FindAsync</c> and <c>UpdateAsync</c> are supported.</summary>
     public Repository.Repository<SenderIdVerification> SenderIdVerifications() => new(_httpClient, _serializerSettings, _baseUrl, "sender_id_verifications");
 
-    // Price lists (API 2026-10-22), each on the host of its prices service.
+    // Price lists (API 2026-11-19), each on the host of its prices service.
 
     /// <summary>The Voice IN price list. Lookup filters: <c>number</c> (required), <c>src_country_iso</c>.</summary>
     public Prices.PricesService<Resource.Prices.VoiceInPrice> VoiceInPrices() =>

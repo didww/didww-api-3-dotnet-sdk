@@ -5,7 +5,7 @@ using Didww.Api3.Resource.Enums;
 
 namespace Didww.Api3.Examples;
 
-// Creates SMS exports (sms_in / sms_out, 2026-10-22) for yesterday and reads
+// Creates SMS exports (sms_in / sms_out, 2026-11-19) for yesterday and reads
 // the columns of a completed SMS-Out export.
 //
 // Filters on SMS exports (Export.Filters):

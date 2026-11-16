@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource.Enums;
 
 /// <summary>
-/// Category of a Voice OUT price row. (API 2026-10-22)
+/// Category of a Voice OUT price row. (API 2026-11-19)
 /// </summary>
 [JsonConverter(typeof(TolerantStringEnumConverter))]
 public enum VoiceOutPriceCategory

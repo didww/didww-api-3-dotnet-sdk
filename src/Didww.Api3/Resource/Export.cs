@@ -35,7 +35,7 @@ public class Export : BaseResource
 
     private Dictionary<string, object>? _filters;
     /// <summary>
-    /// Export filters. Keys accepted by API 2026-10-22:
+    /// Export filters. Keys accepted by API 2026-11-19:
     /// <list type="bullet">
     /// <item><description>every type: <c>from</c> (inclusive) and <c>to</c> (exclusive),
     /// formatted <c>YYYY-MM-DD HH:MM:SS</c> in UTC;</description></item>
@@ -67,7 +67,7 @@ public class Export : BaseResource
 }
 
 /// <summary>
-/// Values of the <c>trunk_type</c> filter of an <c>sms_in</c> export. (API 2026-10-22)
+/// Values of the <c>trunk_type</c> filter of an <c>sms_in</c> export. (API 2026-11-19)
 /// </summary>
 public static class ExportTrunkTypes
 {
@@ -78,7 +78,7 @@ public static class ExportTrunkTypes
 }
 
 /// <summary>
-/// Values of the <c>service_type</c> filter of an <c>sms_out</c> export. (API 2026-10-22)
+/// Values of the <c>service_type</c> filter of an <c>sms_out</c> export. (API 2026-11-19)
 /// </summary>
 public static class ExportServiceTypes
 {

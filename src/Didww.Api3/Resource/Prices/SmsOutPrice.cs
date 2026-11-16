@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource.Prices;
 
 /// <summary>
-/// A row of an SMS OUT (A2P, P2P or OTP) price lookup (API 2026-10-22). The
+/// A row of an SMS OUT (A2P, P2P or OTP) price lookup (API 2026-11-19). The
 /// price is in USD. When <see cref="RejectSms"/> is true <see cref="Price"/> is
 /// null: the messages are refused, which is still an answer. The row ID is
 /// derived from the row content and changes with the price, so it does not

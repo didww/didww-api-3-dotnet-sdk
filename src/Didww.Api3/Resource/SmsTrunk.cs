@@ -6,7 +6,7 @@ namespace Didww.Api3.Resource;
 
 /// <summary>
 /// SMS trunk: how messages for the assigned DIDs are delivered, or accepted
-/// for sending (API 2026-10-22). The delivery is described by
+/// for sending (API 2026-11-19). The delivery is described by
 /// <see cref="Configuration"/>.
 ///
 /// Changes made inside a configuration object are not tracked: reassign the

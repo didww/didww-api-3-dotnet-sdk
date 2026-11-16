@@ -40,7 +40,7 @@ public class Identity : BaseResource, IProofEntity
     private string? _companyWebsite;
     /// <summary>
     /// Website of the company. Rejected on a personal identity; left out of
-    /// the create request while null. (API 2026-10-22)
+    /// the create request while null. (API 2026-11-19)
     /// </summary>
     [JsonProperty("company_website")]
     public string? CompanyWebsite { get => _companyWebsite; set => SetProperty(ref _companyWebsite, value); }

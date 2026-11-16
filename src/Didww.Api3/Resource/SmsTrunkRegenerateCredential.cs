@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace Didww.Api3.Resource;
 
 /// <summary>
-/// Rotates the generated credentials of an SMS trunk (API 2026-10-22). Only
+/// Rotates the generated credentials of an SMS trunk (API 2026-11-19). Only
 /// <c>smpp_esme</c> and <c>http_out</c> trunks have credentials to rotate. The
 /// response carries no credentials: read the trunk again to get the new ones.
 /// <code>
