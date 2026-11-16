@@ -111,7 +111,7 @@ public class Did : BaseResource
     /// (the PATCH sends <c>sms_trunk_group: {data: null}</c>). To unassign,
     /// set to null on a built or loaded resource: the PATCH sends
     /// <c>sms_trunk: {data: null}</c> and leaves the group alone.
-    /// (API 2026-10-22)
+    /// (API 2026-11-19)
     /// </summary>
     [JsonProperty("sms_trunk")]
     public SmsTrunk? SmsTrunk
@@ -135,7 +135,7 @@ public class Did : BaseResource
     /// (the PATCH sends <c>sms_trunk: {data: null}</c>). To unassign,
     /// set to null on a built or loaded resource: the PATCH sends
     /// <c>sms_trunk_group: {data: null}</c> and leaves the trunk alone.
-    /// (API 2026-10-22)
+    /// (API 2026-11-19)
     /// </summary>
     [JsonProperty("sms_trunk_group")]
     public SmsTrunkGroup? SmsTrunkGroup

@@ -52,7 +52,7 @@ public class EmergencyRequirement : BaseResource
     [JsonProperty("country")]
     public Country? Country { get; set; }
 
-    /// <summary>Number type the requirement applies to. Read-only. (API 2026-10-22)</summary>
+    /// <summary>Number type the requirement applies to. Read-only. (API 2026-11-19)</summary>
     [JsonProperty("number_type")]
     public NumberType? NumberType { get; set; }
 

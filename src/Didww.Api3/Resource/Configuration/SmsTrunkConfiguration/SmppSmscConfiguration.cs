@@ -8,7 +8,7 @@ namespace Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 /// <see cref="SystemId"/>, <see cref="Password"/> and
 /// <see cref="ServerLocation"/> are required when the trunk is created;
 /// <see cref="TxPort"/> defaults to 2775 and <see cref="RxPort"/> to 2776.
-/// (API 2026-10-22)
+/// (API 2026-11-19)
 /// </summary>
 public class SmppSmscConfiguration : SmsTrunkConfigurationBase
 {

@@ -63,7 +63,7 @@ public class DidwwClientTest
     [Fact]
     public void TestDefaultApiVersion()
     {
-        DidwwClient.DefaultApiVersion.Should().Be("2026-10-22");
+        DidwwClient.DefaultApiVersion.Should().Be("2026-11-19");
 
         var client = DidwwClient.NewBuilder()
             .SetCredentials(new DidwwCredentials("test-key", DidwwEnvironment.Sandbox))
@@ -87,7 +87,7 @@ public class DidwwClientTest
     public void TestSetApiVersionRejectsInvalidFormat()
     {
         // Unicode digits and a trailing newline must not pass for YYYY-MM-DD.
-        foreach (var version in new[] { "", "latest", "2026-10-22T00:00:00Z", "26-10-22", "2026-10-22\n", "\u0662026-10-22" })
+        foreach (var version in new[] { "", "latest", "2026-11-19T00:00:00Z", "26-11-19", "2026-11-19\n", "\u0662026-11-19" })
         {
             var act = () => DidwwClient.NewBuilder()
                 .SetCredentials(new DidwwCredentials("test-key", DidwwEnvironment.Sandbox))
@@ -107,7 +107,7 @@ public class DidwwClientTest
             .Build();
 
         act.Should().Throw<ArgumentException>()
-            .WithMessage("API version 2026-04-16 is not supported: this SDK requires 2026-10-22 or later; " +
+            .WithMessage("API version 2026-04-16 is not supported: this SDK requires 2026-11-19 or later; " +
                          "use Didww.Api3 3.x (branch release-3) for 2026-04-16");
     }
 
@@ -321,7 +321,7 @@ public class DidwwClientTest
 
         var mint = wireMock.LogEntries.Single(e => e.RequestMessage.Path == "/token").RequestMessage;
         mint.Headers!["Api-Key"].Should().ContainSingle().Which.Should().Be("test-key");
-        JToken.DeepEquals(JToken.Parse(mint.Body!), JToken.Parse("""{"aud":["api.didww.com"],"api_version":"2026-10-22"}"""))
+        JToken.DeepEquals(JToken.Parse(mint.Body!), JToken.Parse("""{"aud":["api.didww.com"],"api_version":"2026-11-19"}"""))
             .Should().BeTrue();
     }
 

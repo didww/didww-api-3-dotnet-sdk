@@ -4,7 +4,7 @@ using Didww.Api3.Resource.Prices;
 
 namespace Didww.Api3.Examples;
 
-// Downloads the Voice IN price file (2026-10-22), checks it again with
+// Downloads the Voice IN price file (2026-11-19), checks it again with
 // If-Modified-Since, and reads a few rows.
 //
 // The file is written exactly as served, still gzipped, and dated with the

@@ -17,15 +17,15 @@ Read more https://doc.didww.com/api
 
 ## API Version
 
-This SDK targets DIDWW API version `2026-10-22` (`DidwwClient.DefaultApiVersion`). The version is not sent as a header: it is requested in the `api_version` of every access token the SDK mints (see [Authentication](#authentication)).
+This SDK targets DIDWW API version `2026-11-19` (`DidwwClient.DefaultApiVersion`). The version is not sent as a header: it is requested in the `api_version` of every access token the SDK mints (see [Authentication](#authentication)).
 
 | NuGet Version | Branch | DIDWW API Version |
 |---------------|--------|-------------------|
-| **4.x** | [`main`](https://github.com/didww/didww-api-3-dotnet-sdk) | [`2026-10-22`](https://doc.didww.com/api3/2026-10-22/index.html) |
+| **4.x** | [`main`](https://github.com/didww/didww-api-3-dotnet-sdk) | [`2026-11-19`](https://doc.didww.com/api3/2026-11-19/index.html) |
 | **3.x** | [`release-3`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/release-3) | [`2026-04-16`](https://doc.didww.com/api3/2026-04-16/index.html) |
 | **2.x** | [`2022-05-10`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/2022-05-10) | [`2022-05-10`](https://doc.didww.com/api3/2022-05-10/index.html) |
 
-`SetApiVersion` requests a later version. `Build()` throws an `ArgumentException` for a value that is not a `YYYY-MM-DD` date and for a version earlier than `2026-10-22`. The resources of earlier API versions are not in this package: use the 3.x line from the [`release-3`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/release-3) branch for API `2026-04-16`.
+`SetApiVersion` requests a later version. `Build()` throws an `ArgumentException` for a value that is not a `YYYY-MM-DD` date and for a version earlier than `2026-11-19`. The resources of earlier API versions are not in this package: use the 3.x line from the [`release-3`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/release-3) branch for API `2026-04-16`.
 
 ## Requirements
 
@@ -251,7 +251,7 @@ var requirements = await client.AddressRequirements().ListAsync();
 var balance = (await client.Balance().FindAsync()).Data;
 ```
 
-`DidGroup`, `AddressRequirement`, `EmergencyRequirement` and `EmergencyCallingService` carry a `NumberType`, one of the `NumberType` values (`Local`, `National`, `Mobile`, `TollFree`, `SharedCost`, `Global`). `DidGroup.IsDemo` flags demo groups. `NumberType` replaces the `DidGroupType` resource and the `did_group_type` relationship, which API `2026-10-22` no longer has. The `pops` resource is gone too: a Voice IN trunk carries its point of presence in the `Pop` attribute (see [Voice In Trunks](#voice-in-trunks)).
+`DidGroup`, `AddressRequirement`, `EmergencyRequirement` and `EmergencyCallingService` carry a `NumberType`, one of the `NumberType` values (`Local`, `National`, `Mobile`, `TollFree`, `SharedCost`, `Global`). `DidGroup.IsDemo` flags demo groups. `NumberType` replaces the `DidGroupType` resource and the `did_group_type` relationship, which API `2026-11-19` no longer has. The `pops` resource is gone too: a Voice IN trunk carries its point of presence in the `Pop` attribute (see [Voice In Trunks](#voice-in-trunks)).
 
 The mandatory fields of `AddressRequirement` (`PersonalMandatoryFields`, `BusinessMandatoryFields`) and of `EmergencyRequirement` (`AddressMandatoryFields`, `PersonalMandatoryFields`, `BusinessMandatoryFields`) list the fields as the API spells them, such as `birth_date`, `id_number`, `country` or `area`, and are empty when nothing is mandatory. `tax_id` stands for `Identity.VatId`. `ProofType.EntityType` is `address`, `business` or `personal`.
 
@@ -852,7 +852,7 @@ file = await prices.DownloadAsync(destinationStream); // any writable Stream
 
 ## Filtering, Sorting, and Pagination
 
-> See [`FILTERS.md`](FILTERS.md) for the list of `filter[KEY]` keys accepted by every list endpoint at API version `2026-10-22`.
+> See [`FILTERS.md`](FILTERS.md) for the list of `filter[KEY]` keys accepted by every list endpoint at API version `2026-11-19`.
 
 ```csharp
 using Didww.Api3.Http;

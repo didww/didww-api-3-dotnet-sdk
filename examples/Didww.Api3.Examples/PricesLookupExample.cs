@@ -5,7 +5,7 @@ using Didww.Api3.Resource.Prices;
 
 namespace Didww.Api3.Examples;
 
-// Looks up Voice IN, Voice OUT, SMS OUT and SMS IN prices (2026-10-22) for one
+// Looks up Voice IN, Voice OUT, SMS OUT and SMS IN prices (2026-11-19) for one
 // number.
 //
 // Prices are served by separate hosts (api-vin, api-vout and api-sms); the SDK
