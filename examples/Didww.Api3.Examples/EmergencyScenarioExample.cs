@@ -80,8 +80,8 @@ public static class EmergencyScenarioExample
         var createdOrder = orderResponse.Data;
         Console.WriteLine($"  Order: {createdOrder.Id} -- {createdOrder.Status}");
 
-        // Wait for order to complete
-        for (var i = 0; i < 10; i++)
+        // Wait up to 120 s for the order to complete
+        for (var i = 0; i < 24; i++)
         {
             if (createdOrder.IsCompleted)
                 break;

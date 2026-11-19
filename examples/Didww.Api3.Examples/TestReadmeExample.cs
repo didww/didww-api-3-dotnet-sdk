@@ -1460,12 +1460,12 @@ public static class TestReadmeExample
         }
     }
 
-    // Creates an order of one item and waits up to a minute for it to complete.
+    // Creates an order of one item and waits up to 120 s for it to complete.
     private static async Task<Order> OrderAndWaitAsync(OrderItemBase item)
     {
         var order = (await _client.Orders().CreateAsync(new Order { Items = new List<OrderItemBase> { item } })).Data;
         Console.WriteLine($"    ordered a DID: order {order.Id} ({order.Status})");
-        for (var attempt = 0; attempt < 12 && order.IsPending; attempt++)
+        for (var attempt = 0; attempt < 24 && order.IsPending; attempt++)
         {
             await Task.Delay(TimeSpan.FromSeconds(5));
             order = (await _client.Orders().FindAsync(order.Id!)).Data;
