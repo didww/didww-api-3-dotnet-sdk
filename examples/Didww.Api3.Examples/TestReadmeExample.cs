@@ -1248,11 +1248,20 @@ public static class TestReadmeExample
         if (did != null)
             return did;
 
-        var groups = (await _client.DidGroups().ListAsync(new QueryParams()
-            .Filter("country.id", ukraine.Id!)
-            .Filter("number_type", EnumWire.Value(NumberType.Local))
-            .Include("address_requirement", "stock_keeping_units")
-            .Page(1, 50))).Data;
+        // The Kiev group has an address requirement; the other Ukrainian local groups come
+        // after it. The requirement is in the response only with include=address_requirement.
+        async Task<List<DidGroup>> LocalGroupsAsync(string? areaName)
+        {
+            var queryParams = new QueryParams()
+                .Filter("country.id", ukraine.Id!)
+                .Filter("number_type", EnumWire.Value(NumberType.Local))
+                .Include("address_requirement", "stock_keeping_units")
+                .Page(1, 50);
+            if (areaName != null)
+                queryParams.Filter("area_name", areaName);
+            return (await _client.DidGroups().ListAsync(queryParams)).Data;
+        }
+        var groups = (await LocalGroupsAsync("Kiev")).Concat(await LocalGroupsAsync(null));
         foreach (var group in groups.Where(g => g.AddressRequirement != null && g.StockKeepingUnits is { Count: > 0 }))
         {
             var available = (await _client.AvailableDids().ListAsync(new QueryParams()
@@ -1358,9 +1367,9 @@ public static class TestReadmeExample
 
         var address = new Address
         {
-            CityName = didGroup.City?.Name ?? didGroup.AreaName ?? "Odesa",
-            PostalCode = "65000",
-            AddressLine = "1 Derybasivska St",
+            CityName = didGroup.City?.Name ?? didGroup.AreaName ?? "Kyiv",
+            PostalCode = "01001",
+            AddressLine = "1 Khreshchatyk St",
             Description = "SDK README check",
             Identity = Identity.Build(createdIdentity.Id!),
             Country = Country.Build(countryId)
