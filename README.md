@@ -1095,8 +1095,8 @@ For the SMS trunk configuration types, see [SMS Trunks](#sms-trunks).
 |---|---|
 | DID | `DidOrderItem` |
 | Capacity | `CapacityOrderItem` |
-| Emergency | `EmergencyOrderItem` |
-| Generic | `GenericOrderItem` |
+| Emergency (response only) | `EmergencyOrderItem` |
+| Generic (response only) | `GenericOrderItem` |
 
 ## All Supported Resources
 

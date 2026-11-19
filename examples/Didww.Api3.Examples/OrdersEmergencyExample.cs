@@ -16,8 +16,8 @@ public static class OrdersEmergencyExample
 {
     public static async Task RunAsync(DidwwClient client)
     {
-        Console.WriteLine("=== All Orders (last 20, filtering for Emergency) ===");
-        var ordersParams = new QueryParams().Page(1, 20);
+        Console.WriteLine("=== Recent Orders (last 20, filtering for Emergency) ===");
+        var ordersParams = new QueryParams().Sort("-created_at").Page(1, 20);
         var ordersResponse = await client.Orders().ListAsync(ordersParams);
         var orders = ordersResponse.Data;
         var emergencyOrders = orders.Where(o => o.Description == "Emergency").ToList();
