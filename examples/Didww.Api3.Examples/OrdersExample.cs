@@ -4,8 +4,9 @@ using Didww.Api3.Resource.OrderItem;
 
 namespace Didww.Api3.Examples;
 
-// Lists recent orders, orders a DID by SKU and cancels that order: deleting
-// an order cancels it.
+// Lists recent orders, orders a DID by SKU and cancels that order: DELETE
+// /orders/{id} cancels a DID order while it is still pending (the API answers
+// 422 for an order that is already completed or canceled).
 public static class OrdersExample
 {
     public static async Task RunAsync(DidwwClient client)

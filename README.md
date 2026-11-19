@@ -1130,7 +1130,7 @@ For the SMS trunk configuration types, see [SMS Trunks](#sms-trunks).
 | DidReservation | `DidReservation` | List, Find, Create, Delete |
 | CapacityPool | `CapacityPool` | List, Find |
 | SharedCapacityGroup | `SharedCapacityGroup` | List, Find, Create, Update, Delete |
-| Order | `Order` | List, Find, Create |
+| Order | `Order` | List, Find, Create, Delete (cancels a pending DID order) |
 | Export | `Export` | List, Find, Create, Update |
 | Address | `Address` | List, Find, Create, Delete |
 | AddressVerification | `AddressVerification` | List, Create, Update |
