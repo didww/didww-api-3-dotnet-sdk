@@ -170,7 +170,22 @@ The SDK compares each token it receives with what it asked for:
 
 Tokens are cached in an `ITokenStore`, keyed by the token service URL, the API key (as a SHA-256 hash), the audience, the API version and the scope. The key is an opaque string starting with `didww:token:v1:`. Each entry is stored for the token's `expires_in`.
 
-The default `MemoryTokenStore` keeps the tokens in process memory. Each client built without `SetTokenStore` has its own, so build one `DidwwClient` and reuse it. To share tokens between clients or processes, pass one store to all of them, for example your own implementation backed by Redis:
+The default `MemoryTokenStore` keeps the tokens in process memory. Each client built without `SetTokenStore` has its own, so build one `DidwwClient` and reuse it. To share tokens between processes or instances, use `DistributedCacheTokenStore` over any [`IDistributedCache`](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/distributed), such as Redis (`Microsoft.Extensions.Caching.StackExchangeRedis`) or SQL Server:
+
+```csharp
+using Didww.Api3.Auth;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+
+var cache = new RedisCache(new RedisCacheOptions { Configuration = "localhost:6379" });
+// or, in an app with dependency injection: serviceProvider.GetRequiredService<IDistributedCache>()
+
+var client = DidwwClient.NewBuilder()
+    .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Production))
+    .SetTokenStore(new DistributedCacheTokenStore(cache))
+    .Build();
+```
+
+It stores each token as JSON under the key above, for the token's `expires_in`. The client reads the store before every authenticated API call, so each such call makes at least one cache request. For any other storage, implement `ITokenStore`:
 
 ```csharp
 public interface ITokenStore
@@ -179,11 +194,6 @@ public interface ITokenStore
     ValueTask SetAsync(string key, DidwwToken token, TimeSpan ttl, CancellationToken cancellationToken);
     ValueTask DeleteAsync(string key, CancellationToken cancellationToken);
 }
-
-var client = DidwwClient.NewBuilder()
-    .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Production))
-    .SetTokenStore(myRedisStore)
-    .Build();
 ```
 
 `DidwwToken` serializes with all its fields under their wire names, with Newtonsoft.Json and System.Text.Json, so that a store can persist it; its `ToString` and debugger display never show the access token. A shared store holds live bearer tokens, so protect it like the API key. Processes that share a store can each mint once when a token is missing.
@@ -202,7 +212,7 @@ Neither the token nor the API key is ever logged.
 ### SDK design decisions
 
 - **Audience strategy.** One token per audience, minted on first use, rather than one token naming every service. An account that never calls the prices services never requests their audiences, so a refused audience cannot break DID management, and every token is valid for one service only.
-- **Cache store.** In-process memory by default, because a .NET service usually keeps one `DidwwClient` for its lifetime. A shared store is opt-in through `SetTokenStore`. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
+- **Cache store.** In-process memory by default, because a .NET service usually keeps one `DidwwClient` for its lifetime. A shared store, `DistributedCacheTokenStore` or your own, is opt-in through `SetTokenStore`. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
 - **Gzip handling.** Price and export files are streamed to your `Stream` or file exactly as served, still gzipped, without being held in memory. The SDK never decompresses a price file on its own: `PriceFileReader` reads a downloaded file when you want rows, and `DownloadAndDecompressExportAsync` writes an export as plain CSV.
 - **Upload retry.** The 401 retry sends the request body a second time. `UploadEncryptedFileAsync` takes the encrypted bytes as a `byte[]` and builds the multipart body in memory, so the retry always resends the complete body; there is no streamed-upload limitation.
 
