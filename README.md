@@ -1055,7 +1055,7 @@ var encrypt = new Encrypt(client);
 byte[] fileData = File.ReadAllBytes("document.pdf");
 byte[] encryptedData = encrypt.EncryptData(fileData);
 
-var fileIds = await client.UploadEncryptedFileAsync(
+var fileId = await client.UploadEncryptedFileAsync(
     encryptedData,
     "document.pdf",
     encrypt.Fingerprint,
