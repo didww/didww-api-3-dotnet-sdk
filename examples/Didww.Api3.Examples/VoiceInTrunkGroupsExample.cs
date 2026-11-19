@@ -93,12 +93,12 @@ public static class VoiceInTrunkGroupsExample
             }
             else
             {
-                // Without a group the trunks are deleted one by one
-                foreach (var trunkId in trunkIds)
+                // Without a group the trunks are deleted one by one, each also when another fails
+                await CleanupSteps.RunAllAsync(trunkIds.Select(trunkId => (Func<Task>)(async () =>
                 {
                     await client.VoiceInTrunks().DeleteAsync(trunkId);
                     Console.WriteLine($"  Deleted trunk {trunkId}");
-                }
+                })));
             }
         }
     }

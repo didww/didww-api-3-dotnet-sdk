@@ -94,17 +94,25 @@ public static class TrunksExample
         }
         finally
         {
+            // Both deletions are attempted, also when the first one fails
             Console.WriteLine("\n--- Delete Voice In Trunks ---");
-            if (sipId != null)
-            {
-                await client.VoiceInTrunks().DeleteAsync(sipId);
-                Console.WriteLine($"  SIP trunk deleted: {sipId}");
-            }
-            if (pstnId != null)
-            {
-                await client.VoiceInTrunks().DeleteAsync(pstnId);
-                Console.WriteLine($"  PSTN trunk deleted: {pstnId}");
-            }
+            await CleanupSteps.RunAllAsync(
+                async () =>
+                {
+                    if (sipId != null)
+                    {
+                        await client.VoiceInTrunks().DeleteAsync(sipId);
+                        Console.WriteLine($"  SIP trunk deleted: {sipId}");
+                    }
+                },
+                async () =>
+                {
+                    if (pstnId != null)
+                    {
+                        await client.VoiceInTrunks().DeleteAsync(pstnId);
+                        Console.WriteLine($"  PSTN trunk deleted: {pstnId}");
+                    }
+                });
         }
     }
 }

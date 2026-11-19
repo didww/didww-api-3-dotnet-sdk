@@ -90,20 +90,28 @@ public static class IdentityAddressProofsExample
         }
         finally
         {
-            // Step 9: clean up
+            // Step 9: clean up, every step also when an earlier one fails
             Console.WriteLine("\n--- Cleanup ---");
+            var steps = new List<Func<Task>>();
             if (addressId != null)
             {
-                await client.Addresses().DeleteAsync(addressId);
-                Console.WriteLine($"  Address deleted: {addressId}");
+                steps.Add(async () =>
+                {
+                    await client.Addresses().DeleteAsync(addressId);
+                    Console.WriteLine($"  Address deleted: {addressId}");
+                });
             }
-            await client.Identities().DeleteAsync(identity.Id!);
-            Console.WriteLine($"  Identity deleted: {identity.Id}");
-            foreach (var fileId in fileIds)
+            steps.Add(async () =>
+            {
+                await client.Identities().DeleteAsync(identity.Id!);
+                Console.WriteLine($"  Identity deleted: {identity.Id}");
+            });
+            steps.AddRange(fileIds.Select(fileId => (Func<Task>)(async () =>
             {
                 await client.EncryptedFiles().DeleteAsync(fileId);
                 Console.WriteLine($"  Encrypted file deleted: {fileId}");
-            }
+            })));
+            await CleanupSteps.RunAllAsync(steps);
         }
     }
 

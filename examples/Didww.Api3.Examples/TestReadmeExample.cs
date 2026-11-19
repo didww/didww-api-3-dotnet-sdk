@@ -1408,29 +1408,51 @@ public static class TestReadmeExample
         cleanup.Add("address", () => TryDeleteAsync("address", () => _client.Addresses().DeleteAsync(createdAddress.Id!)));
         Console.WriteLine($"    address {createdAddress.Id} ({createdAddress.CityName})");
 
+        // An uploaded file stays for the verification once a proof or document uses it;
+        // a file that is still unattached when the check ends is deleted.
         var encrypt = new Encrypt(_client);
         var pdf = SamplePdf.Create("Proof document");
-        async Task<EncryptedFile> UploadAsync(string label) =>
-            EncryptedFile.Build(await _client.UploadEncryptedFileAsync(
-                encrypt.EncryptData(pdf), label + ".pdf.enc", encrypt.Fingerprint, label + ".pdf"));
+        var unattached = new HashSet<string>();
+        async Task<EncryptedFile> UploadAsync(string label)
+        {
+            var fileId = await _client.UploadEncryptedFileAsync(
+                encrypt.EncryptData(pdf), label + ".pdf.enc", encrypt.Fingerprint, label + ".pdf");
+            unattached.Add(fileId);
+            cleanup.Add("unattached encrypted file", async () =>
+            {
+                if (unattached.Contains(fileId))
+                    await DeleteIgnoringNotFoundAsync(() => _client.EncryptedFiles().DeleteAsync(fileId));
+            });
+            return EncryptedFile.Build(fileId);
+        }
 
         // One proof per required proof type: the requirement counts distinct types
         var identityProofQty = (business ? requirement.BusinessProofQty : requirement.PersonalProofQty) ?? 0;
         var identityProofTypes = (business ? requirement.BusinessProofTypes : requirement.PersonalProofTypes) ?? new List<ProofType>();
         foreach (var proofType in identityProofTypes.Take(identityProofQty))
-            await CreateProofAsync(createdIdentity, proofType, await UploadAsync("identity_proof"));
+        {
+            var file = await UploadAsync("identity_proof");
+            await CreateProofAsync(createdIdentity, proofType, file);
+            unattached.Remove(file.Id!);
+        }
         foreach (var proofType in (requirement.AddressProofTypes ?? new List<ProofType>()).Take(requirement.AddressProofQty ?? 0))
-            await CreateProofAsync(createdAddress, proofType, await UploadAsync("address_proof"));
+        {
+            var file = await UploadAsync("address_proof");
+            await CreateProofAsync(createdAddress, proofType, file);
+            unattached.Remove(file.Id!);
+        }
 
         var template = business ? requirement.BusinessPermanentDocument : requirement.PersonalPermanentDocument;
         if (template != null)
         {
+            var file = await UploadAsync("permanent_document");
             var document = (await _client.PermanentSupportingDocuments().CreateAsync(new PermanentSupportingDocument
             {
                 Identity = Identity.Build(createdIdentity.Id!),
                 Template = SupportingDocumentTemplate.Build(template.Id!),
-                Files = new List<EncryptedFile> { await UploadAsync("permanent_document") }
+                Files = new List<EncryptedFile> { file }
             })).Data;
+            unattached.Remove(file.Id!);
             Console.WriteLine($"    permanent supporting document {document.Id} ({template.Name})");
         }
         return (createdIdentity, createdAddress);
@@ -1501,6 +1523,8 @@ public static class TestReadmeExample
         return order;
     }
 
+    // Deletes a resource unless the API refuses it with 409 because it is still in
+    // use, e.g. by a verification; any other error fails the check.
     private static async Task TryDeleteAsync(string what, Func<Task> delete)
     {
         try
@@ -1508,7 +1532,7 @@ public static class TestReadmeExample
             await delete();
             Console.WriteLine($"    deleted the {what}");
         }
-        catch (DidwwApiException e)
+        catch (DidwwApiException e) when (e.HttpStatus == 409)
         {
             Console.WriteLine($"    left the {what} in place: {Describe(e)}");
         }
