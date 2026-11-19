@@ -673,13 +673,17 @@ await client.Addresses().CreateAsync(address);
 ### Exports
 
 ```csharp
+// from and to must fall within the current month and the two previous ones
+var to = DateTime.UtcNow.Date;
+var from = to.AddDays(-14);
+
 var export = new Export
 {
     ExportType = ExportType.CdrIn,
     Filters = new Dictionary<string, object>
     {
-        { "from", "2026-04-01 00:00:00" },
-        { "to", "2026-04-15 23:59:59" }
+        { "from", from.ToString("yyyy-MM-dd HH:mm:ss") },
+        { "to", to.ToString("yyyy-MM-dd HH:mm:ss") }
     }
 };
 var response = await client.Exports().CreateAsync(export);
@@ -690,8 +694,8 @@ var smsOut = (await client.Exports().CreateAsync(new Export
     ExportType = ExportType.SmsOut,
     Filters = new Dictionary<string, object>
     {
-        { "from", "2026-10-01 00:00:00" }, // inclusive
-        { "to", "2026-10-02 00:00:00" },   // exclusive
+        { "from", from.ToString("yyyy-MM-dd HH:mm:ss") }, // inclusive
+        { "to", to.ToString("yyyy-MM-dd HH:mm:ss") },     // exclusive
         { "service_type", ExportServiceTypes.A2p },
         { "sms_trunk.id", new List<string> { "sms-trunk-uuid" } }
     }
