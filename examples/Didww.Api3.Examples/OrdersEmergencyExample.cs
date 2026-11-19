@@ -16,11 +16,14 @@ public static class OrdersEmergencyExample
 {
     public static async Task RunAsync(DidwwClient client)
     {
-        Console.WriteLine("=== Recent Orders (last 20, filtering for Emergency) ===");
-        var ordersParams = new QueryParams().Sort("-created_at").Page(1, 20);
+        Console.WriteLine("=== Recent Orders (last 50, filtering for Emergency) ===");
+        var ordersParams = new QueryParams().Sort("-created_at").Page(1, 50);
         var ordersResponse = await client.Orders().ListAsync(ordersParams);
         var orders = ordersResponse.Data;
-        var emergencyOrders = orders.Where(o => o.Description == "Emergency").ToList();
+        // An emergency order is one with emergency order items
+        var emergencyOrders = orders
+            .Where(o => o.Items?.Any(item => item is EmergencyOrderItem) == true)
+            .ToList();
         Console.WriteLine($"Found {emergencyOrders.Count} emergency orders out of {orders.Count} total");
 
         foreach (var order in emergencyOrders.Take(5))

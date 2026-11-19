@@ -38,5 +38,14 @@ public static class CapacityPoolsExample
                 }
             }
         }
+
+        if (response.Data.Count > 0)
+        {
+            Console.WriteLine("\n--- Find Capacity Pool ---");
+            var found = (await client.CapacityPools().FindAsync(response.Data[0].Id!, queryParams)).Data;
+            Console.WriteLine($"  {found.Name} (ID: {found.Id})");
+            Console.WriteLine($"    Minimum qty per order: {found.MinimumQtyPerOrder}, setup: {found.SetupPrice}, monthly: {found.MonthlyPrice}");
+            Console.WriteLine($"    Shared capacity groups: {found.SharedCapacityGroups?.Count ?? 0}, qty-based pricings: {found.QtyBasedPricings?.Count ?? 0}");
+        }
     }
 }
