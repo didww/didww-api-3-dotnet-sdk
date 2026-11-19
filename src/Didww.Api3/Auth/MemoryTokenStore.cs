@@ -38,12 +38,16 @@ public sealed class MemoryTokenStore : ITokenStore
     public ValueTask SetAsync(string key, DidwwToken token, TimeSpan ttl, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(token);
+        var now = _timeProvider.GetTimestamp();
         long? expiresAt = null;
         if (ttl > TimeSpan.Zero)
-            expiresAt = _timeProvider.GetTimestamp() + (long)(ttl.TotalSeconds * _timeProvider.TimestampFrequency);
+            expiresAt = now + (long)(ttl.TotalSeconds * _timeProvider.TimestampFrequency);
 
         lock (_lock)
         {
+            // Expired entries of keys no longer read would otherwise stay forever.
+            foreach (var expired in _entries.Where(e => e.Value.ExpiresAt <= now).Select(e => e.Key).ToList())
+                _entries.Remove(expired);
             _entries[key] = new Entry(token, expiresAt);
         }
         return ValueTask.CompletedTask;

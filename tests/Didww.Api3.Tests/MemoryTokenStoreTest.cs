@@ -39,6 +39,21 @@ public class MemoryTokenStoreTest
     }
 
     [Fact]
+    public async Task TestSetDropsExpiredEntries()
+    {
+        var clock = new ManualTimeProvider();
+        var store = new MemoryTokenStore(clock);
+        await store.SetAsync("abandoned", Token("first"), TimeSpan.FromSeconds(60), CancellationToken.None);
+        await store.SetAsync("forever", Token("second"), TimeSpan.Zero, CancellationToken.None);
+
+        clock.Advance(TimeSpan.FromSeconds(60));
+        await store.SetAsync("key", Token("third"), TimeSpan.FromSeconds(60), CancellationToken.None);
+
+        store.ToString().Should().Be("MemoryTokenStore{entries: 2}");
+        (await store.GetAsync("forever", CancellationToken.None))!.AccessToken.Should().Be("second");
+    }
+
+    [Fact]
     public async Task TestWithoutTtl()
     {
         var clock = new ManualTimeProvider();
