@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="JsonApiSerializer" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.21" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.21" />
   </ItemGroup>
 
