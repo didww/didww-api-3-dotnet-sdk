@@ -18,6 +18,14 @@ jobs:
             9.0.x
             10.0.x
 
+      - name: Check tag matches package version
+        run: |
+          VERSION="$(dotnet msbuild src/Didww.Api3/Didww.Api3.csproj -getProperty:Version)"
+          if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match the package version ${VERSION} in src/Didww.Api3/Didww.Api3.csproj (expected tag v${VERSION})"
+            exit 1
+          fi
+
       - name: Restore dependencies
         run: dotnet restore
 

@@ -1,3 +1,4 @@
+using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 
 namespace Didww.Api3.Tests;
@@ -13,6 +14,10 @@ public class AddressRequirementTest : BaseTest
         var requirements = response.Data;
 
         requirements.Should().NotBeEmpty();
+        requirements[0].NumberType.Should().Be(NumberType.Local);
+        requirements[0].PersonalMandatoryFields.Should().Equal("country");
+        requirements[0].BusinessMandatoryFields.Should().BeEmpty();
+        requirements[1].NumberType.Should().Be(NumberType.Mobile);
     }
 
     [Fact]
@@ -24,5 +29,9 @@ public class AddressRequirementTest : BaseTest
         var requirement = response.Data;
 
         requirement.Id.Should().Be("25d12afe-1ec6-4fe3-9621-b250dd1fb959");
+        requirement.NumberType.Should().Be(NumberType.Local);
+        requirement.PersonalMandatoryFields.Should().Equal("birth_date", "country", "personal_tax_id");
+        requirement.BusinessMandatoryFields.Should().Equal("id_number", "tax_id", "country", "company_reg_number", "personal_tax_id");
+        requirement.AddressProofTypes.Should().ContainSingle().Which.EntityType.Should().Be("address");
     }
 }

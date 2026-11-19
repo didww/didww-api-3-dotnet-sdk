@@ -51,6 +51,8 @@ public class DidGroupTest : BaseTest
         group.Id.Should().Be("2187c36d-28fb-436f-8861-5a0f5b5a3ee1");
         group.AreaName.Should().Be("Aachen");
         group.Prefix.Should().Be("241");
+        group.NumberType.Should().Be(NumberType.Local);
+        group.IsDemo.Should().BeFalse();
     }
 
     [Fact]
@@ -93,6 +95,21 @@ public class DidGroupTest : BaseTest
         group.ServiceRestrictions.Should().Be("Emergency services only. Voice-out not available.");
         group.AllowAdditionalChannels.Should().BeFalse();
         group.Features.Should().Contain(Feature.Emergency);
+        group.NumberType.Should().Be(NumberType.Global);
+        group.IsDemo.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("\"local\"", NumberType.Local)]
+    [InlineData("\"national\"", NumberType.National)]
+    [InlineData("\"mobile\"", NumberType.Mobile)]
+    [InlineData("\"toll_free\"", NumberType.TollFree)]
+    [InlineData("\"shared_cost\"", NumberType.SharedCost)]
+    [InlineData("\"global\"", NumberType.Global)]
+    public void TestNumberTypeWireValues(string json, NumberType expected)
+    {
+        Newtonsoft.Json.JsonConvert.DeserializeObject<NumberType>(json).Should().Be(expected);
+        Newtonsoft.Json.JsonConvert.SerializeObject(expected).Should().Be(json);
     }
 
     [Fact]

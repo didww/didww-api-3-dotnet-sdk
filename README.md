@@ -17,12 +17,15 @@ Read more https://doc.didww.com/api
 
 ## API Version
 
-This SDK sends the `X-DIDWW-API-Version: 2026-04-16` header with every request by default.
+This SDK targets DIDWW API version `2026-11-19` (`DidwwClient.DefaultApiVersion`). The version is not sent as a header: it is requested in the `api_version` of every access token the SDK mints (see [Authentication](#authentication)).
 
 | NuGet Version | Branch | DIDWW API Version |
 |---------------|--------|-------------------|
-| **3.x** | [`main`](https://github.com/didww/didww-api-3-dotnet-sdk) | [`2026-04-16`](https://doc.didww.com/api3/2026-04-16/index.html) |
+| **4.x** | [`main`](https://github.com/didww/didww-api-3-dotnet-sdk) | [`2026-11-19`](https://doc.didww.com/api3/2026-11-19/index.html) |
+| **3.x** | [`release-3`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/release-3) | [`2026-04-16`](https://doc.didww.com/api3/2026-04-16/index.html) |
 | **2.x** | [`2022-05-10`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/2022-05-10) | [`2022-05-10`](https://doc.didww.com/api3/2022-05-10/index.html) |
+
+`SetApiVersion` requests a later version. `Build()` throws an `ArgumentException` for a value that is not a `YYYY-MM-DD` date and for a version earlier than `2026-11-19`. The resources of earlier API versions are not in this package: use the 3.x line from the [`release-3`](https://github.com/didww/didww-api-3-dotnet-sdk/tree/release-3) branch for API `2026-04-16`.
 
 ## Requirements
 
@@ -31,17 +34,17 @@ This SDK sends the `X-DIDWW-API-Version: 2026-04-16` header with every request b
 ## Installation
 
 ```bash
-dotnet add package Didww.Api3
+dotnet add package Didww.Api3 --version 4.0.0
 ```
 
 ## Usage
 
 ```csharp
 using Didww.Api3;
+using Didww.Api3.Http;
 
 var client = DidwwClient.NewBuilder()
     .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Production))
-    .SetTimeout(TimeSpan.FromSeconds(30))
     .Build();
 
 // Check balance
@@ -53,6 +56,8 @@ var queryParams = new QueryParams().Include("stock_keeping_units");
 var didGroups = await client.DidGroups().ListAsync(queryParams);
 ```
 
+`DidwwClient` is safe for concurrent use: build one and reuse it, for example as a singleton. Every async method takes an optional `CancellationToken` as its last parameter.
+
 For more examples visit [examples/](examples/Didww.Api3.Examples/).
 
 For details on obtaining your API key please visit https://doc.didww.com/api3/configuration.html
@@ -63,31 +68,50 @@ For details on obtaining your API key please visit https://doc.didww.com/api3/co
 // Production
 var client = DidwwClient.NewBuilder()
     .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Production))
-    .SetTimeout(TimeSpan.FromSeconds(30))
     .Build();
 
-// Sandbox
+// Sandbox, read-only tokens, logging through Microsoft.Extensions.Logging
 var client = DidwwClient.NewBuilder()
     .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Sandbox))
+    .SetScope(DidwwScope.Read)
+    .SetLogger(loggerFactory.CreateLogger("Didww"))
     .Build();
 ```
 
+| Builder method | Default | Description |
+|----------------|---------|-------------|
+| `SetCredentials(credentials)` | required | `new DidwwCredentials(apiKey, environment)`, with `DidwwEnvironment.Production` or `DidwwEnvironment.Sandbox`. The environment selects the API, token service and price hosts. See [Environments](#environments). |
+| `SetApiVersion(version)` | `DidwwClient.DefaultApiVersion` | API version requested in every token. See [API Version](#api-version). |
+| `SetScope(scope)` | none | `DidwwScope.Read` or `DidwwScope.Full`. Without it no scope is requested and the token service grants `full`. See [Scope](#scope). |
+| `SetTokenStore(store)` | a `MemoryTokenStore` shared by the process | Cache for access tokens. See [Token cache](#token-cache). |
+| `SetLogger(logger)` | `NullLogger.Instance` | `ILogger` for the token warnings and debug events. The default and `null` log nothing. See [Logging](#logging). |
+| `SetInnerHandler(handler)` | a handler shared by the SDK | `HttpMessageHandler` used for every call. See [Custom HTTP Handler](#custom-http-handler-proxy-tls-etc). |
+| `SetTimeout(timeout)` | 60 s | Time allowed until the response headers arrive. See [Custom HTTP Handler](#custom-http-handler-proxy-tls-etc). |
+| `SetBaseUrl(url)` | API URL of the environment | JSON:API base URL only, including `/v3`. |
+| `SetAuthUrl(url)` | Token service of the environment | Token service base URL. |
+| `SetVoiceInPricesUrl(url)`, `SetVoiceOutPricesUrl(url)`, `SetSmsPricesUrl(url)` | Price hosts of the environment | Price service base URLs, with or without the `/v3` suffix. |
+
+The API key is sent only to the token service. An overridden URL, for example to send the traffic through a proxy, does not change the token audiences (see [Authentication](#authentication)). `Build()` throws an `ArgumentNullException` without credentials, and an `ArgumentException` for an empty API key or one with a character outside printable ASCII (a control character other than tab, such as a trailing newline, or a non-ASCII character, such as a non-breaking space), an invalid API version, an undefined scope or environment value, or a URL that is not an absolute http or https URL or has a query or fragment.
+
 ### Environments
 
-| Environment | Base URL |
-|---|---|
-| `Production` | `https://api.didww.com/v3` |
-| `Sandbox` | `https://sandbox-api.didww.com/v3` |
+| Environment | API | Token service | Voice IN prices | Voice OUT prices | SMS prices |
+|-------------|-----|---------------|-----------------|------------------|------------|
+| `Production` | `https://api.didww.com/v3` | `https://auth.didww.com` | `https://api-vin.didww.com/v3` | `https://api-vout.didww.com/v3` | `https://api-sms.didww.com/v3` |
+| `Sandbox` | `https://sandbox-api.didww.com/v3` | `https://auth-sandbox.didww.com` | `https://api-vin-sandbox.didww.com/v3` | `https://api-vout-sandbox.didww.com/v3` | `https://api-sms-sandbox.didww.com/v3` |
 
-### Custom HTTP Handler
+### Custom HTTP Handler (Proxy, TLS, etc.)
 
 You can pass a custom `HttpMessageHandler` for advanced configuration such as proxy support:
 
 ```csharp
+using System.Net;
+
 var handler = new HttpClientHandler
 {
     Proxy = new WebProxy("http://proxy.example.com:8080"),
-    UseProxy = true
+    UseProxy = true,
+    AllowAutoRedirect = false
 };
 
 var client = DidwwClient.NewBuilder()
@@ -95,6 +119,103 @@ var client = DidwwClient.NewBuilder()
     .SetInnerHandler(handler)
     .Build();
 ```
+
+The SDK adds the bearer token to every request; the API key goes only to `POST /token` on the token service. The handler is used as given for every call: the token service, the JSON:API, export download, encrypted file upload and prices. The SDK never follows redirects, so set `AllowAutoRedirect = false` on your handler (`HttpClientHandler` and `SocketsHttpHandler` follow redirects by default): a redirect your handler follows anyway is reported as an error by the token request, the export download and the prices calls, but only afterwards: by then the request, including the API key of a token request, has already reached the redirect target. Leave `AutomaticDecompression` off, so that price and export files are written exactly as served. The SDK does not dispose your handler.
+
+Without `SetInnerHandler` the SDK uses one `SocketsHttpHandler`, shared by every client of the process, that follows no redirects, does not decompress, neither stores nor sends cookies (so no state is carried between clients or API keys), limits connecting (TCP and TLS) to 10 s and renews pooled connections after 15 minutes.
+
+`SetTimeout` (default 60 s) bounds the time until the response headers arrive. JSON:API answers, price lookups and uploads are read within it too; price and export files are streamed after it, so a large file is not cut off by it. Pass a `CancellationToken` to bound a whole download. Each attempt of a token request is limited to 10 s, independently of `SetTimeout`.
+
+## Authentication
+
+Every request carries `Authorization: Bearer <token>`. The SDK mints the tokens itself with `POST /token` on the token service, sending your API key in the `Api-Key` header. The API key is sent nowhere else. No code change is needed: `new DidwwCredentials("your-api-key", environment)` works as before.
+
+- **Audience.** One token per audience, minted on the first call to a service and reused until it expires. The audience is the production hostname of the service, in the sandbox too:
+
+  | Calls | Token audience |
+  |-------|----------------|
+  | JSON:API resources, export download, encrypted file upload | `api.didww.com` |
+  | Voice IN prices | `api-vin.didww.com` |
+  | Voice OUT prices | `api-vout.didww.com` |
+  | SMS OUT (A2P, P2P, OTP) and SMS IN prices | `api-sms.didww.com` |
+
+  `client.PublicKeys().ListAsync()` is sent without a token.
+- **Expiry and 401.** The SDK asks for the longest lifetime the token service grants, one hour (`expires_in: 3600`), and caches a token for the `expires_in` granted, with no local expiry margin. When a request is answered 401, the SDK drops that token, mints a new one and sends the request once more. A second 401 drops the new token too and is not retried: it becomes the error of the call (see [Error Handling](#error-handling)). A 403, such as `insufficient_scope`, is never retried.
+- **Concurrency.** Concurrent calls of one `DidwwClient` that need the same token wait for a single mint. A caller whose `CancellationToken` is cancelled stops waiting; the mint itself goes on for the other callers.
+- **Token service errors** are thrown as `DidwwAuthException` from any call that needs a new token (kinds in [Error Handling](#error-handling)):
+  - A 429 throws `DidwwAuthErrorKind.RateLimited` with `RetryAfter` (the `Retry-After` seconds, at least 1 s). Every further mint for the same token service and API key in the process fails the same way without a request until that time has passed, plus a small random delay so that clients do not retry in step.
+  - A 5xx answer, a connection failure or a timeout is retried with exponential backoff and full jitter (0.5 s base, 8 s cap, 4 attempts in all), then throws `ServerError` or `ConnectionError`.
+  - A 400, a 401 or a TLS failure is thrown at once, without a retry.
+
+### Scope
+
+```csharp
+using Didww.Api3.Auth;
+
+var readOnly = DidwwClient.NewBuilder()
+    .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Production))
+    .SetScope(DidwwScope.Read) // GET and HEAD only; DidwwScope.Full allows every method
+    .Build();
+// Without SetScope the scope is not sent and the token service grants full.
+```
+
+A `Read` token is enough for the price lookups and price files. A write with a `Read` token is answered 403, which the JSON:API repositories throw as a `DidwwApiException` (see [Error Handling](#error-handling)).
+
+The SDK compares each token it receives with what it asked for:
+
+- a different `scope` (for example `full` granted for a `read` request) or a different `api_version` is logged as a warning through the logger (see [Logging](#logging)), and the token is used;
+- a token with an empty access token, or whose `aud` does not include the requested audience, throws `DidwwAuthErrorKind.InvalidGrant` and is not cached.
+
+### Token cache
+
+Tokens are cached in an `ITokenStore`, keyed by the token service URL, the API key (as a SHA-256 hash), the audience, the API version and the scope. The key is an opaque string starting with `didww:token:v1:`. Each entry is stored for the token's `expires_in`.
+
+The default `MemoryTokenStore` keeps the tokens in process memory and is shared by every client built without `SetTokenStore`, so clients with the same API key reuse each other's tokens. To share tokens between processes or instances, use `DistributedCacheTokenStore` over any [`IDistributedCache`](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/distributed), such as Redis (`Microsoft.Extensions.Caching.StackExchangeRedis`) or SQL Server:
+
+```csharp
+using Didww.Api3.Auth;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+
+var cache = new RedisCache(new RedisCacheOptions { Configuration = "localhost:6379" });
+// or, in an app with dependency injection: serviceProvider.GetRequiredService<IDistributedCache>()
+
+var client = DidwwClient.NewBuilder()
+    .SetCredentials(new DidwwCredentials("your-api-key", DidwwEnvironment.Production))
+    .SetTokenStore(new DistributedCacheTokenStore(cache))
+    .Build();
+```
+
+It stores each token as JSON under the key above, for the token's `expires_in`. The client reads the store before every authenticated API call, so each such call makes at least one cache request. For any other storage, implement `ITokenStore`:
+
+```csharp
+public interface ITokenStore
+{
+    ValueTask<DidwwToken?> GetAsync(string key, CancellationToken cancellationToken);
+    ValueTask SetAsync(string key, DidwwToken token, TimeSpan ttl, CancellationToken cancellationToken);
+    ValueTask DeleteAsync(string key, CancellationToken cancellationToken);
+}
+```
+
+`DidwwToken` serializes with all its fields under their wire names, with Newtonsoft.Json and System.Text.Json, so that a store can persist it; its `ToString` and debugger display never show the access token. A shared store holds live bearer tokens, so protect it like the API key. Processes that share a store can each mint once when a token is missing.
+
+A store that throws does not fail the call: the error is logged as a warning, and the call goes on with a newly minted token (a failed write leaves the token uncached). Every store call gets a `CancellationToken`. The calls the SDK makes on its own behalf, re-reading the store before a mint, writing a minted token, and the read and delete that evict a refused token after a 401, are limited to 10 seconds, so a store should honour its token. The first read of a call follows the caller's token.
+
+### Logging
+
+`SetLogger` sets the `Microsoft.Extensions.Logging` `ILogger` for token events. Following the .NET library convention, the default is `NullLogger.Instance`: nothing is logged, not even the mismatch warnings, until you pass a logger.
+
+- Warnings: `DIDWW token scope mismatch` and `DIDWW token api_version mismatch` (with `Requested` and `Granted`), and token store failures (`DIDWW token store read failed`, `write failed`, `write skipped`, `delete failed`).
+- Debug: `DIDWW token minted`, with `Audience`, `Scope`, `ApiVersion`, `ExpiresIn` and `Duration`.
+
+Neither the token nor the API key is ever logged.
+
+### SDK design decisions
+
+- **Audience strategy.** One token per audience, minted on first use, rather than one token naming every service. An account that never calls the prices services never requests their audiences, so a refused audience cannot break DID management, and every token is valid for one service only.
+- **Cache store.** In-process memory by default, shared by every client of the process. A store shared between processes, `DistributedCacheTokenStore` or your own, is opt-in through `SetTokenStore`.
+- **Token lifetime.** The longest the token service grants, one hour, so that a process mints each token as rarely as possible. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
+- **Gzip handling.** Price and export files are streamed to your `Stream` or file exactly as served, still gzipped, without being held in memory. The SDK never decompresses a price file on its own: `PriceFileReader` reads a downloaded file when you want rows, and `DownloadAndDecompressExportAsync` writes an export as plain CSV.
+- **Upload retry.** The 401 retry sends the request body a second time. `UploadEncryptedFileAsync` takes the encrypted bytes as a `byte[]` and builds the multipart body in memory, so the retry always resends the complete body; there is no streamed-upload limitation.
 
 ## Resources
 
@@ -120,14 +241,10 @@ var areas = await client.Areas().ListAsync();
 // NANPA Prefixes
 var prefixes = await client.NanpaPrefixes().ListAsync();
 
-// POPs (Points of Presence)
-var pops = await client.Pops().ListAsync();
-
-// DID Group Types
-var types = await client.DidGroupTypes().ListAsync();
-
-// DID Groups (with stock keeping units)
-var groups = await client.DidGroups().ListAsync(new QueryParams().Include("stock_keeping_units"));
+// DID Groups (with stock keeping units), filtered by number type
+var groups = await client.DidGroups().ListAsync(new QueryParams()
+    .Include("stock_keeping_units")
+    .Filter("number_type", "toll_free"));
 
 // Available DIDs
 var available = await client.AvailableDids().ListAsync();
@@ -145,6 +262,10 @@ var requirements = await client.AddressRequirements().ListAsync();
 var balance = (await client.Balance().FindAsync()).Data;
 ```
 
+`DidGroup`, `AddressRequirement`, `EmergencyRequirement` and `EmergencyCallingService` carry a `NumberType`, one of the `NumberType` values (`Local`, `National`, `Mobile`, `TollFree`, `SharedCost`, `Global`). `DidGroup.IsDemo` flags demo groups. `NumberType` replaces the `DidGroupType` resource and the `did_group_type` relationship, which API `2026-11-19` no longer has. The `pops` resource is gone too: a Voice IN trunk carries its point of presence in the `Pop` attribute (see [Voice In Trunks](#voice-in-trunks)).
+
+The mandatory fields of `AddressRequirement` (`PersonalMandatoryFields`, `BusinessMandatoryFields`) and of `EmergencyRequirement` (`AddressMandatoryFields`, `PersonalMandatoryFields`, `BusinessMandatoryFields`) list the fields as the API spells them, such as `birth_date`, `id_number`, `country` or `area`, and are empty when nothing is mandatory. `tax_id` stands for `Identity.VatId`. `ProofType.EntityType` is `address`, `business` or `personal`.
+
 ### DIDs
 
 ```csharp
@@ -159,6 +280,34 @@ did.VoiceInTrunk = VoiceInTrunk.Build("trunk-uuid");
 did = (await client.Dids().UpdateAsync(did)).Data;
 ```
 
+#### SMS routing
+
+A DID's inbound messages go to an SMS trunk or to an SMS trunk group. The two are exclusive: assigning one sends the other as `null` in the same request, as `VoiceInTrunk` and `VoiceInTrunkGroup` do. Setting one of them to `null` sends only that one as `null`; set both to unroute the DID.
+
+```csharp
+// sends sms_trunk and sms_trunk_group: null
+var route = Did.Build("did-uuid");
+route.SmsTrunk = SmsTrunk.Build("sms-trunk-uuid");
+await client.Dids().UpdateAsync(route);
+
+// sends sms_trunk_group and sms_trunk: null
+var toGroup = Did.Build("did-uuid");
+toGroup.SmsTrunkGroup = SmsTrunkGroup.Build("sms-trunk-group-uuid");
+await client.Dids().UpdateAsync(toGroup);
+
+// unroute: sends sms_trunk: null and sms_trunk_group: null
+var unroute = Did.Build("did-uuid");
+unroute.SmsTrunk = null;
+unroute.SmsTrunkGroup = null;
+await client.Dids().UpdateAsync(unroute);
+
+var routed = await client.Dids().ListAsync(new QueryParams()
+    .Filter("sms_trunk.id", "sms-trunk-uuid")
+    .Include("sms_trunk", "sms_trunk_group")); // did.SmsTrunk, did.SmsTrunkGroup
+```
+
+An SMS trunk cannot be deleted while DIDs are routed to it, nor an SMS trunk group while DIDs are routed to it or to one of its trunks: unroute those DIDs, or route them elsewhere, first.
+
 ### Voice In Trunks
 
 ```csharp
@@ -171,7 +320,8 @@ var sipConfig = new SipConfiguration
     Username = "myuser",
     Host = "203.0.113.1",
     Port = 5060,
-    CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729 },
+    Codecs = new List<Codec> { Codec.Pcma, Codec.Pcmu, Codec.TelephoneEvent },
+    IceMode = IceMode.Accept,
     TransportProtocolId = TransportProtocol.UDP,
     SstRefreshMethodId = SstRefreshMethod.INVITE,
     MediaEncryptionMode = MediaEncryptionMode.Disabled
@@ -201,6 +351,16 @@ await client.VoiceInTrunks().UpdateAsync(existingTrunk);
 
 // Delete trunk
 await client.VoiceInTrunks().DeleteAsync("trunk-uuid");
+```
+
+`Codecs` lists the codecs offered on calls to the trunk by name, in priority order: the first has the highest priority. It replaces `codec_ids`; the names are the `Codec` values. Left out, the trunk offers `pcmu`, `pcma`, `g729`, `g723` and `telephone_event`. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` take `Disabled` (the default), `Accept` or `Initiate`.
+
+`Pop` is a plain attribute, one of the `Pop` values (`Nyc`, `Fra`, `Lac`, `Mia`, `Sg`, `Hk`, `Ams`: `nyc`, `fra`, `lac`, `mia`, `sg`, `hk`, `ams`). Leave it `null` to let DIDWW choose; setting it to `null` on a built or fetched trunk sends `"pop": null`. It is no longer a relationship and cannot be included.
+
+```csharp
+var popUpdate = VoiceInTrunk.Build("trunk-uuid");
+popUpdate.Pop = Pop.Ams;
+await client.VoiceInTrunks().UpdateAsync(popUpdate);
 ```
 
 #### SIP Registration (2026-04-16)
@@ -255,6 +415,8 @@ var group = new VoiceInTrunkGroup
 await client.VoiceInTrunkGroups().CreateAsync(group);
 ```
 
+A Voice In trunk group cannot be deleted while DIDs are routed to it or to one of its trunks (422): unroute those DIDs, or route them elsewhere, first.
+
 ### Voice Out Trunks
 
 Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three types are supported:
@@ -265,6 +427,7 @@ Voice Out Trunks use a polymorphic `AuthenticationMethod` (2026-04-16). Three ty
 
 ```csharp
 using Didww.Api3.Resource.Configuration.AuthenticationMethod;
+using Didww.Api3.Resource.Enums;
 
 // NOTE: 203.0.113.0/24 is RFC 5737 TEST-NET-3 documentation space.
 // Replace with the real CIDR of your SIP infrastructure.
@@ -276,11 +439,141 @@ var trunk = new VoiceOutTrunk
     AuthenticationMethod = new CredentialsAndIpAuthenticationMethod
     {
         AllowedSipIps = new List<string> { "203.0.113.0/24" },
-    }
+    },
+    Codecs = new List<VoiceOutCodec> { VoiceOutCodec.Opus, VoiceOutCodec.Pcma, VoiceOutCodec.TelephoneEvent }
 };
 var response = await client.VoiceOutTrunks().CreateAsync(trunk);
 // response.Data.AuthenticationMethod as CredentialsAndIpAuthenticationMethod -- Username/Password server-generated
 ```
+
+`Codecs` lists the codecs offered on calls from the trunk by name, in priority order: the first has the highest priority. The names are the `VoiceOutCodec` values, which differ from the `Codec` values of an inbound SIP trunk. Left out, the trunk offers `pcma`, `pcmu` and `telephone_event`. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` take `Disabled`, `Accept` (the default) or `Initiate`.
+
+### SMS Trunks
+
+An SMS trunk delivers inbound messages, accepts outbound ones, or both. Its `Configuration` is one of five types in namespace `Didww.Api3.Resource.Configuration.SmsTrunkConfiguration`:
+
+| Type | Class | Notes |
+|------|-------|-------|
+| `sms_to_email` | `SmsToEmailConfiguration` | Inbound messages are forwarded as email. `SendTo`, `Subject` and `Message` are required. |
+| `http_in` | `HttpInConfiguration` | Inbound messages are sent as an HTTP request to your `Url`. `HttpMethod` is one of the `SmsHttpMethod` values (`Get`, `Post`, `Put`); post and put also need `BodyType` (an `SmsBodyType` value) and `Body`. |
+| `http_out` | `HttpOutConfiguration` | You submit outbound messages over HTTP. `AuthName` and `AuthPassword` are generated. The submit URL is `trunk.Host` (from the trunk's meta). |
+| `smpp_esme` | `SmppEsmeConfiguration` | You bind to DIDWW as an SMPP ESME. `ServerLocation` is required; `SystemId` and `Password` are generated. |
+| `smpp_smsc` | `SmppSmscConfiguration` | DIDWW binds to your SMSC with your `Host`, `SystemId`, `Password` and `ServerLocation`. `TxPort` defaults to 2775 and `RxPort` to 2776. |
+
+The read-only `AllowIn` and `AllowOut` tell which directions a trunk handles. `ServerLocation` is `SmppServerLocations.Nyc` or `SmppServerLocations.Ams`; the sandbox accepts `nyc` only. A configuration type this SDK does not know is read as a `GenericSmsTrunkConfiguration` and sent back unchanged; its numbers keep their exact value.
+
+```csharp
+using Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
+using Didww.Api3.Resource.Enums;
+using Newtonsoft.Json.Linq;
+
+var trunk = (await client.SmsTrunks().CreateAsync(new SmsTrunk
+{
+    Name = "Inbound webhook",
+    Configuration = new HttpInConfiguration
+    {
+        Url = "https://example.com/sms",
+        HttpMethod = SmsHttpMethod.Post,
+        BodyType = SmsBodyType.Json,
+        Body = "{\"text\":\"{SMS_TEXT}\",\"from\":\"{SMS_SRC_ADDR}\",\"to\":\"{SMS_DST_ADDR}\"}"
+    }
+})).Data;
+
+// On update the configuration type must stay the same; attributes left out keep their values.
+var update = SmsTrunk.Build(trunk.Id!);
+update.Configuration = new HttpInConfiguration { Url = "https://example.com/sms/v2" };
+await client.SmsTrunks().UpdateAsync(update);
+
+// Nullable attributes are cleared with a generic configuration of the same type: null is sent as null
+var clear = SmsTrunk.Build(trunk.Id!);
+clear.Configuration = new GenericSmsTrunkConfiguration("http_in", new JObject
+{
+    ["http_method"] = "get",
+    ["body_type"] = JValue.CreateNull(),
+    ["body"] = JValue.CreateNull()
+});
+await client.SmsTrunks().UpdateAsync(clear);
+
+// List by configuration type, with the group
+var trunks = await client.SmsTrunks().ListAsync(new QueryParams()
+    .Filter("configuration.type", "http_in,sms_to_email")
+    .Include("sms_trunk_group"));
+```
+
+Changes made inside a configuration object are not tracked: assign `Configuration` to send it in the next update. The configuration is sent as a whole, and a `null` member is left out, so on update it keeps its stored value. A typed configuration therefore cannot clear a nullable attribute: the `QueryParameters`, `Headers`, `BodyType` and `Body` of `http_in`, the `CallbackUrl` and `AllowedIps` of `http_out`, the `SystemType` and `AllowedIps` of `smpp_esme` and the `SystemType` of `smpp_smsc`. Send such a change as a `GenericSmsTrunkConfiguration` of the same type, as above: its `JValue.CreateNull()` values are sent as `null`.
+
+`OutgoingDids` replaces the whole `outgoing_dids` list of the trunk: list every DID to keep (include `outgoing_dids` to read the current list), or assign an empty list to clear it.
+
+The generated credentials of `http_out` and `smpp_esme` trunks are read-only and are never sent in a request. `ToString` masks them, the `Password` of an `SmppSmscConfiguration`, and the `Headers` of an `HttpInConfiguration`, which may carry the credentials of your endpoint. A `GenericSmsTrunkConfiguration` masks every attribute value, since its fields are not known; only the attribute names and explicit nulls are shown. The properties keep the real values. To rotate the generated credentials:
+
+```csharp
+await client.SmsTrunkRegenerateCredentials().CreateAsync(
+    new SmsTrunkRegenerateCredential { SmsTrunk = SmsTrunk.Build(outTrunkId) });
+
+// The response carries no credentials: read the trunk again
+var outTrunk = (await client.SmsTrunks().FindAsync(outTrunkId)).Data;
+switch (outTrunk.Configuration)
+{
+    case HttpOutConfiguration http:
+        // http.AuthName and http.AuthPassword are the new credentials
+        break;
+    case SmppEsmeConfiguration esme:
+        // esme.SystemId and esme.Password are the new credentials
+        break;
+}
+```
+
+### SMS Trunk Groups
+
+An SMS trunk group spreads a DID's inbound messages over its trunks by their `Priority` (the higher value first). `http_out` trunks cannot join a group. Deleting a group also deletes the trunks in it.
+
+```csharp
+var group = (await client.SmsTrunkGroups().CreateAsync(new SmsTrunkGroup
+{
+    Name = "Inbound SMS",
+    SmsTrunks = new List<SmsTrunk> { SmsTrunk.Build("sms-trunk-uuid") }
+})).Data;
+Console.WriteLine(group.SmsTrunksCount); // 1
+```
+
+`SmsTrunks` replaces the whole membership of the group: list every trunk to keep. Build the list from the included `sms_trunks`:
+
+```csharp
+var current = (await client.SmsTrunkGroups().FindAsync(group.Id!, new QueryParams().Include("sms_trunks"))).Data;
+var update = SmsTrunkGroup.Build(group.Id!);
+update.SmsTrunks = (current.SmsTrunks ?? new List<SmsTrunk>())
+    .Select(t => SmsTrunk.Build(t.Id!))
+    .Append(SmsTrunk.Build("another-sms-trunk-uuid"))
+    .ToList();
+await client.SmsTrunkGroups().UpdateAsync(update);
+
+// An empty list removes every trunk from the group
+var empty = SmsTrunkGroup.Build(group.Id!);
+empty.SmsTrunks = new List<SmsTrunk>();
+await client.SmsTrunkGroups().UpdateAsync(empty);
+```
+
+### Sender ID Verifications
+
+A Sender ID verification covers the sender IDs your outbound messages use. It is created and reviewed outside the API: the API lists and reads verifications, and changes only their `Name` and the SMS trunk their messages are routed through. A closed verification cannot be changed. `Status` is one of the `SenderIdVerificationStatus` values and `SenderType` one of the `SenderType` values; `IsActive`, `IsClosed` and the other `Is*` properties test the status. `Meta` carries `setup_price` and `monthly_price` as decimal strings.
+
+```csharp
+var verifications = (await client.SenderIdVerifications().ListAsync(new QueryParams()
+    .Filter("status", "active")
+    .Include("sms_trunk"))).Data;
+
+// http_out, smpp_esme or smpp_smsc trunks only
+var route = SenderIdVerification.Build(verifications[0].Id!);
+route.SmsTrunk = SmsTrunk.Build("sms-trunk-uuid");
+await client.SenderIdVerifications().UpdateAsync(route);
+
+// Outbound messages stop until a trunk is assigned again
+var unroute = SenderIdVerification.Build(verifications[0].Id!);
+unroute.SmsTrunk = null;
+await client.SenderIdVerifications().UpdateAsync(unroute);
+```
+
+Deleting an SMS trunk leaves the verifications routed through it without a trunk.
 
 ### Orders
 
@@ -361,6 +654,8 @@ var identity = new Identity
 await client.Identities().CreateAsync(identity);
 ```
 
+`CompanyWebsite` belongs to business identities; a personal identity refuses it, and it is left out of a create request while `null`.
+
 ### Addresses
 
 ```csharp
@@ -378,24 +673,57 @@ await client.Addresses().CreateAsync(address);
 ### Exports
 
 ```csharp
+// from and to must fall within the current month and the two previous ones
+var to = DateTime.UtcNow.Date;
+var from = to.AddDays(-14);
+
 var export = new Export
 {
     ExportType = ExportType.CdrIn,
     Filters = new Dictionary<string, object>
     {
-        { "from", "2026-04-01 00:00:00" },
-        { "to", "2026-04-15 23:59:59" }
+        { "from", from.ToString("yyyy-MM-dd HH:mm:ss") },
+        { "to", to.ToString("yyyy-MM-dd HH:mm:ss") }
     }
 };
 var response = await client.Exports().CreateAsync(export);
 
-// Download when completed
-var completed = (await client.Exports().FindAsync(response.Data.Id)).Data;
+// SMS export
+var smsOut = (await client.Exports().CreateAsync(new Export
+{
+    ExportType = ExportType.SmsOut,
+    Filters = new Dictionary<string, object>
+    {
+        { "from", from.ToString("yyyy-MM-dd HH:mm:ss") }, // inclusive
+        { "to", to.ToString("yyyy-MM-dd HH:mm:ss") },     // exclusive
+        { "service_type", ExportServiceTypes.A2p },
+        { "sms_trunk.id", new List<string> { "sms-trunk-uuid" } }
+    }
+})).Data;
+
+// The export is pending until its file is generated; read it again later
+var completed = (await client.Exports().FindAsync(smsOut.Id!)).Data;
 if (completed.Url != null)
 {
-    await client.DownloadExportAsync(completed, "/tmp/export.csv");
+    await client.DownloadExportAsync(completed, "/tmp/export.csv.gz");           // gzipped CSV, as served
+    await client.DownloadAndDecompressExportAsync(completed, "/tmp/export.csv");  // plain CSV
+
+    await using var stream = File.Create("/tmp/copy.csv.gz");
+    await client.DownloadExportAsync(completed.Url, stream);                     // any writable Stream
 }
 ```
+
+The export downloads send the token only to the origin (scheme, host and port) of the JSON:API base URL or of the environment, so export URLs, which the API builds on the environment's host, are still downloaded when `SetBaseUrl` points elsewhere; that request goes directly to the environment's host. A URL on any other origin throws a `DidwwClientException` and nothing is sent. Only a 200 answer is written, and redirects are not followed (see [Error Handling](#error-handling)).
+
+`from` and `to` are required for every export type (`cdr_in`, `cdr_out`, `sms_in`, `sms_out`). The other filter keys depend on the type:
+
+- `sms_in` and `sms_out`: `source_address_eq`, `source_address_cont`, `destination_address_eq`, `destination_address_cont`, `status`, `sms_id`, `sms_trunk.id` (a string or a list of strings);
+- `sms_in` only: `trunk_type`, one or more of the `ExportTrunkTypes` values;
+- `sms_out` only: `service_type`, one of the `ExportServiceTypes` values, and `sender_id_verification.id` (a string or a list of strings).
+
+Filter values are lowercase: `service_type` is `a2p` or `p2p`, `trunk_type` is one or more of `smpp_smsc`, `smpp_esme`, `sms_to_email` and `http_in`, and `status` is `success`, `failed` or `queued` for `sms_in`, and `routing_error`, `in_progress`, `queued`, `failed` or `success` for `sms_out`.
+
+The doc comment of `Export.Filters` lists the keys of every type.
 
 ### Address Verifications
 
@@ -445,9 +773,101 @@ foreach (var entry in history.Data)
 }
 ```
 
+## Prices
+
+Prices are served by three services outside the JSON:API (hosts in [Environments](#environments)). Each price list has a price file and a lookup:
+
+| Accessor | Service | Price file | Lookup | Lookup rows |
+|----------|---------|------------|--------|-------------|
+| `client.VoiceInPrices()` | Voice IN | `prices.csv.gz` | `lookup/prices` | `VoiceInPrice` |
+| `client.VoiceOutPrices()` | Voice OUT | `prices.csv.gz` | `lookup/prices` | `VoiceOutPrice` |
+| `client.SmsOutA2PPrices()` | SMS | `sms_out/a2p/prices.csv.gz` | `sms_out/a2p/lookup/prices` | `SmsOutPrice` |
+| `client.SmsOutP2PPrices()` | SMS | `sms_out/p2p/prices.csv.gz` | `sms_out/p2p/lookup/prices` | `SmsOutPrice` |
+| `client.SmsOutOtpPrices()` | SMS | `sms_out/otp/prices.csv.gz` | `sms_out/otp/lookup/prices` | `SmsOutPrice` |
+| `client.SmsInPrices()` | SMS | `sms_in/prices.csv.gz` | `sms_in/lookup/prices` | `SmsInPrice` |
+
+Each accessor returns a `PricesService<TPrice>` (namespace `Didww.Api3.Prices`); the row classes are in `Didww.Api3.Resource.Prices`. The account needs a price plan of that service: without one, every call throws `DidwwPricesErrorKind.PricePlanNotAssigned`.
+
+### Price lookups
+
+```csharp
+using Didww.Api3.Prices;
+using Didww.Api3.Resource.Prices;
+
+var result = await client.VoiceInPrices().LookupAsync(new Dictionary<string, string?>
+{
+    ["number"] = "18005550123",
+    ["src_country_iso"] = "US"
+});
+Console.WriteLine(result.TotalRecords);
+foreach (var price in result.Rows)
+{
+    if (price.Rate != null)
+        Console.WriteLine($"{price.Destination} {price.SourceType}: {price.Rate} USD/min");
+}
+
+var voiceOut = await client.VoiceOutPrices().LookupAsync(new Dictionary<string, string?> { ["number"] = "493012345678" });
+Console.WriteLine(voiceOut.Rows[0].Category); // VoiceOutPriceCategory
+var a2p = await client.SmsOutA2PPrices().LookupAsync(new Dictionary<string, string?> { ["dst_number"] = "4915123456789" });
+var smsIn = await client.SmsInPrices().LookupAsync(new Dictionary<string, string?> { ["dst_country_iso"] = "US" });
+```
+
+| Service | Filters |
+|---------|---------|
+| Voice IN | `number` (required), `src_country_iso` |
+| Voice OUT | `number` (required); no other filter |
+| SMS OUT and SMS IN | `dst_number`, `dst_country_iso`; at least one |
+
+A missing or unknown filter throws an `ArgumentException` before any request; `null` and blank values are dropped. The server checks the value formats and answers a bad value with 400 (`DidwwPricesErrorKind.BadRequest`).
+
+`LookupAsync` returns a `PriceLookup<TPrice>` with `Rows` and `TotalRecords`. It always holds at least one row: no match throws `DidwwPricesErrorKind.PriceNotFound`, never an empty result. In the rows, prices and fees are `decimal?` in USD (`null` when the row rejects the calls or messages, see `RejectCalls` and `RejectSms`; `SmsInPrice.Price` is a `decimal`), intervals and increments are `int` (`int?` for the scheduled `NextInitialIncrement` and `NextRecurringIncrement`), `SmsOutPrice.Mcc` and `Mnc` are `int?`, `VoiceOutPrice.EffectiveAt` is a `DateTimeOffset?` and `VoiceOutPrice.Category` is one of the `VoiceOutPriceCategory` values (`International`, `OriginBased`, `Local`).
+
+The `Id` of an SMS OUT or SMS IN lookup row is derived from its content: it changes when the row or its price changes, so do not use it to track a destination over time. A Voice OUT `Id` stays the same when a re-import changes only the price. A Voice IN `Id` names the answering row of the plan.
+
+### Price files
+
+The files are gzipped CSV with a header row. The SDK writes them exactly as served and never decompresses them.
+
+```csharp
+var prices = client.VoiceInPrices();
+const string path = "/var/data/voice_in_prices.csv.gz";
+
+// Download unless the copy at the path is current
+var file = await prices.FetchAsync(path);
+Console.WriteLine(file.NotModified
+    ? "answered 304, the file was kept"
+    : $"downloaded {file.BytesWritten} bytes, last modified {file.LastModified:R}");
+
+// Read the rows, keyed by the header line
+await using (var stream = File.OpenRead(path))
+{
+    await foreach (var row in PriceFileReader.ReadRowsAsync(stream))
+        Console.WriteLine($"{row["Destination"]}: {row["Rate"]}");
+}
+
+// Lower-level calls
+var status = await prices.HeadAsync(file.LastModified); // sent as If-Modified-Since; null sends none
+// status.NotModified, status.ContentLength (null when unknown),
+// status.FileName (from Content-Disposition, e.g. "voice_in_prices.csv.gz")
+
+file = await prices.DownloadToFileAsync(path);
+file = await prices.DownloadAsync(destinationStream); // any writable Stream
+```
+
+- `FetchAsync(path)` sends the modification time of the file at `path` as `If-Modified-Since`, when the file is there; an unchanged price file is answered 304 and the file is kept. A file written by `DownloadToFileAsync` or `FetchAsync` gets the `Last-Modified` of the response as its modification time, so the date matches the copy on disk. `FetchAsync` trusts the modification time of any file at `path`: a file copied or changed by other means can be answered 304 and kept, so replace such a file with `DownloadToFileAsync`.
+- `DownloadToFileAsync` and `FetchAsync` stream the body into a temp file `.didww-<16 hex digits>.tmp` in the directory of `path`, unique to the call, which gets the mode of a new file (`0666` minus the umask on Unix) and replaces `path` atomically only on a 200. A 304 or an error leaves an existing file untouched, the temp file is always removed, and concurrent downloads to one path do not mix their bytes. On Windows the replacement fails while `path` is open without `FileShare.Delete`.
+- `DownloadAsync(destination, ifModifiedSince)` writes the body into `destination` only on a 200, as it arrives, so after a transfer error `destination` may hold part of it. An exception of `destination` propagates as is.
+- `HeadAsync` and the downloads return a `PriceFile`: `StatusCode`, `LastModified` (`null` when absent), `ContentLength`, `FileName`, `BytesWritten` and `NotModified`.
+- `PriceFileReader.ReadRows(stream)` and `ReadRowsAsync(stream)` gunzip a downloaded file and return each row as a dictionary keyed by the header line, as served. A UTF-8 byte order mark is skipped. The input is a single gzip member, as the prices services serve it. Input that is not gzip, gzip data cut short (an empty input included), or a row whose field count differs from the header, throws an `InvalidDataException`. The rows are read lazily, so rows before the error have already been returned; the stream is left open.
+- The columns, prices in USD with VAT excluded. Voice IN: `Country`, `Src country name`, `Source type`, `Destination`, `Rate`, `Connection fee`, `Initial interval`, `Next interval` and `Reject calls`. Voice OUT: `Category`, `Country`, `Network`, `Prefix` (one prefix per row), `Rate`, `Connection fee`, `Initial increment`, `Recurring increment`, `Reject calls`, `Next rate`, `Next connection fee`, `Next initial increment`, `Next recurring increment`, `Effective date` and `Comment`. SMS OUT: `Source prefix`, `Destination prefix`, `Country`, `MCC`, `MCC name`, `MNC`, `MNC name`, `Reject SMS` (`true` or `false`) and `Price`. SMS IN: `Source prefix`, `Source number length min`, `Source number length max`, `Destination prefix`, `Destination number length min`, `Destination number length max`, `Country` and `Price`.
+- Only `Last-Modified` and `If-Modified-Since` are used. The service sends no `ETag`, and the SDK never sends `If-None-Match`, which would make the service ignore `If-Modified-Since`.
+- A 503 on a price file is retried up to 2 times when its `Retry-After` is 60 seconds or less, after waiting that long (at least 1 s) plus a small random delay so that clients do not retry in step. Otherwise it throws `DidwwPricesErrorKind.ServiceUnavailable` with `RetryAfter`. Lookups are not retried.
+- A 404 `price_not_found` throws `PriceNotFound`; any other 404, `price_plan_not_assigned` included, and any 404 on `HeadAsync`, which has no body, throws `PricePlanNotAssigned`. `DidwwPricesException.Code` holds the code of the answer, or `price_plan_not_assigned` for a 404 without one.
+- Redirects are not followed. A status without its own kind in [Error Handling](#error-handling), such as a 3xx, a 202 or a 204, throws `DidwwPricesErrorKind.UnexpectedStatus`. An error is never turned into an empty file or an empty result.
+
 ## Filtering, Sorting, and Pagination
 
-> See [`FILTERS.md`](FILTERS.md) for the canonical list of `filter[KEY]` keys accepted by every list endpoint, verified live against the DIDWW API at version `2026-04-16`.
+> See [`FILTERS.md`](FILTERS.md) for the list of `filter[KEY]` keys accepted by every list endpoint at API version `2026-11-19`.
 
 ```csharp
 using Didww.Api3.Http;
@@ -525,6 +945,8 @@ await client.VoiceInTrunks().UpdateAsync(trunk);
 
 ## Error Handling
 
+Every exception of the SDK derives from `DidwwException` (namespace `Didww.Api3.Exception`). Messages never contain the API key or a token.
+
 ```csharp
 using Didww.Api3.Exception;
 
@@ -546,6 +968,87 @@ catch (DidwwClientException e)
 }
 ```
 
+| Exception | Thrown for |
+|-----------|------------|
+| `DidwwApiException` | An error status of the JSON:API repositories, `DownloadExportAsync` and `UploadEncryptedFileAsync`, with `HttpStatus`, `Errors` and `RetryAfter`. |
+| `DidwwClientException` | A failure on the client side: an upload or price lookup answer that cannot be parsed, a refused export URL, a broken export download, `UpdateAsync` on a resource without an `Id`. |
+| `DidwwAuthException` | The token service, from any call that needs a new token. |
+| `DidwwPricesException` | The prices services. |
+
+`DidwwApiException` also reports the authentication failures of the API: a 401 still answered after the token was replaced once (`HttpStatus` 401), and a 403 such as `insufficient_scope` for a write with a `Read` token, which is never retried. `DownloadExportAsync` does not follow redirects: any status other than 200, such as a 3xx or a 204, throws a `DidwwApiException`, and a redirect followed by a custom handler throws a `DidwwClientException`.
+
+A 429 (`too_many_requests`) means the request budget of the account for the current window is spent. The repositories, `DownloadExportAsync` and `UploadEncryptedFileAsync` throw it as a `DidwwApiException` with `HttpStatus` 429 and `RetryAfter`, the `Retry-After` of the response (`null` when it is missing or not a number of seconds). The SDK does not retry it, as a write may not be safe to send twice: wait `RetryAfter` before sending the request again.
+
+```csharp
+try
+{
+    await client.Dids().ListAsync();
+}
+catch (DidwwApiException e) when (e.HttpStatus == 429)
+{
+    Console.WriteLine($"API rate limit, retry after {e.RetryAfter}");
+}
+```
+
+The token service and prices errors carry a `Kind`, which `catch ... when` tells apart:
+
+```csharp
+try
+{
+    await client.SmsOutA2PPrices().LookupAsync(new Dictionary<string, string?> { ["dst_number"] = "4915123456789" });
+}
+catch (DidwwAuthException e) when (e.Kind == DidwwAuthErrorKind.RateLimited)
+{
+    // Wait RetryAfter and try again; repeat while the kind is RateLimited.
+    Console.WriteLine($"Token service rate limit, retry after {e.RetryAfter}");
+}
+catch (DidwwAuthException e) when (e.Kind == DidwwAuthErrorKind.InvalidClient)
+{
+    Console.WriteLine($"API key refused: {e.Message}");
+}
+catch (DidwwPricesException e) when (e.Kind == DidwwPricesErrorKind.PriceNotFound)
+{
+    Console.WriteLine("No price for this number");
+}
+catch (DidwwPricesException e) when (e.Kind == DidwwPricesErrorKind.TooManyRequests)
+{
+    Console.WriteLine($"Prices rate limit, retry after {e.RetryAfter}");
+}
+catch (DidwwException e)
+{
+    Console.WriteLine($"Error: {e.Message}");
+}
+```
+
+**Token service** (`DidwwAuthException`, with `Kind`, `StatusCode`, `Error`, `ErrorDescription` and `RetryAfter`):
+
+| `DidwwAuthErrorKind` | Thrown when |
+|----------------------|-------------|
+| `InvalidClient` | 401: the token service refused the API key. Not retried. |
+| `InvalidRequest` | 400, e.g. `invalid_request` or `invalid_scope`. |
+| `RateLimited` | 429. `RetryAfter` is the server's wait. Further mints fail without a request until `RetryAfter` plus a small random delay has passed; such a refusal reports the time still left in `RetryAfter`, so retry in a loop rather than once. |
+| `ServerError` | 5xx on the last of the 4 attempts. |
+| `ConnectionError` | Connection failure or timeout on the last attempt, or a TLS failure (not retried). |
+| `InvalidGrant` | The token is empty or does not cover the requested audience. |
+| `UnexpectedStatus` | Any other status, or a redirect followed by a custom handler. |
+
+**Prices** (`DidwwPricesException`, with `Kind`, `StatusCode`, `Code`, `Errors` and `RetryAfter`):
+
+| `DidwwPricesErrorKind` | Status |
+|------------------------|--------|
+| `BadRequest` | 400, e.g. a filter value of the wrong format |
+| `NotAuthorized` | 401 after the token was replaced once |
+| `AccessDenied` | 403 |
+| `PricePlanNotAssigned` | 404 `price_plan_not_assigned`, and any other 404 except `price_not_found`, including any 404 on `HeadAsync`, which has no body |
+| `PriceNotFound` | 404 `price_not_found`: no price matches the lookup |
+| `NotAcceptable` | 406 |
+| `TooManyRequests` | 429, with `RetryAfter`. Not retried. |
+| `ServiceUnavailable` | 503, with `RetryAfter`. Retried on price files only, see [Price files](#price-files). |
+| `UnexpectedStatus` | Any other status, or a redirect followed by a custom handler |
+| `ConnectionError` | Connection failure, timeout, TLS failure or a response body that breaks off. Not retried. An exception writing the file or `Stream` propagates as is. |
+
+The prices services can also throw a `DidwwAuthException`, `LookupAsync` an `ArgumentException` for invalid filters and a `DidwwClientException` when a 200 answer is not a JSON:API document it can parse or holds no prices. `DownloadToFileAsync` and `FetchAsync` also let the file system exceptions of the path (temp file, times, move) propagate as is. When the `CancellationToken` is cancelled, also while a 503 `Retry-After` is being waited out, the `OperationCanceledException` propagates as is.
+
 ## File Encryption
 
 The SDK provides an `Encrypt` utility for encrypting files before upload, using RSA-OAEP + AES-256-CBC (matching DIDWW's encryption requirements).
@@ -556,7 +1059,7 @@ var encrypt = new Encrypt(client);
 byte[] fileData = File.ReadAllBytes("document.pdf");
 byte[] encryptedData = encrypt.EncryptData(fileData);
 
-var fileIds = await client.UploadEncryptedFileAsync(
+var fileId = await client.UploadEncryptedFileAsync(
     encryptedData,
     "document.pdf",
     encrypt.Fingerprint,
@@ -588,14 +1091,16 @@ var isValid = validator.Validate(
 | SIP | `SipConfiguration` |
 | PSTN | `PstnConfiguration` |
 
+For the SMS trunk configuration types, see [SMS Trunks](#sms-trunks).
+
 ## Order Item Types
 
 | Type | Class |
 |---|---|
 | DID | `DidOrderItem` |
 | Capacity | `CapacityOrderItem` |
-| Emergency | `EmergencyOrderItem` |
-| Generic | `GenericOrderItem` |
+| Emergency (response only) | `EmergencyOrderItem` |
+| Generic (response only) | `GenericOrderItem` |
 
 ## All Supported Resources
 
@@ -606,8 +1111,6 @@ var isValid = validator.Validate(
 | City | `City` | List, Find |
 | Area | `Area` | List, Find |
 | NanpaPrefix | `NanpaPrefix` | List, Find |
-| Pop | `Pop` | List, Find |
-| DidGroupType | `DidGroupType` | List, Find |
 | DidGroup | `DidGroup` | List, Find |
 | AvailableDid | `AvailableDid` | List, Find |
 | ProofType | `ProofType` | List, Find |
@@ -620,14 +1123,18 @@ var isValid = validator.Validate(
 | VoiceInTrunkGroup | `VoiceInTrunkGroup` | List, Find, Create, Update, Delete |
 | VoiceOutTrunk | `VoiceOutTrunk` | List, Find, Create, Update, Delete |
 | VoiceOutTrunkRegenerateCredential | `VoiceOutTrunkRegenerateCredential` | Create |
+| SmsTrunk | `SmsTrunk` | List, Find, Create, Update, Delete |
+| SmsTrunkGroup | `SmsTrunkGroup` | List, Find, Create, Update, Delete |
+| SmsTrunkRegenerateCredential | `SmsTrunkRegenerateCredential` | Create |
+| SenderIdVerification | `SenderIdVerification` | List, Find, Update |
 | DidReservation | `DidReservation` | List, Find, Create, Delete |
 | CapacityPool | `CapacityPool` | List, Find |
 | SharedCapacityGroup | `SharedCapacityGroup` | List, Find, Create, Update, Delete |
-| Order | `Order` | List, Find, Create |
+| Order | `Order` | List, Find, Create, Delete (cancels a pending DID order) |
 | Export | `Export` | List, Find, Create, Update |
 | Address | `Address` | List, Find, Create, Delete |
 | AddressVerification | `AddressVerification` | List, Create, Update |
-| Identity | `Identity` | List, Find, Create, Delete |
+| Identity | `Identity` | List, Find, Create, Update, Delete |
 | EncryptedFile | `EncryptedFile` | List, Find, Delete |
 | PermanentSupportingDocument | `PermanentSupportingDocument` | Create, Delete |
 | Proof | `Proof` | Create, Delete |
@@ -637,6 +1144,12 @@ var isValid = validator.Validate(
 | EmergencyRequirementValidation | `EmergencyRequirementValidation` | Create |
 | EmergencyCallingService | `EmergencyCallingService` | List, Find, Delete |
 | EmergencyVerification | `EmergencyVerification` | List, Find, Create, Update |
+| VoiceInPrice | `client.VoiceInPrices()` | Lookup, Head, Download, DownloadToFile, Fetch |
+| VoiceOutPrice | `client.VoiceOutPrices()` | Lookup, Head, Download, DownloadToFile, Fetch |
+| SmsOutPrice | `client.SmsOutA2PPrices()`, `client.SmsOutP2PPrices()`, `client.SmsOutOtpPrices()` | Lookup, Head, Download, DownloadToFile, Fetch |
+| SmsInPrice | `client.SmsInPrices()` | Lookup, Head, Download, DownloadToFile, Fetch |
+
+> **Note:** The price rows are served by the prices services outside the JSON:API, see [Prices](#prices).
 
 ## Date and Datetime Fields
 
@@ -644,13 +1157,17 @@ The SDK distinguishes between date-only and datetime fields:
 
 - **Datetime fields** are deserialized as `DateTimeOffset?`:
   - `CreatedAt` — present on most resources
+  - `UpdatedAt` — `SmsTrunk`, `SmsTrunkGroup`
   - `ExpiresAt` — `Did`, `DidReservation`, `Proof`, `EncryptedFile` (nullable)
-  - `ActivatedAt` — `EmergencyCallingService` (nullable)
+  - `ActivatedAt` — `EmergencyCallingService`, `SenderIdVerification` (nullable)
   - `CanceledAt` — `EmergencyCallingService` (nullable)
+  - `ClosedAt` — `SenderIdVerification` (nullable)
+  - `EffectiveAt` — `VoiceOutPrice` price lookup rows (nullable)
 - **Date-only fields** (`Identity.BirthDate`) are deserialized as `DateOnly?`.
 - **Date-only fields kept as strings** remain as `string?`:
   - `CapacityPool.RenewDate`, `EmergencyCallingService.RenewDate` — `"YYYY-MM-DD"` (nullable)
-  - `DidOrderItem.BilledFrom`, `DidOrderItem.BilledTo`
+  - `SenderIdVerification.RenewDate` — `"YYYY-MM-DD"`, `null` once the verification is closed
+  - `BilledFrom`, `BilledTo` — `DidOrderItem` (and the available and reservation DID order items), `EmergencyOrderItem`
 - **String fields** (not numeric):
   - `EmergencyRequirement.EstimateSetupTime` — e.g. `"7-14 days"`, `"1"`
   - `EmergencyRequirement.RequirementRestrictionMessage` — nullable
@@ -675,12 +1192,18 @@ The SDK provides enum types in `Didww.Api3.Resource.Enums`:
 
 `CallbackMethod`, `IdentityType`, `OrderStatus`, `ExportType`, `ExportStatus`, `CliFormat`,
 `OnCliMismatchAction`\*, `MediaEncryptionMode`, `DefaultDstAction`, `VoiceOutTrunkStatus`,
-`EmergencyCallingServiceStatus`, `EmergencyVerificationStatus`, `DiversionRelayPolicy`,
-`TransportProtocol`, `Codec`, `RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`,
-`ReroutingDisconnectCode`, `Feature`, `AreaLevel`, `AddressVerificationStatus`, `StirShakenMode`,
-`DidHistoryAction`, `DidHistoryMethod`
+`EmergencyCallingServiceStatus`, `EmergencyVerificationStatus`, `DiversionRelayPolicy`, `TransportProtocol`,
+`RxDtmfFormat`, `TxDtmfFormat`, `SstRefreshMethod`, `ReroutingDisconnectCode`, `Feature`, `AreaLevel`,
+`AddressVerificationStatus`, `StirShakenMode`, `DidHistoryAction`, `DidHistoryMethod`, `NumberType`, `Pop`,
+`SenderIdVerificationStatus`, `SenderType`, `SmsHttpMethod`, `SmsBodyType`, `VoiceOutPriceCategory`
 
 \* `ReplaceCli` and `RandomizeCli` require additional account configuration. Contact DIDWW support to enable these values.
+
+`Codec` holds the codecs of an inbound SIP trunk (`SipConfiguration.Codecs`) and `VoiceOutCodec` those of a Voice OUT trunk (`VoiceOutTrunk.Codecs`); the two lists differ. `IceMode`, `RtcpMuxMode` and `RtcpFeedbackMode` serve both.
+
+These five, in the same namespace, are value types rather than enums, as the API adds codecs and modes over time. Each known value is a static property, such as `Codec.Pcmu`, and `Value` is its API name. A value this version of the SDK does not know is kept as read, such as `new Codec("evs")`, and sent back unchanged on update. Compare them with `==`; they are not constants, so match them with `if` or a `when` clause instead of `case Codec.Pcmu:`.
+
+`ExportType` includes `SmsIn` and `SmsOut`. The values of the `trunk_type` filter of `sms_in` exports are the constants of `ExportTrunkTypes`, those of the `service_type` filter of `sms_out` exports the constants of `ExportServiceTypes` (both in namespace `Didww.Api3.Resource`), and the SMPP server locations those of `SmppServerLocations` (namespace `Didww.Api3.Resource.Configuration.SmsTrunkConfiguration`).
 
 ## Development
 
@@ -703,15 +1226,15 @@ dotnet build
 To publish a new version to NuGet:
 
 1. Update the version in `src/Didww.Api3/Didww.Api3.csproj`
-2. Commit and push to `main`
-3. Create and push a version tag:
+2. Commit and push to `main` (4.x), or to `release-3` for a 3.x patch release
+3. Create and push a version tag matching that version:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v4.0.0
+git push origin v4.0.0
 ```
 
-The [release workflow](.github/workflows/release.yml) will automatically build, test, and publish the package to [NuGet](https://www.nuget.org/).
+The [release workflow](.github/workflows/release.yml) will automatically build, test, and publish the package to [NuGet](https://www.nuget.org/). For tags on `main` (4.x), it fails when the tag does not match the version in the `.csproj`.
 
 ## Contributing
 

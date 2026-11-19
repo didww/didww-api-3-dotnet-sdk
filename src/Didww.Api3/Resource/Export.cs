@@ -34,6 +34,28 @@ public class Export : BaseResource
     public bool IsCompleted => Status == ExportStatus.Completed;
 
     private Dictionary<string, object>? _filters;
+    /// <summary>
+    /// Export filters. Keys accepted by API 2026-11-19:
+    /// <list type="bullet">
+    /// <item><description>every type: <c>from</c> (inclusive) and <c>to</c> (exclusive),
+    /// formatted <c>YYYY-MM-DD HH:MM:SS</c> in UTC;</description></item>
+    /// <item><description><see cref="Enums.ExportType.CdrIn"/>: <c>did_number</c>, <c>source_number</c>,
+    /// <c>source_number_out</c>, <c>source_country_iso</c>;</description></item>
+    /// <item><description><see cref="Enums.ExportType.CdrOut"/>: <c>voice_out_trunk.id</c>, <c>source</c>,
+    /// <c>cli</c>, <c>destination</c>;</description></item>
+    /// <item><description><see cref="Enums.ExportType.SmsIn"/> and <see cref="Enums.ExportType.SmsOut"/>:
+    /// <c>source_address_eq</c>, <c>source_address_cont</c>, <c>destination_address_eq</c>,
+    /// <c>destination_address_cont</c>, <c>status</c>, <c>sms_id</c>, <c>sms_trunk.id</c>
+    /// (a string or a list of strings); <c>status</c> is <c>success</c>, <c>failed</c> or
+    /// <c>queued</c> for <c>sms_in</c>, and <c>routing_error</c>, <c>in_progress</c>,
+    /// <c>queued</c>, <c>failed</c> or <c>success</c> for <c>sms_out</c>;</description></item>
+    /// <item><description><see cref="Enums.ExportType.SmsIn"/> only: <c>trunk_type</c>
+    /// (a string or a list of strings, see <see cref="ExportTrunkTypes"/>);</description></item>
+    /// <item><description><see cref="Enums.ExportType.SmsOut"/> only: <c>service_type</c>
+    /// (see <see cref="ExportServiceTypes"/>) and <c>sender_id_verification.id</c> (a string or a list of strings).</description></item>
+    /// </list>
+    /// Exports created with earlier API versions may also return <c>year</c>, <c>month</c> and <c>day</c>.
+    /// </summary>
     [JsonProperty("filters")]
     public Dictionary<string, object>? Filters { get => _filters; set => _filters = MarkDirty("filters", value); }
 
@@ -42,4 +64,24 @@ public class Export : BaseResource
     private string? _externalReferenceId;
     [JsonProperty("external_reference_id")]
     public string? ExternalReferenceId { get => _externalReferenceId; set => _externalReferenceId = MarkDirty("externalReferenceId", value); }
+}
+
+/// <summary>
+/// Values of the <c>trunk_type</c> filter of an <c>sms_in</c> export. (API 2026-11-19)
+/// </summary>
+public static class ExportTrunkTypes
+{
+    public const string SmppSmsc = "smpp_smsc";
+    public const string SmppEsme = "smpp_esme";
+    public const string SmsToEmail = "sms_to_email";
+    public const string HttpIn = "http_in";
+}
+
+/// <summary>
+/// Values of the <c>service_type</c> filter of an <c>sms_out</c> export. (API 2026-11-19)
+/// </summary>
+public static class ExportServiceTypes
+{
+    public const string A2p = "a2p";
+    public const string P2p = "p2p";
 }

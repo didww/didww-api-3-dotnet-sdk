@@ -1,7 +1,10 @@
+using System.Reflection;
 using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration.AuthenticationMethod;
 using Didww.Api3.Resource.Enums;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -31,6 +34,16 @@ public class VoiceOutTrunkTest : BaseTest
         first.ThresholdReached.Should().BeFalse();
         first.ThresholdAmount.Should().Be(200.0m);
         first.DstPrefixes.Should().ContainSingle().Which.Should().Be("370");
+        first.Codecs.Should().Equal(VoiceOutCodec.Opus, VoiceOutCodec.G722, VoiceOutCodec.Pcma, VoiceOutCodec.TelephoneEvent);
+        first.IceMode.Should().Be(IceMode.Initiate);
+        first.RtcpMuxMode.Should().Be(RtcpMuxMode.Disabled);
+        first.RtcpFeedbackMode.Should().Be(RtcpFeedbackMode.Initiate);
+
+        var second = trunks[1];
+        second.Codecs.Should().Equal(VoiceOutCodec.Pcma, VoiceOutCodec.Pcmu, VoiceOutCodec.TelephoneEvent);
+        second.IceMode.Should().Be(IceMode.Accept);
+        second.RtcpMuxMode.Should().Be(RtcpMuxMode.Accept);
+        second.RtcpFeedbackMode.Should().Be(RtcpFeedbackMode.Accept);
 
         first.AuthenticationMethod.Should().BeOfType<CredentialsAndIpAuthenticationMethod>();
         var cai = (CredentialsAndIpAuthenticationMethod)first.AuthenticationMethod!;
@@ -52,6 +65,10 @@ public class VoiceOutTrunkTest : BaseTest
         trunk.ExternalReferenceId.Should().Be("crm-vot-0001");
         trunk.EmergencyEnableAll.Should().BeFalse();
         trunk.RtpTimeout.Should().Be(30);
+        trunk.Codecs.Should().Equal(VoiceOutCodec.AmrWb, VoiceOutCodec.Pcmu);
+        trunk.IceMode.Should().Be(IceMode.Disabled);
+        trunk.RtcpMuxMode.Should().Be(RtcpMuxMode.Initiate);
+        trunk.RtcpFeedbackMode.Should().Be(RtcpFeedbackMode.Disabled);
         trunk.Dids.Should().HaveCount(2);
         trunk.DefaultDid.Should().NotBeNull();
         trunk.DefaultDid!.Number.Should().Be("37061498222");
@@ -147,7 +164,11 @@ public class VoiceOutTrunkTest : BaseTest
                 TechPrefix = ""
             },
             DefaultDid = did,
-            Dids = new List<Did> { did }
+            Dids = new List<Did> { did },
+            Codecs = new List<VoiceOutCodec> { VoiceOutCodec.Opus, VoiceOutCodec.Pcma, VoiceOutCodec.TelephoneEvent },
+            IceMode = IceMode.Initiate,
+            RtcpMuxMode = RtcpMuxMode.Disabled,
+            RtcpFeedbackMode = RtcpFeedbackMode.Accept
         };
 
         var response = await Client.VoiceOutTrunks().CreateAsync(trunk);
@@ -177,6 +198,10 @@ public class VoiceOutTrunkTest : BaseTest
         trunk.DstPrefixes = new List<string> { "370" };
         trunk.ForceSymmetricRtp = true;
         trunk.RtpPing = true;
+        trunk.Codecs = new List<VoiceOutCodec> { VoiceOutCodec.G722, VoiceOutCodec.Amr, VoiceOutCodec.Gsm };
+        trunk.IceMode = IceMode.Disabled;
+        trunk.RtcpMuxMode = RtcpMuxMode.Initiate;
+        trunk.RtcpFeedbackMode = RtcpFeedbackMode.Disabled;
         trunk.AuthenticationMethod = new IpOnlyAuthenticationMethod
         {
             AllowedSipIps = new List<string> { "203.0.113.1/32" },
@@ -203,6 +228,26 @@ public class VoiceOutTrunkTest : BaseTest
         trunk.ThresholdAmount = 500.0m;
 
         await Client.VoiceOutTrunks().UpdateAsync(trunk);
+    }
+
+    [Fact]
+    public async Task TestUpdateSendsBackCodecsTheSdkDoesNotKnow()
+    {
+        var id = "425ce763-a3a9-49b4-af5b-ada1a65c8864";
+        StubGet($"voice_out_trunks/{id}", "voice_out_trunks/show_unknown_media_values.json");
+        StubPatch($"voice_out_trunks/{id}", "voice_out_trunks/show_unknown_media_values.json");
+
+        var trunk = (await Client.VoiceOutTrunks().FindAsync(id)).Data;
+        trunk.Codecs.Should().Equal(new VoiceOutCodec("evs"), VoiceOutCodec.Pcma);
+        trunk.IceMode.Should().Be(new IceMode("require"));
+        trunk.RtcpMuxMode.Should().Be(new RtcpMuxMode("require"));
+        trunk.RtcpFeedbackMode.Should().Be(new RtcpFeedbackMode("require"));
+
+        trunk.Codecs = trunk.Codecs!.Append(VoiceOutCodec.Opus).ToList();
+        await Client.VoiceOutTrunks().UpdateAsync(trunk);
+
+        var sent = JObject.Parse(RequestsTo($"/v3/voice_out_trunks/{id}").Single(r => r.Method == "PATCH").Body!);
+        sent.SelectToken("data.attributes.codecs")!.ToObject<string[]>().Should().Equal("evs", "pcma", "opus");
     }
 
     [Fact]
@@ -276,6 +321,37 @@ public class VoiceOutTrunkTest : BaseTest
         trunk.ExternalReferenceId = "crm-vot-0002";
 
         await Client.VoiceOutTrunks().UpdateAsync(trunk);
+    }
+
+    public static TheoryData<string, VoiceOutCodec> VoiceOutCodecWireValues => new()
+    {
+        { "\"telephone_event\"", VoiceOutCodec.TelephoneEvent },
+        { "\"g723\"", VoiceOutCodec.G723 },
+        { "\"g729\"", VoiceOutCodec.G729 },
+        { "\"pcmu\"", VoiceOutCodec.Pcmu },
+        { "\"pcma\"", VoiceOutCodec.Pcma },
+        { "\"gsm\"", VoiceOutCodec.Gsm },
+        { "\"g722\"", VoiceOutCodec.G722 },
+        { "\"opus\"", VoiceOutCodec.Opus },
+        { "\"amr\"", VoiceOutCodec.Amr },
+        { "\"amr_wb\"", VoiceOutCodec.AmrWb },
+    };
+
+    [Theory]
+    [MemberData(nameof(VoiceOutCodecWireValues))]
+    public void TestVoiceOutCodecWireValues(string json, VoiceOutCodec expected)
+    {
+        JsonConvert.DeserializeObject<VoiceOutCodec>(json).Should().Be(expected);
+        JsonConvert.SerializeObject(expected).Should().Be(json);
+    }
+
+    [Fact]
+    public void TestVoiceOutCodecHasOneMemberPerDocumentedName()
+    {
+        typeof(VoiceOutCodec).GetProperties(BindingFlags.Public | BindingFlags.Static)
+            .Where(property => property.PropertyType == typeof(VoiceOutCodec))
+            .Select(property => property.GetValue(null)!.ToString()).Should().BeEquivalentTo(
+            "telephone_event", "g723", "g729", "pcmu", "pcma", "gsm", "g722", "opus", "amr", "amr_wb");
     }
 
     [Fact]

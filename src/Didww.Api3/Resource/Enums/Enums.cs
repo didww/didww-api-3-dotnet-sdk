@@ -62,7 +62,9 @@ public enum ExportStatus
 public enum ExportType
 {
     [System.Runtime.Serialization.EnumMember(Value = "cdr_in")] CdrIn,
-    [System.Runtime.Serialization.EnumMember(Value = "cdr_out")] CdrOut
+    [System.Runtime.Serialization.EnumMember(Value = "cdr_out")] CdrOut,
+    [System.Runtime.Serialization.EnumMember(Value = "sms_in")] SmsIn,
+    [System.Runtime.Serialization.EnumMember(Value = "sms_out")] SmsOut
 }
 
 [JsonConverter(typeof(TolerantStringEnumConverter))]
@@ -187,24 +189,181 @@ public enum DidHistoryMethod
     [System.Runtime.Serialization.EnumMember(Value = "user_panel")] UserPanel
 }
 
-// Integer-based enums
-public enum Codec
+/// <summary>
+/// Number type of a DID group, address requirement, emergency requirement or
+/// emergency calling service. (API 2026-11-19)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum NumberType
 {
-    TELEPHONE_EVENT = 6,
-    G723 = 7,
-    G729 = 8,
-    PCMU = 9,
-    PCMA = 10,
-    SPEEX = 12,
-    GSM = 13,
-    G726_32 = 14,
-    G721 = 15,
-    G726_24 = 16,
-    G726_40 = 17,
-    G726_16 = 18,
-    L16 = 19
+    [System.Runtime.Serialization.EnumMember(Value = "local")] Local,
+    [System.Runtime.Serialization.EnumMember(Value = "national")] National,
+    [System.Runtime.Serialization.EnumMember(Value = "mobile")] Mobile,
+    [System.Runtime.Serialization.EnumMember(Value = "toll_free")] TollFree,
+    [System.Runtime.Serialization.EnumMember(Value = "shared_cost")] SharedCost,
+    [System.Runtime.Serialization.EnumMember(Value = "global")] Global
 }
 
+/// <summary>
+/// DIDWW point of presence a Voice IN trunk is served from. (API 2026-11-19)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum Pop
+{
+    [System.Runtime.Serialization.EnumMember(Value = "nyc")] Nyc,
+    [System.Runtime.Serialization.EnumMember(Value = "fra")] Fra,
+    [System.Runtime.Serialization.EnumMember(Value = "lac")] Lac,
+    [System.Runtime.Serialization.EnumMember(Value = "mia")] Mia,
+    [System.Runtime.Serialization.EnumMember(Value = "sg")] Sg,
+    [System.Runtime.Serialization.EnumMember(Value = "hk")] Hk,
+    [System.Runtime.Serialization.EnumMember(Value = "ams")] Ams
+}
+
+/// <summary>
+/// Lifecycle state of a sender ID verification. (API 2026-11-19)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SenderIdVerificationStatus
+{
+    [System.Runtime.Serialization.EnumMember(Value = "active")] Active,
+    [System.Runtime.Serialization.EnumMember(Value = "changes_required")] ChangesRequired,
+    [System.Runtime.Serialization.EnumMember(Value = "closed")] Closed,
+    [System.Runtime.Serialization.EnumMember(Value = "closing_in_process")] ClosingInProcess,
+    [System.Runtime.Serialization.EnumMember(Value = "in_process")] InProcess,
+    [System.Runtime.Serialization.EnumMember(Value = "new")] New
+}
+
+/// <summary>
+/// Kind of sender a sender ID verification covers. (API 2026-11-19)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SenderType
+{
+    [System.Runtime.Serialization.EnumMember(Value = "alphanumeric")] Alphanumeric,
+    [System.Runtime.Serialization.EnumMember(Value = "carrier")] Carrier,
+    [System.Runtime.Serialization.EnumMember(Value = "long_code")] LongCode,
+    [System.Runtime.Serialization.EnumMember(Value = "short_code")] ShortCode,
+    [System.Runtime.Serialization.EnumMember(Value = "toll_free")] TollFree
+}
+
+/// <summary>
+/// HTTP method of an <c>http_in</c> SMS trunk configuration. (API 2026-11-19)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SmsHttpMethod
+{
+    [System.Runtime.Serialization.EnumMember(Value = "get")] Get,
+    [System.Runtime.Serialization.EnumMember(Value = "post")] Post,
+    [System.Runtime.Serialization.EnumMember(Value = "put")] Put
+}
+
+/// <summary>
+/// Body encoding of an <c>http_in</c> SMS trunk configuration. (API 2026-11-19)
+/// </summary>
+[JsonConverter(typeof(TolerantStringEnumConverter))]
+public enum SmsBodyType
+{
+    [System.Runtime.Serialization.EnumMember(Value = "json")] Json,
+    [System.Runtime.Serialization.EnumMember(Value = "html_multipart")] HtmlMultipart,
+    [System.Runtime.Serialization.EnumMember(Value = "html_url_encoded")] HtmlUrlEncoded,
+    [System.Runtime.Serialization.EnumMember(Value = "raw")] Raw
+}
+
+/// <summary>
+/// Codec of an inbound SIP trunk (<see cref="Configuration.SipConfiguration.Codecs"/>).
+/// A Voice OUT trunk has its own list, <see cref="VoiceOutCodec"/>. (API 2026-11-19)
+/// A value the server adds later is kept as read and sent back unchanged.
+/// </summary>
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct Codec(string Value) : IStringValue
+{
+    public static Codec TelephoneEvent { get; } = new("telephone_event");
+    public static Codec G723 { get; } = new("g723");
+    public static Codec G729 { get; } = new("g729");
+    public static Codec Pcmu { get; } = new("pcmu");
+    public static Codec Pcma { get; } = new("pcma");
+    public static Codec Speex { get; } = new("speex");
+    public static Codec Gsm { get; } = new("gsm");
+    public static Codec G726_32 { get; } = new("g726_32");
+    public static Codec G721 { get; } = new("g721");
+    public static Codec G726_24 { get; } = new("g726_24");
+    public static Codec G726_40 { get; } = new("g726_40");
+    public static Codec G726_16 { get; } = new("g726_16");
+    public static Codec L16 { get; } = new("l16");
+    public static Codec Amr { get; } = new("amr");
+    public static Codec AmrWb { get; } = new("amr_wb");
+
+    public override string ToString() => Value;
+}
+
+/// <summary>
+/// Codec of a Voice OUT trunk (<see cref="VoiceOutTrunk.Codecs"/>). An inbound
+/// SIP trunk has its own list, <see cref="Codec"/>. (API 2026-11-19)
+/// A value the server adds later is kept as read and sent back unchanged.
+/// </summary>
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct VoiceOutCodec(string Value) : IStringValue
+{
+    public static VoiceOutCodec TelephoneEvent { get; } = new("telephone_event");
+    public static VoiceOutCodec G723 { get; } = new("g723");
+    public static VoiceOutCodec G729 { get; } = new("g729");
+    public static VoiceOutCodec Pcmu { get; } = new("pcmu");
+    public static VoiceOutCodec Pcma { get; } = new("pcma");
+    public static VoiceOutCodec Gsm { get; } = new("gsm");
+    public static VoiceOutCodec G722 { get; } = new("g722");
+    public static VoiceOutCodec Opus { get; } = new("opus");
+    public static VoiceOutCodec Amr { get; } = new("amr");
+    public static VoiceOutCodec AmrWb { get; } = new("amr_wb");
+
+    public override string ToString() => Value;
+}
+
+/// <summary>
+/// ICE (Interactive Connectivity Establishment) on the calls of a trunk: not
+/// used, accepted when the other side offers it, or initiated by DIDWW. (API 2026-11-19)
+/// A value the server adds later is kept as read and sent back unchanged.
+/// </summary>
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct IceMode(string Value) : IStringValue
+{
+    public static IceMode Disabled { get; } = new("disabled");
+    public static IceMode Accept { get; } = new("accept");
+    public static IceMode Initiate { get; } = new("initiate");
+
+    public override string ToString() => Value;
+}
+
+/// <summary>
+/// RTP and RTCP multiplexed on one port on the calls of a trunk: not used,
+/// accepted when the other side offers it, or initiated by DIDWW. (API 2026-11-19)
+/// A value the server adds later is kept as read and sent back unchanged.
+/// </summary>
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct RtcpMuxMode(string Value) : IStringValue
+{
+    public static RtcpMuxMode Disabled { get; } = new("disabled");
+    public static RtcpMuxMode Accept { get; } = new("accept");
+    public static RtcpMuxMode Initiate { get; } = new("initiate");
+
+    public override string ToString() => Value;
+}
+
+/// <summary>
+/// RTCP feedback (AVPF) on the calls of a trunk: not used, accepted when the
+/// other side offers it, or initiated by DIDWW. (API 2026-11-19)
+/// A value the server adds later is kept as read and sent back unchanged.
+/// </summary>
+[JsonConverter(typeof(StringValueConverter))]
+public readonly record struct RtcpFeedbackMode(string Value) : IStringValue
+{
+    public static RtcpFeedbackMode Disabled { get; } = new("disabled");
+    public static RtcpFeedbackMode Accept { get; } = new("accept");
+    public static RtcpFeedbackMode Initiate { get; } = new("initiate");
+
+    public override string ToString() => Value;
+}
+
+// Integer-based enums
 public enum RxDtmfFormat
 {
     RFC_2833 = 1,

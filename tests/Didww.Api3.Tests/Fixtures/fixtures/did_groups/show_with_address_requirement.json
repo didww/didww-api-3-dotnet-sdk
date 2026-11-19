@@ -10,7 +10,9 @@
       ],
       "is_metered": false,
       "area_name": "Aachen",
-      "allow_additional_channels": true
+      "allow_additional_channels": true,
+      "number_type": "local",
+      "is_demo": false
     },
     "relationships": {
       "country": {
@@ -62,19 +64,14 @@
         "personal_mandatory_fields": [],
         "business_mandatory_fields": [],
         "service_description_required": false,
-        "restriction_message": null
+        "restriction_message": null,
+        "number_type": "local"
       },
       "relationships": {
         "country": {
           "links": {
             "self": "https://sandbox-api.didww.com/v3/address_requirements/8da1e0b2-047c-4baf-9c57-57143f09b9ce/relationships/country",
             "related": "https://sandbox-api.didww.com/v3/address_requirements/8da1e0b2-047c-4baf-9c57-57143f09b9ce/country"
-          }
-        },
-        "did_group_type": {
-          "links": {
-            "self": "https://sandbox-api.didww.com/v3/address_requirements/8da1e0b2-047c-4baf-9c57-57143f09b9ce/relationships/did_group_type",
-            "related": "https://sandbox-api.didww.com/v3/address_requirements/8da1e0b2-047c-4baf-9c57-57143f09b9ce/did_group_type"
           }
         }
       }

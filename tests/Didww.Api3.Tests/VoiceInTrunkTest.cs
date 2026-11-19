@@ -1,3 +1,4 @@
+using System.Reflection;
 using Didww.Api3.Http;
 using Didww.Api3.Resource;
 using Didww.Api3.Resource.Configuration;
@@ -5,6 +6,7 @@ using Didww.Api3.Resource.Enums;
 using FluentAssertions;
 using JsonApiSerializer;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Didww.Api3.Tests;
 
@@ -15,7 +17,7 @@ public class VoiceInTrunkTest : BaseTest
     {
         StubGet("voice_in_trunks", "voice_in_trunks/index.json");
 
-        var queryParams = new QueryParams().Include("trunk_group", "pop");
+        var queryParams = new QueryParams().Include("voice_in_trunk_group");
         var response = await Client.VoiceInTrunks().ListAsync(queryParams);
         var trunks = response.Data;
 
@@ -27,6 +29,8 @@ public class VoiceInTrunkTest : BaseTest
         first.Priority.Should().Be(1);
         first.Weight.Should().Be(65535);
         first.CliFormat.Should().Be(CliFormat.E164);
+        first.Pop.Should().BeNull();
+        trunks[1].Pop.Should().Be(Pop.Fra);
     }
 
     [Fact]
@@ -44,7 +48,10 @@ public class VoiceInTrunkTest : BaseTest
         config.Username.Should().Be("username");
         config.Host.Should().Be("203.0.113.78");
         config.Port.Should().Be(8060);
-        config.CodecIds.Should().ContainInOrder(Codec.PCMU, Codec.PCMA, Codec.G729);
+        config.Codecs.Should().Equal(Codec.AmrWb, Codec.Pcma, Codec.G726_32, Codec.TelephoneEvent);
+        config.IceMode.Should().Be(IceMode.Accept);
+        config.RtcpMuxMode.Should().Be(RtcpMuxMode.Initiate);
+        config.RtcpFeedbackMode.Should().Be(RtcpFeedbackMode.Accept);
         config.TransportProtocolId.Should().Be(TransportProtocol.UDP);
         config.AuthEnabled.Should().BeTrue();
         config.AuthUser.Should().Be("auth_user");
@@ -121,7 +128,10 @@ public class VoiceInTrunkTest : BaseTest
             Username = "new-username",
             Host = "203.0.113.110",
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729, Codec.G723, Codec.TELEPHONE_EVENT },
+            Codecs = new List<Codec> { Codec.Amr, Codec.Pcmu, Codec.Speex, Codec.TelephoneEvent },
+            IceMode = IceMode.Initiate,
+            RtcpMuxMode = RtcpMuxMode.Accept,
+            RtcpFeedbackMode = RtcpFeedbackMode.Initiate,
             SstRefreshMethodId = SstRefreshMethod.INVITE,
             MediaEncryptionMode = MediaEncryptionMode.Zrtp,
             StirShakenMode = StirShakenMode.Pai,
@@ -166,7 +176,10 @@ public class VoiceInTrunkTest : BaseTest
             Host = "203.0.113.110",
             SstRefreshMethodId = SstRefreshMethod.INVITE,
             Port = 5060,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA, Codec.G729, Codec.G723, Codec.TELEPHONE_EVENT },
+            Codecs = new List<Codec> { Codec.L16, Codec.Gsm, Codec.Pcma },
+            IceMode = IceMode.Accept,
+            RtcpMuxMode = RtcpMuxMode.Accept,
+            RtcpFeedbackMode = RtcpFeedbackMode.Initiate,
             ReroutingDisconnectCodeIds = new List<ReroutingDisconnectCode>
             {
                 ReroutingDisconnectCode.SIP_400_BAD_REQUEST,
@@ -589,5 +602,223 @@ public class VoiceInTrunkTest : BaseTest
         output.Should().NotContain("srv-user-xyz");
         output.Should().NotContain("srv-pass-xyz");
         output.Should().Contain("[FILTERED]");
+    }
+
+    [Fact]
+    public async Task TestCreateVoiceInTrunkWithPop()
+    {
+        StubPost("voice_in_trunks", "voice_in_trunks/create_with_pop_request.json", "voice_in_trunks/create_with_pop.json");
+
+        var trunk = new VoiceInTrunk
+        {
+            Name = "hello, test pstn trunk",
+            Configuration = new PstnConfiguration { Dst = "558540420024" },
+            Pop = Pop.Fra
+        };
+
+        var created = (await Client.VoiceInTrunks().CreateAsync(trunk)).Data;
+
+        created.Id.Should().Be("41b94706-325e-4704-a433-d65105758836");
+        created.Pop.Should().Be(Pop.Fra);
+    }
+
+    [Fact]
+    public async Task TestCreateVoiceInTrunkOmitsNullPop()
+    {
+        StubPost("voice_in_trunks", "voice_in_trunks/create.json");
+
+        var trunk = new VoiceInTrunk
+        {
+            Name = "hello, test pstn trunk",
+            Configuration = new PstnConfiguration { Dst = "558540420024" }
+        };
+
+        await Client.VoiceInTrunks().CreateAsync(trunk);
+
+        var body = WireMock.LogEntries
+            .Single(e => e.RequestMessage.Method == "POST" && e.RequestMessage.Path == "/v3/voice_in_trunks")
+            .RequestMessage.Body;
+        body.Should().NotContain("\"pop\"");
+    }
+
+    [Fact]
+    public async Task TestUpdateVoiceInTrunkClearPop()
+    {
+        StubPatch("voice_in_trunks/41b94706-325e-4704-a433-d65105758836",
+            "voice_in_trunks/update_clear_pop_request.json", "voice_in_trunks/create.json");
+
+        var trunk = VoiceInTrunk.Build("41b94706-325e-4704-a433-d65105758836");
+        trunk.Pop = null;
+
+        await Client.VoiceInTrunks().UpdateAsync(trunk);
+
+        var body = RequestsTo("/v3/voice_in_trunks/41b94706-325e-4704-a433-d65105758836").Should().ContainSingle()
+            .Subject.Body!;
+        JObject.Parse(body).SelectToken("data.attributes")!.ToString(Formatting.None).Should().Be("{\"pop\":null}");
+    }
+
+    [Theory]
+    [InlineData("\"nyc\"", Pop.Nyc)]
+    [InlineData("\"fra\"", Pop.Fra)]
+    [InlineData("\"lac\"", Pop.Lac)]
+    [InlineData("\"mia\"", Pop.Mia)]
+    [InlineData("\"sg\"", Pop.Sg)]
+    [InlineData("\"hk\"", Pop.Hk)]
+    [InlineData("\"ams\"", Pop.Ams)]
+    public void TestPopWireValues(string json, Pop expected)
+    {
+        JsonConvert.DeserializeObject<Pop>(json).Should().Be(expected);
+        JsonConvert.SerializeObject(expected).Should().Be(json);
+    }
+
+    public static TheoryData<string, Codec> CodecWireValues => new()
+    {
+        { "\"telephone_event\"", Codec.TelephoneEvent },
+        { "\"g723\"", Codec.G723 },
+        { "\"g729\"", Codec.G729 },
+        { "\"pcmu\"", Codec.Pcmu },
+        { "\"pcma\"", Codec.Pcma },
+        { "\"speex\"", Codec.Speex },
+        { "\"gsm\"", Codec.Gsm },
+        { "\"g726_32\"", Codec.G726_32 },
+        { "\"g721\"", Codec.G721 },
+        { "\"g726_24\"", Codec.G726_24 },
+        { "\"g726_40\"", Codec.G726_40 },
+        { "\"g726_16\"", Codec.G726_16 },
+        { "\"l16\"", Codec.L16 },
+        { "\"amr\"", Codec.Amr },
+        { "\"amr_wb\"", Codec.AmrWb },
+    };
+
+    [Theory]
+    [MemberData(nameof(CodecWireValues))]
+    public void TestCodecWireValues(string json, Codec expected)
+    {
+        JsonConvert.DeserializeObject<Codec>(json).Should().Be(expected);
+        JsonConvert.SerializeObject(expected).Should().Be(json);
+    }
+
+    [Fact]
+    public void TestCodecHasOneMemberPerDocumentedName()
+    {
+        DeclaredValues<Codec>().Should().BeEquivalentTo(
+            "telephone_event", "g723", "g729", "pcmu", "pcma", "speex", "gsm", "g726_32", "g721",
+            "g726_24", "g726_40", "g726_16", "l16", "amr", "amr_wb");
+    }
+
+    public static TheoryData<string, IceMode, RtcpMuxMode, RtcpFeedbackMode> ModeWireValues => new()
+    {
+        { "\"disabled\"", IceMode.Disabled, RtcpMuxMode.Disabled, RtcpFeedbackMode.Disabled },
+        { "\"accept\"", IceMode.Accept, RtcpMuxMode.Accept, RtcpFeedbackMode.Accept },
+        { "\"initiate\"", IceMode.Initiate, RtcpMuxMode.Initiate, RtcpFeedbackMode.Initiate },
+    };
+
+    [Theory]
+    [MemberData(nameof(ModeWireValues))]
+    public void TestModeWireValues(string json, IceMode ice, RtcpMuxMode mux, RtcpFeedbackMode feedback)
+    {
+        JsonConvert.SerializeObject(ice).Should().Be(json);
+        JsonConvert.SerializeObject(mux).Should().Be(json);
+        JsonConvert.SerializeObject(feedback).Should().Be(json);
+        JsonConvert.DeserializeObject<IceMode>(json).Should().Be(ice);
+        JsonConvert.DeserializeObject<RtcpMuxMode>(json).Should().Be(mux);
+        JsonConvert.DeserializeObject<RtcpFeedbackMode>(json).Should().Be(feedback);
+    }
+
+    [Fact]
+    public void TestModesHaveTheDocumentedValues()
+    {
+        string[] documented = ["disabled", "accept", "initiate"];
+        DeclaredValues<IceMode>().Should().BeEquivalentTo(documented);
+        DeclaredValues<RtcpMuxMode>().Should().BeEquivalentTo(documented);
+        DeclaredValues<RtcpFeedbackMode>().Should().BeEquivalentTo(documented);
+    }
+
+    [Fact]
+    public void TestCodecAndModesKeepAValueTheSdkDoesNotKnow()
+    {
+        JsonConvert.DeserializeObject<Codec>("\"evs\"").Should().Be(new Codec("evs"));
+        JsonConvert.SerializeObject(new Codec("evs")).Should().Be("\"evs\"");
+        JsonConvert.DeserializeObject<IceMode?>("\"require\"").Should().Be(new IceMode("require"));
+        JsonConvert.DeserializeObject<RtcpMuxMode?>("\"require\"").Should().Be(new RtcpMuxMode("require"));
+        JsonConvert.DeserializeObject<RtcpFeedbackMode?>("\"require\"").Should().Be(new RtcpFeedbackMode("require"));
+    }
+
+    [Fact]
+    public void TestModeReadsNullAsNull()
+    {
+        JsonConvert.DeserializeObject<IceMode?>("null").Should().BeNull();
+    }
+
+    [Fact]
+    public void TestCodecSendsBackANullItAlsoRead()
+    {
+        var config = JsonConvert.DeserializeObject<SipConfiguration>("{\"codecs\":[null,\"pcmu\"]}")!;
+
+        config.Codecs.Should().Equal(default(Codec), Codec.Pcmu);
+        JsonConvert.SerializeObject(new SipConfiguration { Codecs = config.Codecs }).Should().Be("{\"codecs\":[null,\"pcmu\"]}");
+    }
+
+    [Fact]
+    public void TestCodecRejectsANonStringValue()
+    {
+        var read = () => JsonConvert.DeserializeObject<Codec>("1");
+
+        read.Should().Throw<JsonSerializationException>().WithMessage("Unexpected token Integer for Codec, expected a string.");
+    }
+
+    [Fact]
+    public void TestModeRejectsANonStringValue()
+    {
+        var read = () => JsonConvert.DeserializeObject<IceMode?>("1");
+
+        read.Should().Throw<JsonSerializationException>().WithMessage("Unexpected token Integer for IceMode, expected a string.");
+    }
+
+    [Fact]
+    public async Task TestUpdateSendsBackCodecsAndModesTheSdkDoesNotKnow()
+    {
+        var id = "a80006b6-4183-4865-8b99-7ebbd359a762";
+        StubGet($"voice_in_trunks/{id}", "voice_in_trunks/show_unknown_media_values.json");
+        StubPatch($"voice_in_trunks/{id}", "voice_in_trunks/show_unknown_media_values.json");
+
+        var config = (SipConfiguration)(await Client.VoiceInTrunks().FindAsync(id)).Data.Configuration!;
+        config.Codecs.Should().Equal(new Codec("evs"), Codec.Pcmu);
+        config.IceMode.Should().Be(new IceMode("require"));
+
+        config.Host = "203.0.113.111";
+        var trunk = VoiceInTrunk.Build(id);
+        trunk.Configuration = config;
+        await Client.VoiceInTrunks().UpdateAsync(trunk);
+
+        var sent = JObject.Parse(RequestsTo($"/v3/voice_in_trunks/{id}").Single(r => r.Method == "PATCH").Body!);
+        var attributes = sent.SelectToken("data.attributes.configuration.attributes")!;
+        attributes["codecs"]!.ToObject<string[]>().Should().Equal("evs", "pcmu");
+        attributes["ice_mode"]!.Value<string>().Should().Be("require");
+        attributes["rtcp_mux_mode"]!.Value<string>().Should().Be("require");
+        attributes["rtcp_feedback_mode"]!.Value<string>().Should().Be("require");
+    }
+
+    private static IEnumerable<string> DeclaredValues<T>() => typeof(T)
+        .GetProperties(BindingFlags.Public | BindingFlags.Static)
+        .Where(property => property.PropertyType == typeof(T))
+        .Select(property => property.GetValue(null)!.ToString()!);
+
+    [Fact]
+    public void TestSipConfigurationHasNoCodecIds()
+    {
+        typeof(SipConfiguration).GetProperty("CodecIds").Should().BeNull();
+
+        var json = JsonConvert.SerializeObject(new SipConfiguration { Codecs = new List<Codec> { Codec.Pcma } });
+
+        json.Should().Be("{\"codecs\":[\"pcma\"]}");
+    }
+
+    [Fact]
+    public void TestSipConfigurationSendsNoDefaultCodecsOrModes()
+    {
+        var json = JsonConvert.SerializeObject(new SipConfiguration { Username = "u" });
+
+        json.Should().Be("{\"username\":\"u\"}");
     }
 }

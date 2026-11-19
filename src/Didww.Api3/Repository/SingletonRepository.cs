@@ -14,12 +14,11 @@ public class SingletonRepository<T> : ReadOnlyRepository<T> where T : BaseResour
     {
     }
 
-    public async Task<ApiResponse<T>> FindAsync(QueryParams? queryParams = null)
+    public async Task<ApiResponse<T>> FindAsync(QueryParams? queryParams = null,
+        CancellationToken cancellationToken = default)
     {
         var url = BuildUrl(queryParams: queryParams);
-        var response = await HttpClient.GetAsync(url);
-        await HandleErrorResponseAsync(response);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await SendAsync(HttpMethod.Get, url, null, cancellationToken).ConfigureAwait(false);
         var data = JsonConvert.DeserializeObject<T>(body, SerializerSettings)!;
         return new ApiResponse<T>(data, ExtractMeta(body));
     }

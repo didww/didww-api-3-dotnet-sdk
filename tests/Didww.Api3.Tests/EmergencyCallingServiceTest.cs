@@ -45,6 +45,7 @@ public class EmergencyCallingServiceTest : BaseTest
         service.Name.Should().Be("Berlin Office ECS");
         service.Reference.Should().Be("ECS-0042");
         service.Status.Should().Be(EmergencyCallingServiceStatus.PendingUpdate);
+        service.NumberType.Should().Be(NumberType.National);
         service.Meta.Should().NotBeNull();
         service.Meta!["setup_price"]!.ToString().Should().Be("5.0");
         service.Meta!["monthly_price"]!.ToString().Should().Be("3.75");

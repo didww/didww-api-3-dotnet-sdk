@@ -26,7 +26,7 @@ public static class VoiceInTrunkSipRegistrationExample
             EnabledSipRegistration = true,
             UseDidInRuri = true,
             CnamLookup = false,
-            CodecIds = new List<Codec> { Codec.PCMU, Codec.PCMA },
+            Codecs = new List<Codec> { Codec.Pcmu, Codec.Pcma },
             TransportProtocolId = TransportProtocol.UDP,
         };
         var trunk = new VoiceInTrunk

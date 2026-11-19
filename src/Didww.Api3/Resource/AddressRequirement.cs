@@ -16,13 +16,24 @@ public class AddressRequirement : BaseResource
     [JsonProperty("personal_proof_qty")] public int? PersonalProofQty { get; set; }
     [JsonProperty("business_proof_qty")] public int? BusinessProofQty { get; set; }
     [JsonProperty("address_proof_qty")] public int? AddressProofQty { get; set; }
+    /// <summary>
+    /// Identity fields that must be filled in for a personal identity, among
+    /// <c>birth_date</c>, <c>country</c>, <c>birth_country</c>, <c>id_number</c>,
+    /// <c>personal_tax_id</c> and <c>contact_email</c>. Empty when none are.
+    /// </summary>
     [JsonProperty("personal_mandatory_fields")] public List<string>? PersonalMandatoryFields { get; set; }
+    /// <summary>
+    /// Identity fields that must be filled in for a business identity, among
+    /// <c>id_number</c>, <c>tax_id</c> (<see cref="Identity.VatId"/>), <c>country</c>,
+    /// <c>company_reg_number</c>, <c>personal_tax_id</c> and <c>contact_email</c>. Empty when none are.
+    /// </summary>
     [JsonProperty("business_mandatory_fields")] public List<string>? BusinessMandatoryFields { get; set; }
     [JsonProperty("service_description_required")] public bool? ServiceDescriptionRequired { get; set; }
     [JsonProperty("restriction_message")] public string? RestrictionMessage { get; set; }
+    /// <summary>Number type the requirement applies to. Read-only. (API 2026-11-19)</summary>
+    [JsonProperty("number_type")] public NumberType? NumberType { get; set; }
 
     [JsonProperty("country")] public Country? Country { get; set; }
-    [JsonProperty("did_group_type")] public DidGroupType? DidGroupType { get; set; }
     [JsonProperty("personal_permanent_document")] public SupportingDocumentTemplate? PersonalPermanentDocument { get; set; }
     [JsonProperty("business_permanent_document")] public SupportingDocumentTemplate? BusinessPermanentDocument { get; set; }
     [JsonProperty("personal_onetime_document")] public SupportingDocumentTemplate? PersonalOnetimeDocument { get; set; }

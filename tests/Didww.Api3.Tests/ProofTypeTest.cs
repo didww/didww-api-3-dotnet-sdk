@@ -17,6 +17,7 @@ public class ProofTypeTest : BaseTest
         var first = types[0];
         first.Id.Should().Be("ab1fb565-ac55-4c73-bc55-64dc61e70169");
         first.Name.Should().Be("Utility Bill");
-        first.EntityType.Should().Be("Address");
+        first.EntityType.Should().Be("address");
+        types.Select(t => t.EntityType).Should().Equal("address", "address", "address", "personal", "address");
     }
 }

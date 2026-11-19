@@ -86,8 +86,12 @@ public class Did : BaseResource
         set
         {
             SetProperty(ref _voiceInTrunk, value);
-            _voiceInTrunkGroup = null;
-            MarkDirty("voiceInTrunkGroup");
+            // A response with both relationships sets the empty one too; it must not clear the other.
+            if (value != null || IsDirtyTrackingEnabled)
+            {
+                _voiceInTrunkGroup = null;
+                MarkDirty("voiceInTrunkGroup");
+            }
         }
     }
 
@@ -99,8 +103,59 @@ public class Did : BaseResource
         set
         {
             SetProperty(ref _voiceInTrunkGroup, value);
-            _voiceInTrunk = null;
-            MarkDirty("voiceInTrunk");
+            if (value != null || IsDirtyTrackingEnabled)
+            {
+                _voiceInTrunk = null;
+                MarkDirty("voiceInTrunk");
+            }
+        }
+    }
+
+    private SmsTrunk? _smsTrunk;
+    /// <summary>
+    /// SMS trunk inbound messages for this DID are delivered to.
+    /// Assigning a trunk also unassigns <see cref="SmsTrunkGroup"/>
+    /// (the PATCH sends <c>sms_trunk_group: {data: null}</c>). To unassign,
+    /// set to null on a built or loaded resource: the PATCH sends
+    /// <c>sms_trunk: {data: null}</c> and leaves the group alone.
+    /// (API 2026-11-19)
+    /// </summary>
+    [JsonProperty("sms_trunk")]
+    public SmsTrunk? SmsTrunk
+    {
+        get => _smsTrunk;
+        set
+        {
+            SetProperty(ref _smsTrunk, value);
+            if (value != null)
+            {
+                _smsTrunkGroup = null;
+                MarkDirty("smsTrunkGroup");
+            }
+        }
+    }
+
+    private SmsTrunkGroup? _smsTrunkGroup;
+    /// <summary>
+    /// SMS trunk group inbound messages for this DID are delivered to.
+    /// Assigning a group also unassigns <see cref="SmsTrunk"/>
+    /// (the PATCH sends <c>sms_trunk: {data: null}</c>). To unassign,
+    /// set to null on a built or loaded resource: the PATCH sends
+    /// <c>sms_trunk_group: {data: null}</c> and leaves the trunk alone.
+    /// (API 2026-11-19)
+    /// </summary>
+    [JsonProperty("sms_trunk_group")]
+    public SmsTrunkGroup? SmsTrunkGroup
+    {
+        get => _smsTrunkGroup;
+        set
+        {
+            SetProperty(ref _smsTrunkGroup, value);
+            if (value != null)
+            {
+                _smsTrunk = null;
+                MarkDirty("smsTrunk");
+            }
         }
     }
 

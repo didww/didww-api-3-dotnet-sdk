@@ -118,6 +118,9 @@ public class EncryptWithClientTest : BaseTest
         var encrypt = new Encrypt(Client);
         encrypt.Fingerprint.Should().Contain(":::");
         encrypt.PublicKeys.Should().HaveCount(2);
+        MintCount.Should().Be(0, "public keys are fetched without a token");
+        RequestsTo("/v3/public_keys").Should().ContainSingle()
+            .Which.Headers.Should().NotContainKey("Authorization").And.NotContainKey("Api-Key");
     }
 
     [Fact]

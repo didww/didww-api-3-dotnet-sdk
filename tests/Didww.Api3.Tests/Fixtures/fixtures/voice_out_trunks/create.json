@@ -13,6 +13,14 @@
       "threshold_reached": false,
       "threshold_amount": null,
       "media_encryption_mode": "disabled",
+      "codecs": [
+        "opus",
+        "pcma",
+        "telephone_event"
+      ],
+      "ice_mode": "initiate",
+      "rtcp_mux_mode": "disabled",
+      "rtcp_feedback_mode": "accept",
       "default_dst_action": "allow_all",
       "dst_prefixes": [],
       "force_symmetric_rtp": false,

@@ -33,11 +33,15 @@ public static class DidReservationsExample
         Console.WriteLine($"    Expires at: {created.ExpiresAt}");
 
         Console.WriteLine("\n--- List DID Reservations ---");
-        var listResponse = await client.DidReservations().ListAsync();
+        var listResponse = await client.DidReservations().ListAsync(new QueryParams().Include("available_did"));
         foreach (var r in listResponse.Data)
         {
-            Console.WriteLine($"  Reservation: {r.Id} (expires: {r.ExpiresAt})");
+            Console.WriteLine($"  Reservation: {r.Id} {r.AvailableDid?.Number ?? "unknown"} (expires: {r.ExpiresAt})");
         }
+
+        Console.WriteLine("\n--- Find DID Reservation ---");
+        var found = (await client.DidReservations().FindAsync(created.Id!)).Data;
+        Console.WriteLine($"  Found: {found.Id} ({found.Description})");
 
         Console.WriteLine("\n--- Delete DID Reservation ---");
         await client.DidReservations().DeleteAsync(created.Id!);

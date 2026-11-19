@@ -13,6 +13,14 @@
       "threshold_reached": false,
       "threshold_amount": "200.0",
       "media_encryption_mode": "disabled",
+      "codecs": [
+        "g722",
+        "amr",
+        "gsm"
+      ],
+      "ice_mode": "disabled",
+      "rtcp_mux_mode": "initiate",
+      "rtcp_feedback_mode": "disabled",
       "default_dst_action": "reject_all",
       "dst_prefixes": [
         "370"

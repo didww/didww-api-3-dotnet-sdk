@@ -216,9 +216,11 @@ public class ExportTest : BaseTest
         );
 
         var export = new Export { Id = "nonexistent", Url = exportUrl };
-        var act = () => Client.DownloadExportAsync(export, Path.Combine(Path.GetTempPath(), "test.csv"));
-        await act.Should().ThrowAsync<DidwwClientException>()
-            .WithMessage("*404*");
+        var filePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var act = () => Client.DownloadExportAsync(export, filePath);
+        var e = (await act.Should().ThrowAsync<DidwwApiException>().WithMessage("*HTTP 404*")).Which;
+        e.HttpStatus.Should().Be(404);
+        File.Exists(filePath).Should().BeFalse("the file is created only after a 200 answer");
     }
 
     [Fact]
@@ -240,10 +242,11 @@ public class ExportTest : BaseTest
         {
             await Client.DownloadExportAsync(export, tempFile);
 
-            var request = WireMock.LogEntries.First().RequestMessage;
-            request.Headers.Should().ContainKey("Api-Key");
-            request.Headers.Should().ContainKey("User-Agent");
-            request.Headers.Should().ContainKey(DidwwClient.ApiVersionHeader);
+            var request = RequestsTo("/v3/exports/test-id.csv.gz").Should().ContainSingle().Subject;
+            request.Headers!["Authorization"].Should().ContainSingle()
+                .Which.Should().Be("Bearer " + TestAccessToken);
+            request.Headers.Should().NotContainKey("Api-Key");
+            request.Headers.Should().NotContainKey("X-DIDWW-API-Version");
             request.Headers!["User-Agent"].Should().ContainSingle()
                 .Which.Should().Be(DidwwClient.SdkUserAgent);
         }
@@ -251,6 +254,256 @@ public class ExportTest : BaseTest
         {
             File.Delete(tempFile);
         }
+    }
+
+    [Fact]
+    public async Task TestDownloadExportToStream()
+    {
+        var gzData = CompressToGzip("Date/Time Start (UTC),DID\n");
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/02bf6df4.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/octet-stream").WithBody(gzData)
+        );
+        using var destination = new MemoryStream();
+
+        await Client.DownloadExportAsync(WireMock.Url + "/v3/exports/02bf6df4.csv.gz", destination);
+
+        destination.ToArray().Should().Equal(gzData);
+        MintCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TestDownloadExportJsonApiError()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/missing.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(404)
+                .WithHeader("Content-Type", "application/vnd.api+json")
+                .WithBody("""{"errors":[{"title":"Not found","detail":"Export file not found","status":"404"}]}""")
+        );
+
+        var act = () => Client.DownloadExportAsync(WireMock.Url + "/v3/exports/missing.csv.gz", Stream.Null);
+
+        var e = (await act.Should().ThrowAsync<DidwwApiException>()).Which;
+        e.HttpStatus.Should().Be(404);
+        e.Errors.Should().ContainSingle().Which.Detail.Should().Be("Export file not found");
+    }
+
+    [Fact]
+    public async Task TestDownloadExportPlainError()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/missing.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(404).WithBody("not found")
+        );
+
+        var act = () => Client.DownloadExportAsync(WireMock.Url + "/v3/exports/missing.csv.gz", Stream.Null);
+
+        var e = (await act.Should().ThrowAsync<DidwwApiException>()).Which;
+        e.Errors.Should().ContainSingle().Which.Detail.Should().Be("not found");
+    }
+
+    [Fact]
+    public async Task TestDownloadExportDoesNotFollowRedirects()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/02bf6df4.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(302).WithHeader("Location", WireMock.Url + "/elsewhere/export.csv.gz")
+        );
+        WireMock.Given(
+            Request.Create().WithPath("/elsewhere/export.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(200).WithBody(CompressToGzip("x"))
+        );
+        using var destination = new MemoryStream();
+
+        var act = () => Client.DownloadExportAsync(WireMock.Url + "/v3/exports/02bf6df4.csv.gz", destination);
+
+        (await act.Should().ThrowAsync<DidwwApiException>()).Which.HttpStatus.Should().Be(302);
+        RequestsTo("/elsewhere/export.csv.gz").Should().BeEmpty();
+        destination.Length.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task TestDownloadExportRefusesRedirectFollowedByInnerHandler()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/02bf6df4.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(302).WithHeader("Location", WireMock.Url + "/elsewhere/export.csv.gz")
+        );
+        WireMock.Given(
+            Request.Create().WithPath("/elsewhere/export.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(200).WithBody(CompressToGzip("x"))
+        );
+        using var followingHandler = new HttpClientHandler { AllowAutoRedirect = true };
+        var client = NewClientBuilder().SetInnerHandler(followingHandler).Build();
+        using var destination = new MemoryStream();
+
+        var act = () => client.DownloadExportAsync(WireMock.Url + "/v3/exports/02bf6df4.csv.gz", destination);
+
+        (await act.Should().ThrowAsync<DidwwClientException>()).Which.Message.Should().Contain("redirected");
+        RequestsTo("/elsewhere/export.csv.gz").Should().ContainSingle("the inner handler followed the redirect");
+        destination.Length.Should().Be(0, "nothing from the redirect target is written");
+    }
+
+    [Fact]
+    public async Task TestDownloadExportNoContent()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/02bf6df4.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(204)
+        );
+
+        var act = () => Client.DownloadExportAsync(WireMock.Url + "/v3/exports/02bf6df4.csv.gz", Stream.Null);
+
+        var e = (await act.Should().ThrowAsync<DidwwApiException>()).Which;
+        e.HttpStatus.Should().Be(204);
+        e.Errors.Should().ContainSingle().Which.Title.Should().Be("Unexpected status");
+    }
+
+    [Fact]
+    public async Task TestDownloadExportRetriedAfter401()
+    {
+        var gzData = CompressToGzip("Date/Time Start (UTC),DID\n");
+        using var server = new FakeAuthServer();
+        server.Api = (r, _) =>
+        {
+            if (r.Authorization == "Bearer token-1")
+                return Task.FromResult(FakeAuthServer.Json(401, "{}", "application/vnd.api+json"));
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(gzData)
+            });
+        };
+        var client = server.NewClient();
+        using var destination = new MemoryStream();
+
+        await client.DownloadExportAsync("https://api.example.test/v3/exports/02bf6df4.csv.gz", destination);
+
+        destination.ToArray().Should().Equal(gzData);
+        server.ApiRequests.Select(r => r.Authorization).Should().Equal("Bearer token-1", "Bearer token-2");
+        server.Mints.Should().Be(2);
+    }
+
+    [Theory]
+    [InlineData("other host", "https://other.example.test/v3/exports/1.csv.gz")]
+    [InlineData("http on an https base URL", "http://api.example.test/v3/exports/1.csv.gz")]
+    [InlineData("relative URL", "/v3/exports/1.csv.gz")]
+    [InlineData("not a URL", "::")]
+    public async Task TestDownloadExportRefusesUrlOutsideBaseUrl(string name, string url)
+    {
+        using var server = new FakeAuthServer();
+        var client = server.NewClient();
+        using var destination = new MemoryStream();
+
+        var toStream = () => client.DownloadExportAsync(url, destination);
+        var decompressed = () => client.DownloadAndDecompressExportAsync(new Export { Id = "1", Url = url },
+            Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+
+        (await toStream.Should().ThrowAsync<DidwwClientException>()).Which.Message
+            .Should().Contain("does not match the API base URL", name);
+        (await decompressed.Should().ThrowAsync<DidwwClientException>()).Which.Message
+            .Should().Contain("does not match the API base URL", name);
+        destination.Length.Should().Be(0);
+        server.ApiRequests.Should().BeEmpty();
+        server.Mints.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("https://proxy.example.com/v3", "https://proxy.example.com/v3/exports/1.csv.gz", true)]
+    [InlineData("https://proxy.example.com/v3", "https://api.didww.com/v3/exports/1.csv.gz", true)]
+    [InlineData("https://proxy.example.com/v3", "https://api.didww.com:443/v3/exports/1.csv.gz", true)]
+    [InlineData("https://proxy.example.com/v3", "https://API.didww.com./v3/exports/1.csv.gz", true)]
+    [InlineData("https://proxy.example.com:443/v3", "https://proxy.example.com/v3/exports/1.csv.gz", true)]
+    [InlineData("https://proxy.example.com./v3", "https://proxy.example.com/v3/exports/1.csv.gz", true)]
+    [InlineData("http://proxy.example.com/v3", "http://proxy.example.com:80/v3/exports/1.csv.gz", true)]
+    [InlineData("https://proxy.example.com/v3", "https://other.example.com/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "https://sandbox-api.didww.com/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "http://api.didww.com/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "https://api.didww.com:8443/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "https://proxy.example.com:8443/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "http://proxy.example.com:443/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "/v3/exports/1.csv.gz", false)]
+    [InlineData("https://proxy.example.com/v3", "file:///v3/exports/1.csv.gz", false)]
+    public void TestCheckExportUrlOrigin(string baseUrl, string url, bool allowed)
+    {
+        var client = DidwwClient.NewBuilder()
+            .SetCredentials(new DidwwCredentials("test-api-key", DidwwEnvironment.Production))
+            .SetBaseUrl(baseUrl)
+            .Build();
+
+        var act = () => client.CheckExportUrl(url);
+
+        if (allowed)
+            act.Should().NotThrow();
+        else
+            act.Should().Throw<DidwwClientException>().WithMessage("*does not match the API base URL*");
+    }
+
+    [Fact]
+    public async Task TestDownloadExportPropagatesDestinationError()
+    {
+        WireMock.Given(
+            Request.Create().WithPath("/v3/exports/02bf6df4.csv.gz").UsingGet()
+        ).RespondWith(
+            Response.Create().WithStatusCode(200).WithBody(CompressToGzip("Date/Time Start (UTC),DID\n"))
+        );
+        var writeError = new IOException("disk full");
+
+        var act = () => Client.DownloadExportAsync(WireMock.Url + "/v3/exports/02bf6df4.csv.gz",
+            new FailingStream(writeError));
+
+        (await act.Should().ThrowAsync<IOException>()).Which.Should().BeSameAs(writeError);
+    }
+
+    [Fact]
+    public async Task TestDownloadExportWrapsBrokenBody()
+    {
+        using var server = new FakeAuthServer();
+        server.Api = (_, _) => Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new FailingStream(new IOException("connection reset")))
+        });
+        var client = server.NewClient();
+
+        var act = () => client.DownloadExportAsync("https://api.example.test/v3/exports/1.csv.gz", Stream.Null);
+
+        var e = (await act.Should().ThrowAsync<DidwwClientException>()).Which;
+        e.Message.Should().Contain("Failed to read export data");
+        e.InnerException.Should().BeOfType<IOException>();
+    }
+
+    private sealed class FailingStream : Stream
+    {
+        private readonly System.Exception _error;
+
+        public FailingStream(System.Exception error)
+        {
+            _error = error;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw _error;
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            throw _error;
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) =>
+            throw _error;
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw _error;
     }
 
     private static byte[] CompressToGzip(string content)

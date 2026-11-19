@@ -6,7 +6,7 @@ namespace Didww.Api3.Examples;
 // Lists and cancels customer Emergency Calling Services (2026-04-16).
 //
 // An EmergencyCallingService represents a customer's 911/112 subscription
-// attached to one or more DIDs. It ties an address, identity, DID group type
+// attached to one or more DIDs. It ties an address, identity, number type
 // and country together with a pricing snapshot (meta.setup_price, meta.monthly_price).
 //
 // Supported operations: index, show, destroy (cancel).
@@ -15,7 +15,7 @@ public static class EmergencyCallingServicesExample
     public static async Task RunAsync(DidwwClient client)
     {
         Console.WriteLine("=== Emergency Calling Services ===");
-        var queryParams = new QueryParams().Include("country", "did_group_type", "dids");
+        var queryParams = new QueryParams().Include("country", "dids");
         var response = await client.EmergencyCallingServices().ListAsync(queryParams);
         var services = response.Data;
         Console.WriteLine($"Found {services.Count} emergency calling services");
@@ -27,7 +27,7 @@ public static class EmergencyCallingServicesExample
             Console.WriteLine($"  Reference: {svc.Reference}");
             Console.WriteLine($"  Status: {svc.Status}");
             Console.WriteLine($"  Country: {svc.Country?.Name}");
-            Console.WriteLine($"  DID Group Type: {svc.DidGroupType?.Name}");
+            Console.WriteLine($"  Number Type: {svc.NumberType}");
             Console.WriteLine($"  Activated: {svc.ActivatedAt}");
             if (svc.CanceledAt.HasValue)
                 Console.WriteLine($"  Canceled: {svc.CanceledAt}");
