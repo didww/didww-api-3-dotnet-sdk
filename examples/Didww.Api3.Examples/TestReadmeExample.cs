@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using Didww.Api3.Auth;
 using Didww.Api3.Callback;
 using Didww.Api3.Exception;
@@ -10,7 +11,7 @@ using Didww.Api3.Resource.Configuration.AuthenticationMethod;
 using Didww.Api3.Resource.Configuration.SmsTrunkConfiguration;
 using Didww.Api3.Resource.Enums;
 using Didww.Api3.Resource.OrderItem;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -22,11 +23,17 @@ namespace Didww.Api3.Examples;
 //
 // Placeholders such as "uuid" or "trunk-uuid" are replaced with resources of the
 // sandbox account or with resources the check creates. Everything a check
-// creates is deleted again, except orders and exports, which cannot be deleted;
-// a DID or Sender ID verification a check changes is restored. Snippets that
-// need production, a proxy or Redis server, or a review by DIDWW staff are
-// reported as skipped with the reason. The shell snippets (installation,
-// development, release) are not checked.
+// creates is deleted again, except orders, exports and verifications, which
+// cannot be deleted; a DID or Sender ID verification a check changes is
+// restored. The address and emergency verifications it creates are printed on
+// lines starting with "REVIEW", so that they can be approved or rejected.
+// Only the snippets that would talk to production are skipped.
+//
+// The proxy and Redis snippets need a server:
+//   DIDWW_README_PROXY_URL  an HTTP proxy, e.g. http://localhost:3128
+//   DIDWW_README_REDIS_URL  a Redis server, e.g. redis://localhost:6379/0
+// Without the variable, that check is reported as skipped. The shell snippets
+// (installation, development, release) are not checked.
 //
 // Usage: ... -- test-readme
 public static class TestReadmeExample
@@ -107,16 +114,29 @@ public static class TestReadmeExample
         });
 
         Section("Custom HTTP Handler");
-        Skip("Custom HTTP handler with a proxy", "needs a proxy server; the next check passes a handler without one");
-        await Check("Custom HTTP handler without redirects", async () =>
+        await Check("Custom HTTP handler with a proxy", async () =>
         {
-            using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            // README: new WebProxy("http://proxy.example.com:8080") and DidwwEnvironment.Production.
+            // The check sends sandbox requests through the proxy of DIDWW_README_PROXY_URL;
+            // RecordingProxy is that WebProxy, noting the hosts it is asked to proxy.
+            var proxy = new RecordingProxy(RequiredSetting("DIDWW_README_PROXY_URL"));
+            using var handler = new HttpClientHandler
+            {
+                Proxy = proxy,
+                UseProxy = true,
+                AllowAutoRedirect = false
+            };
             var client = DidwwClient.NewBuilder()
                 .SetCredentials(new DidwwCredentials(_apiKey, DidwwEnvironment.Sandbox))
                 .SetInnerHandler(handler)
+                .SetTokenStore(new MemoryTokenStore()) // a new store, so that the token is minted through the proxy too
                 .Build();
             var balance = (await client.Balance().FindAsync()).Data;
-            Console.WriteLine($"    Balance through the handler: {balance.BalanceAmount}");
+            var publicKeys = await client.PublicKeys().ListAsync();
+            Console.WriteLine($"    balance {balance.BalanceAmount}, {publicKeys.Data.Count} public keys");
+            Console.WriteLine($"    proxied hosts: {string.Join(", ", proxy.Hosts.Keys.Order())}");
+            foreach (var url in new[] { DidwwEnvironment.Sandbox.GetAuthUrl(), DidwwEnvironment.Sandbox.GetBaseUrl() })
+                Expect(proxy.Hosts.ContainsKey(new Uri(url).Host), $"no request to {new Uri(url).Host} went through the proxy");
         });
 
         Section("Scope");
@@ -142,18 +162,43 @@ public static class TestReadmeExample
         });
 
         Section("Token cache");
-        Skip("Token cache: RedisCache", "needs a Redis server and the Microsoft.Extensions.Caching.StackExchangeRedis package; the next check uses an in-process IDistributedCache");
-        await Check("Token cache: DistributedCacheTokenStore", async () =>
+        await Check("Token cache: DistributedCacheTokenStore over RedisCache", async () =>
         {
-            var cache = new DictionaryDistributedCache();
+            var configuration = RedisConfiguration(RequiredSetting("DIDWW_README_REDIS_URL"));
+            // README: new RedisCache(new RedisCacheOptions { Configuration = "localhost:6379" }).
+            // An instance name of this run's own makes the first client mint a token.
+            var options = new RedisCacheOptions { Configuration = configuration, InstanceName = $"didww-readme-{_suffix}:" };
+
+            using var cache = new RedisCache(options);
+            var store = new CountingTokenStore(new DistributedCacheTokenStore(cache));
             var client = DidwwClient.NewBuilder()
                 .SetCredentials(new DidwwCredentials(_apiKey, DidwwEnvironment.Sandbox))
-                .SetTokenStore(new DistributedCacheTokenStore(cache))
+                .SetTokenStore(store)
                 .Build();
             await client.Balance().FindAsync();
-            Expect(cache.Keys.Any(key => key.StartsWith("didww:token:v1:", StringComparison.Ordinal)),
-                "no token stored under a didww:token:v1: key");
-            Console.WriteLine($"    {cache.Keys.Count} token(s) in the cache");
+            Expect(store.Writes.Count == 1, $"the first client stored {store.Writes.Count} tokens, expected 1");
+            var key = store.Writes[0];
+            Expect(key.StartsWith("didww:token:v1:", StringComparison.Ordinal), "the key does not start with didww:token:v1:");
+
+            // A second cache and client, with a connection of their own, read the token from Redis
+            using var otherCache = new RedisCache(options);
+            try
+            {
+                Expect(await otherCache.GetAsync(key) != null, "the token is not in Redis");
+                var otherStore = new CountingTokenStore(new DistributedCacheTokenStore(otherCache));
+                var otherClient = DidwwClient.NewBuilder()
+                    .SetCredentials(new DidwwCredentials(_apiKey, DidwwEnvironment.Sandbox))
+                    .SetTokenStore(otherStore)
+                    .Build();
+                await otherClient.Balance().FindAsync();
+                Expect(otherStore.Hits > 0 && otherStore.Writes.Count == 0,
+                    "the second client minted a token instead of reusing the one in Redis");
+                Console.WriteLine($"    minted and stored by the first client, reused by the second ({otherStore.Hits} read(s))");
+            }
+            finally
+            {
+                await otherCache.RemoveAsync(key);
+            }
         });
         await Check("Token cache: own ITokenStore", async () =>
         {
@@ -719,7 +764,39 @@ public static class TestReadmeExample
             var verifications = await _client.AddressVerifications().ListAsync();
             Console.WriteLine($"    {verifications.Data.Count} address verification(s)");
         });
-        Skip("Address verifications: create", "submits a DID and an address for a verification that DIDWW staff review");
+        await Check("Address verifications: create (left for review)", async cleanup =>
+        {
+            // A Ukrainian DID whose DID group has an address requirement, without an address verification
+            var did = await DidNeedingAddressAsync();
+            var requirement = (await _client.AddressRequirements().FindAsync(did.DidGroup!.AddressRequirement!.Id!,
+                new QueryParams().Include("country", "personal_proof_types", "business_proof_types", "address_proof_types",
+                    "personal_permanent_document", "business_permanent_document"))).Data;
+            Console.WriteLine($"    DID {did.Number}: requirement {requirement.Id}, identity {requirement.IdentityType}, " +
+                              $"address area level {requirement.AddressAreaLevel}");
+
+            // An identity and an address that meet the requirement, checked before the verification
+            var (identity, address) = await CreateIdentityAndAddressForAsync(requirement, did.DidGroup, cleanup);
+            await _client.AddressRequirementValidations().CreateAsync(new AddressRequirementValidation
+            {
+                AddressRequirement = BaseResource.Build<AddressRequirement>(requirement.Id!),
+                Address = Address.Build(address.Id!),
+                Identity = Identity.Build(identity.Id!)
+            });
+            Console.WriteLine("    the identity and the address meet the requirement");
+
+            var verification = new AddressVerification
+            {
+                CallbackUrl = "https://example.com/callback",
+                CallbackMethod = CallbackMethod.Post,
+                Address = Address.Build(address.Id!),
+                Dids = new List<Did> { Did.Build(did.Id!) }
+            };
+            if (requirement.ServiceDescriptionRequired == true)
+                verification.ServiceDescription = "Inbound calls to a customer support line";
+            var result = await _client.AddressVerifications().CreateAsync(verification);
+            // A verification cannot be deleted: it stays for DIDWW staff to approve or reject
+            Console.WriteLine($"REVIEW address_verification {result.Data.Id} {result.Data.Reference}");
+        });
 
         Section("Emergency Services");
         await Check("Emergency services: requirements and calling services", async () =>
@@ -728,7 +805,41 @@ public static class TestReadmeExample
             var emergServices = await _client.EmergencyCallingServices().ListAsync();
             Console.WriteLine($"    {emergReqs.Data.Count} requirement(s), {emergServices.Data.Count} calling service(s)");
         });
-        Skip("Emergency services: create a verification", "submits a DID and an address for a verification that DIDWW staff review");
+        await Check("Emergency services: create a verification (left for review)", async () =>
+        {
+            // The account's addresses with an identity, those in Ukraine first, the oldest first
+            var addresses = (await _client.Addresses().ListAsync(new QueryParams()
+                    .Include("country", "identity")
+                    .Page(1, 50))).Data
+                .Where(a => a.Country != null && a.Identity != null)
+                .OrderBy(a => a.Country!.Iso == "UA" ? 0 : 1)
+                .ThenBy(a => a.CreatedAt)
+                .ToList();
+            if (addresses.Count == 0)
+                throw new InvalidOperationException("the sandbox account has no address with an identity");
+            var country = addresses[0].Country!;
+
+            // An emergency-capable DID in the country of the address, and its emergency requirement
+            var did = await EmergencyDidAsync(country);
+            var requirementParams = new QueryParams().Filter("country.id", country.Id!);
+            if (did.DidGroup?.NumberType is { } numberType)
+                requirementParams.Filter("number_type", EnumWire.Value(numberType));
+            var requirement = (await _client.EmergencyRequirements().ListAsync(requirementParams)).Data.FirstOrDefault()
+                              ?? throw new InvalidOperationException($"no emergency requirement for {country.Name} / {did.DidGroup?.NumberType}");
+            var address = await EmergencyAddressAsync(requirement, addresses.Where(a => a.Country!.Id == country.Id).Take(10));
+            Console.WriteLine($"    DID {did.Number}, address {address.Id} ({country.Name}), requirement {requirement.Id}");
+
+            var emergVerification = new EmergencyVerification
+            {
+                CallbackUrl = "https://example.com/callback",
+                CallbackMethod = CallbackMethod.Post,
+                Address = Address.Build(address.Id!),
+                Dids = new List<Did> { Did.Build(did.Id!) }
+            };
+            var emergResult = await _client.EmergencyVerifications().CreateAsync(emergVerification);
+            // A verification cannot be deleted: it stays for DIDWW staff to approve or reject
+            Console.WriteLine($"REVIEW emergency_verification {emergResult.Data.Id} {emergResult.Data.Reference}");
+        });
 
         Section("DID History");
         await Check("DID history: list", async () =>
@@ -1121,6 +1232,279 @@ public static class TestReadmeExample
         return (await _client.Identities().CreateAsync(identity)).Data;
     }
 
+    // A Ukrainian DID of the account whose DID group has an address requirement and
+    // which has no address verification yet; orders one when there is none.
+    private static async Task<Did> DidNeedingAddressAsync()
+    {
+        var ukraine = (await _client.Countries().ListAsync(new QueryParams().Filter("iso", "UA"))).Data.FirstOrDefault()
+                      ?? throw new InvalidOperationException("country UA not found");
+        string[] didIncludes = ["did_group.address_requirement", "did_group.city", "address_verification"];
+        var dids = (await _client.Dids().ListAsync(new QueryParams()
+            .Filter("country.id", ukraine.Id!)
+            .Filter("terminated", "false")
+            .Include(didIncludes)
+            .Page(1, 50))).Data;
+        var did = dids.FirstOrDefault(d => d.DidGroup?.AddressRequirement != null && d.AddressVerification == null);
+        if (did != null)
+            return did;
+
+        var groups = (await _client.DidGroups().ListAsync(new QueryParams()
+            .Filter("country.id", ukraine.Id!)
+            .Filter("number_type", EnumWire.Value(NumberType.Local))
+            .Include("address_requirement", "stock_keeping_units")
+            .Page(1, 50))).Data;
+        foreach (var group in groups.Where(g => g.AddressRequirement != null && g.StockKeepingUnits is { Count: > 0 }))
+        {
+            var available = (await _client.AvailableDids().ListAsync(new QueryParams()
+                .Filter("did_group.id", group.Id!)
+                .Page(1, 1))).Data.FirstOrDefault();
+            if (available == null)
+                continue;
+            var order = await OrderAndWaitAsync(new AvailableDidOrderItem
+            {
+                AvailableDidId = available.Id,
+                SkuId = group.StockKeepingUnits![0].Id
+            });
+            return (await _client.Dids().ListAsync(new QueryParams()
+                       .Filter("order.id", order.Id!)
+                       .Include(didIncludes))).Data.FirstOrDefault()
+                   ?? throw new InvalidOperationException($"order {order.Id} has no DID");
+        }
+        throw new InvalidOperationException("no Ukrainian local DID group with an address requirement and an available DID");
+    }
+
+    // An emergency-capable DID of the account in the country, without an emergency
+    // calling service; orders one when there is none.
+    private static async Task<Did> EmergencyDidAsync(Country country)
+    {
+        string[] didIncludes = ["did_group", "emergency_calling_service"];
+        var dids = (await _client.Dids().ListAsync(new QueryParams()
+            .Filter("did_group.features", EnumWire.Value(Feature.Emergency))
+            .Filter("emergency_enabled", "false")
+            .Filter("country.id", country.Id!)
+            .Filter("terminated", "false")
+            .Include(didIncludes)
+            .Sort("-created_at")
+            .Page(1, 20))).Data;
+        var did = dids.FirstOrDefault(d => d.EmergencyCallingService == null);
+        if (did != null)
+            return did;
+
+        var available = (await _client.AvailableDids().ListAsync(new QueryParams()
+                .Filter("did_group.features", EnumWire.Value(Feature.Emergency))
+                .Filter("country.id", country.Id!)
+                .Include("did_group.stock_keeping_units")
+                .Page(1, 10))).Data
+            .FirstOrDefault(ad => ad.DidGroup?.StockKeepingUnits is { Count: > 0 })
+            ?? throw new InvalidOperationException($"no available emergency-capable DID in {country.Name}");
+        var order = await OrderAndWaitAsync(new AvailableDidOrderItem
+        {
+            AvailableDidId = available.Id,
+            SkuId = available.DidGroup!.StockKeepingUnits![0].Id
+        });
+        return (await _client.Dids().ListAsync(new QueryParams()
+                   .Filter("order.id", order.Id!)
+                   .Include(didIncludes))).Data.FirstOrDefault()
+               ?? throw new InvalidOperationException($"order {order.Id} has no DID");
+    }
+
+    // The first of the addresses that meets the emergency requirement with its identity.
+    private static async Task<Address> EmergencyAddressAsync(EmergencyRequirement requirement, IEnumerable<Address> candidates)
+    {
+        var refusals = new List<string>();
+        foreach (var address in candidates)
+        {
+            try
+            {
+                await _client.EmergencyRequirementValidations().CreateAsync(new EmergencyRequirementValidation
+                {
+                    EmergencyRequirement = EmergencyRequirement.Build(requirement.Id!),
+                    Address = Address.Build(address.Id!),
+                    Identity = Identity.Build(address.Identity!.Id!)
+                });
+                return address;
+            }
+            catch (DidwwApiException e) when (e.HttpStatus == 422)
+            {
+                refusals.Add($"{address.Id}: {Describe(e)}");
+            }
+        }
+        throw new InvalidOperationException("no address of the account meets the emergency requirement: " +
+                                            string.Join(" | ", refusals));
+    }
+
+    // Creates an identity and an address that meet an address requirement: the
+    // identity type, the mandatory fields, the proofs and the permanent supporting
+    // document it asks for. The cleanup deletes them if the API allows it.
+    private static async Task<(Identity Identity, Address Address)> CreateIdentityAndAddressForAsync(
+        AddressRequirement requirement, DidGroup didGroup, Cleanup cleanup)
+    {
+        var business = requirement.IdentityType == IdentityType.Business;
+        var countryId = requirement.Country?.Id ?? throw new InvalidOperationException("the requirement has no country");
+        var identity = new Identity
+        {
+            IdentityType = business ? IdentityType.Business : IdentityType.Personal,
+            FirstName = "John",
+            LastName = "Doe",
+            PhoneNumber = "380441234567",
+            Country = Country.Build(countryId)
+        };
+        if (business)
+            identity.CompanyName = "Example LLC";
+        FillMandatoryFields(identity, business ? requirement.BusinessMandatoryFields : requirement.PersonalMandatoryFields);
+        var createdIdentity = (await _client.Identities().CreateAsync(identity)).Data;
+        cleanup.Add("identity", () => TryDeleteAsync("identity", () => _client.Identities().DeleteAsync(createdIdentity.Id!)));
+        Console.WriteLine($"    identity {createdIdentity.Id} ({createdIdentity.IdentityType})");
+
+        var address = new Address
+        {
+            CityName = didGroup.City?.Name ?? didGroup.AreaName ?? "Odesa",
+            PostalCode = "65000",
+            AddressLine = "1 Derybasivska St",
+            Description = "SDK README check",
+            Identity = Identity.Build(createdIdentity.Id!),
+            Country = Country.Build(countryId)
+        };
+        if (requirement.AddressAreaLevel == AreaLevel.City && didGroup.City != null)
+            address.City = City.Build(didGroup.City.Id!);
+        var createdAddress = (await _client.Addresses().CreateAsync(address)).Data;
+        cleanup.Add("address", () => TryDeleteAsync("address", () => _client.Addresses().DeleteAsync(createdAddress.Id!)));
+        Console.WriteLine($"    address {createdAddress.Id} ({createdAddress.CityName})");
+
+        var encrypt = new Encrypt(_client);
+        var pdf = SamplePdf.Create("Proof document");
+        async Task<EncryptedFile> UploadAsync(string label) =>
+            EncryptedFile.Build(await _client.UploadEncryptedFileAsync(
+                encrypt.EncryptData(pdf), label + ".pdf.enc", encrypt.Fingerprint, label + ".pdf"));
+
+        // One proof per required proof type: the requirement counts distinct types
+        var identityProofQty = (business ? requirement.BusinessProofQty : requirement.PersonalProofQty) ?? 0;
+        var identityProofTypes = (business ? requirement.BusinessProofTypes : requirement.PersonalProofTypes) ?? new List<ProofType>();
+        foreach (var proofType in identityProofTypes.Take(identityProofQty))
+            await CreateProofAsync(createdIdentity, proofType, await UploadAsync("identity_proof"));
+        foreach (var proofType in (requirement.AddressProofTypes ?? new List<ProofType>()).Take(requirement.AddressProofQty ?? 0))
+            await CreateProofAsync(createdAddress, proofType, await UploadAsync("address_proof"));
+
+        var template = business ? requirement.BusinessPermanentDocument : requirement.PersonalPermanentDocument;
+        if (template != null)
+        {
+            var document = (await _client.PermanentSupportingDocuments().CreateAsync(new PermanentSupportingDocument
+            {
+                Identity = Identity.Build(createdIdentity.Id!),
+                Template = SupportingDocumentTemplate.Build(template.Id!),
+                Files = new List<EncryptedFile> { await UploadAsync("permanent_document") }
+            })).Data;
+            Console.WriteLine($"    permanent supporting document {document.Id} ({template.Name})");
+        }
+        return (createdIdentity, createdAddress);
+    }
+
+    private static async Task CreateProofAsync(BaseResource entity, ProofType proofType, EncryptedFile file)
+    {
+        var proof = (await _client.Proofs().CreateAsync(new Proof
+        {
+            Entity = entity is Identity ? Identity.Build(entity.Id!) : Address.Build(entity.Id!),
+            ProofType = ProofType.Build(proofType.Id!),
+            Files = new List<EncryptedFile> { file }
+        })).Data;
+        Console.WriteLine($"    {(entity is Identity ? "identity" : "address")} proof {proof.Id} ({proofType.Name})");
+    }
+
+    // Fills the mandatory identity fields of a requirement, as the API names them.
+    private static void FillMandatoryFields(Identity identity, IEnumerable<string>? fields)
+    {
+        foreach (var field in fields ?? [])
+        {
+            switch (field)
+            {
+                case "first_name" or "last_name" or "phone_number" or "country" or "company_name":
+                    break; // already set
+                case "birth_date":
+                    identity.BirthDate = new DateOnly(1990, 5, 20);
+                    break;
+                case "id_number":
+                    identity.IdNumber = "AB123456";
+                    break;
+                case "tax_id":
+                    identity.VatId = "UA1234567890";
+                    break;
+                case "personal_tax_id":
+                    identity.PersonalTaxId = "1234567890";
+                    break;
+                case "company_reg_number":
+                    identity.CompanyRegNumber = "12345678";
+                    break;
+                case "company_website":
+                    identity.CompanyWebsite = "https://example.com";
+                    break;
+                case "contact_email":
+                    identity.ContactEmail = "john.doe@example.com";
+                    break;
+                case "description":
+                    identity.Description = "SDK README check";
+                    break;
+                default:
+                    Console.WriteLine($"    mandatory field {field} is not filled by the check");
+                    break;
+            }
+        }
+    }
+
+    // Creates an order of one item and waits up to a minute for it to complete.
+    private static async Task<Order> OrderAndWaitAsync(OrderItemBase item)
+    {
+        var order = (await _client.Orders().CreateAsync(new Order { Items = new List<OrderItemBase> { item } })).Data;
+        Console.WriteLine($"    ordered a DID: order {order.Id} ({order.Status})");
+        for (var attempt = 0; attempt < 12 && order.IsPending; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            order = (await _client.Orders().FindAsync(order.Id!)).Data;
+        }
+        Expect(order.IsCompleted, $"order {order.Id} is {order.Status}");
+        return order;
+    }
+
+    private static async Task TryDeleteAsync(string what, Func<Task> delete)
+    {
+        try
+        {
+            await delete();
+            Console.WriteLine($"    deleted the {what}");
+        }
+        catch (DidwwApiException e)
+        {
+            Console.WriteLine($"    left the {what} in place: {Describe(e)}");
+        }
+    }
+
+    // The value of an environment variable a check needs; the check is skipped without it.
+    private static string RequiredSetting(string name)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        return string.IsNullOrWhiteSpace(value) ? throw new SkipException($"set {name}") : value;
+    }
+
+    // redis://[user:password@]host[:port][/database] as a StackExchange.Redis configuration string
+    private static string RedisConfiguration(string url)
+    {
+        var uri = new Uri(url);
+        var parts = new List<string> { $"{uri.Host}:{(uri.Port > 0 ? uri.Port : 6379)}" };
+        var database = uri.AbsolutePath.Trim('/');
+        if (database.Length > 0)
+            parts.Add($"defaultDatabase={database}");
+        if (uri.UserInfo.Length > 0)
+        {
+            var userInfo = Uri.UnescapeDataString(uri.UserInfo);
+            var colon = userInfo.IndexOf(':');
+            if (colon > 0)
+                parts.Add($"user={userInfo[..colon]}");
+            parts.Add($"password={(colon >= 0 ? userInfo[(colon + 1)..] : userInfo)}");
+        }
+        if (uri.Scheme == "rediss")
+            parts.Add("ssl=true");
+        return string.Join(",", parts);
+    }
+
     // Runs one price lookup; returns 1 when the service answered, 0 without a price plan.
     private static async Task<int> LookupAsync<TPrice>(string service, Func<Task<PriceLookup<TPrice>>> lookup,
         Func<TPrice, string> describe)
@@ -1278,38 +1662,51 @@ public static class TestReadmeExample
             Lines.Add($"{logLevel}: {formatter(state, exception)}");
     }
 
-    // An in-process IDistributedCache, standing in for Redis or SQL Server.
-    private sealed class DictionaryDistributedCache : IDistributedCache
+    // A WebProxy that notes the hosts the handler asks it to proxy.
+    private sealed class RecordingProxy(string proxyUrl) : IWebProxy
     {
-        private readonly ConcurrentDictionary<string, byte[]> _entries = new();
+        private readonly WebProxy _proxy = new(proxyUrl);
 
-        public ICollection<string> Keys => _entries.Keys;
+        public ConcurrentDictionary<string, int> Hosts { get; } = new();
 
-        public byte[]? Get(string key) => _entries.TryGetValue(key, out var value) ? value : null;
-
-        public Task<byte[]?> GetAsync(string key, CancellationToken token = default) => Task.FromResult(Get(key));
-
-        public void Set(string key, byte[] value, DistributedCacheEntryOptions options) => _entries[key] = value;
-
-        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default)
+        public ICredentials? Credentials
         {
-            Set(key, value, options);
-            return Task.CompletedTask;
+            get => _proxy.Credentials;
+            set => _proxy.Credentials = value;
         }
 
-        public void Refresh(string key)
+        public Uri? GetProxy(Uri destination)
         {
+            Hosts.AddOrUpdate(destination.Host, 1, (_, count) => count + 1);
+            return _proxy.GetProxy(destination);
         }
 
-        public Task RefreshAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public bool IsBypassed(Uri host) => _proxy.IsBypassed(host);
+    }
 
-        public void Remove(string key) => _entries.TryRemove(key, out _);
+    // Wraps a token store and counts the tokens read from it and written to it.
+    private sealed class CountingTokenStore(ITokenStore inner) : ITokenStore
+    {
+        public int Hits { get; private set; }
 
-        public Task RemoveAsync(string key, CancellationToken token = default)
+        public List<string> Writes { get; } = new();
+
+        public async ValueTask<DidwwToken?> GetAsync(string key, CancellationToken cancellationToken)
         {
-            Remove(key);
-            return Task.CompletedTask;
+            var token = await inner.GetAsync(key, cancellationToken);
+            if (token != null)
+                Hits++;
+            return token;
         }
+
+        public ValueTask SetAsync(string key, DidwwToken token, TimeSpan ttl, CancellationToken cancellationToken)
+        {
+            Writes.Add(key);
+            return inner.SetAsync(key, token, ttl, cancellationToken);
+        }
+
+        public ValueTask DeleteAsync(string key, CancellationToken cancellationToken) =>
+            inner.DeleteAsync(key, cancellationToken);
     }
 
     // An ITokenStore of your own, as in the README.
