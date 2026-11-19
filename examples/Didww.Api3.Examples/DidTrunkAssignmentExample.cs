@@ -88,26 +88,44 @@ public static class DidTrunkAssignmentExample
         }
         finally
         {
-            // Restore the DID first, so the created trunk and group are no longer in use
-            if (didChanged)
+            try
             {
-                var restore = Did.Build(did.Id!);
-                if (originalTrunkId != null)
-                    restore.VoiceInTrunk = VoiceInTrunk.Build(originalTrunkId);
-                else if (originalGroupId != null)
-                    restore.VoiceInTrunkGroup = VoiceInTrunkGroup.Build(originalGroupId);
-                else
-                    restore.VoiceInTrunk = null; // sends both voice_in_trunk and voice_in_trunk_group as null
-                restore.Description = originalDescription;
-                await client.Dids().UpdateAsync(restore);
-                Console.WriteLine("\nRestored the DID's original routing:");
-                await PrintAssignmentAsync(client, did.Id!);
+                // Restore the DID first, so the created trunk and group are no longer in use
+                if (didChanged)
+                {
+                    var restore = Did.Build(did.Id!);
+                    if (originalTrunkId != null)
+                        restore.VoiceInTrunk = VoiceInTrunk.Build(originalTrunkId);
+                    else if (originalGroupId != null)
+                        restore.VoiceInTrunkGroup = VoiceInTrunkGroup.Build(originalGroupId);
+                    else
+                        restore.VoiceInTrunk = null; // sends both voice_in_trunk and voice_in_trunk_group as null
+                    restore.Description = originalDescription;
+                    await client.Dids().UpdateAsync(restore);
+                    Console.WriteLine("\nRestored the DID's original routing:");
+                    await PrintAssignmentAsync(client, did.Id!);
+                }
             }
+            finally
+            {
+                // Delete the trunk and the group even when the restore or its read-back fails
+                await DeleteCreatedAsync(client, trunkId, groupId);
+            }
+        }
+    }
+
+    private static async Task DeleteCreatedAsync(DidwwClient client, string? trunkId, string? groupId)
+    {
+        try
+        {
             if (trunkId != null)
             {
                 await client.VoiceInTrunks().DeleteAsync(trunkId);
                 Console.WriteLine("Deleted trunk");
             }
+        }
+        finally
+        {
             if (groupId != null)
             {
                 await client.VoiceInTrunkGroups().DeleteAsync(groupId);
