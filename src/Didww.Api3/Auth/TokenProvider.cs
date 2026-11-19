@@ -18,6 +18,8 @@ namespace Didww.Api3.Auth;
 internal sealed class TokenProvider
 {
     internal const string CacheKeyPrefix = "didww:token:v1:";
+    // The longest lifetime the token service grants: the fewer mints, the better.
+    internal const int RequestedLifetime = 3600;
     internal const int MaxMintAttempts = 4;
     internal const int MaxErrorBodySize = 1 << 20;
     internal static readonly TimeSpan DefaultMintTimeout = TimeSpan.FromSeconds(10);
@@ -524,5 +526,8 @@ internal sealed class TokenProvider
 
         [JsonProperty("scope")]
         public string? Scope { get; }
+
+        [JsonProperty("expires_in")]
+        public int ExpiresIn => RequestedLifetime;
     }
 }

@@ -83,7 +83,7 @@ var client = DidwwClient.NewBuilder()
 | `SetCredentials(credentials)` | required | `new DidwwCredentials(apiKey, environment)`, with `DidwwEnvironment.Production` or `DidwwEnvironment.Sandbox`. The environment selects the API, token service and price hosts. See [Environments](#environments). |
 | `SetApiVersion(version)` | `DidwwClient.DefaultApiVersion` | API version requested in every token. See [API Version](#api-version). |
 | `SetScope(scope)` | none | `DidwwScope.Read` or `DidwwScope.Full`. Without it no scope is requested and the token service grants `full`. See [Scope](#scope). |
-| `SetTokenStore(store)` | a new `MemoryTokenStore` per client | Cache for access tokens. See [Token cache](#token-cache). |
+| `SetTokenStore(store)` | a `MemoryTokenStore` shared by the process | Cache for access tokens. See [Token cache](#token-cache). |
 | `SetLogger(logger)` | `NullLogger.Instance` | `ILogger` for the token warnings and debug events. The default and `null` log nothing. See [Logging](#logging). |
 | `SetInnerHandler(handler)` | a handler shared by the SDK | `HttpMessageHandler` used for every call. See [Custom HTTP Handler](#custom-http-handler-proxy-tls-etc). |
 | `SetTimeout(timeout)` | 60 s | Time allowed until the response headers arrive. See [Custom HTTP Handler](#custom-http-handler-proxy-tls-etc). |
@@ -140,7 +140,7 @@ Every request carries `Authorization: Bearer <token>`. The SDK mints the tokens 
   | SMS OUT (A2P, P2P, OTP) and SMS IN prices | `api-sms.didww.com` |
 
   `client.PublicKeys().ListAsync()` is sent without a token.
-- **Expiry and 401.** A cached token lives for the `expires_in` granted; the SDK adds no local expiry margin. When a request is answered 401, the SDK drops that token, mints a new one and sends the request once more. A second 401 drops the new token too and is not retried: it becomes the error of the call (see [Error Handling](#error-handling)). A 403, such as `insufficient_scope`, is never retried.
+- **Expiry and 401.** The SDK asks for the longest lifetime the token service grants, one hour (`expires_in: 3600`), and caches a token for the `expires_in` granted, with no local expiry margin. When a request is answered 401, the SDK drops that token, mints a new one and sends the request once more. A second 401 drops the new token too and is not retried: it becomes the error of the call (see [Error Handling](#error-handling)). A 403, such as `insufficient_scope`, is never retried.
 - **Concurrency.** Concurrent calls of one `DidwwClient` that need the same token wait for a single mint. A caller whose `CancellationToken` is cancelled stops waiting; the mint itself goes on for the other callers.
 - **Token service errors** are thrown as `DidwwAuthException` from any call that needs a new token (kinds in [Error Handling](#error-handling)):
   - A 429 throws `DidwwAuthErrorKind.RateLimited` with `RetryAfter` (the `Retry-After` seconds, at least 1 s). Every further mint for the same token service and API key in the process fails the same way without a request until that time has passed, plus a small random delay so that clients do not retry in step.
@@ -170,7 +170,7 @@ The SDK compares each token it receives with what it asked for:
 
 Tokens are cached in an `ITokenStore`, keyed by the token service URL, the API key (as a SHA-256 hash), the audience, the API version and the scope. The key is an opaque string starting with `didww:token:v1:`. Each entry is stored for the token's `expires_in`.
 
-The default `MemoryTokenStore` keeps the tokens in process memory. Each client built without `SetTokenStore` has its own, so build one `DidwwClient` and reuse it. To share tokens between processes or instances, use `DistributedCacheTokenStore` over any [`IDistributedCache`](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/distributed), such as Redis (`Microsoft.Extensions.Caching.StackExchangeRedis`) or SQL Server:
+The default `MemoryTokenStore` keeps the tokens in process memory and is shared by every client built without `SetTokenStore`, so clients with the same API key reuse each other's tokens. To share tokens between processes or instances, use `DistributedCacheTokenStore` over any [`IDistributedCache`](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/distributed), such as Redis (`Microsoft.Extensions.Caching.StackExchangeRedis`) or SQL Server:
 
 ```csharp
 using Didww.Api3.Auth;
@@ -212,7 +212,8 @@ Neither the token nor the API key is ever logged.
 ### SDK design decisions
 
 - **Audience strategy.** One token per audience, minted on first use, rather than one token naming every service. An account that never calls the prices services never requests their audiences, so a refused audience cannot break DID management, and every token is valid for one service only.
-- **Cache store.** In-process memory by default, because a .NET service usually keeps one `DidwwClient` for its lifetime. A shared store, `DistributedCacheTokenStore` or your own, is opt-in through `SetTokenStore`. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
+- **Cache store.** In-process memory by default, shared by every client of the process. A store shared between processes, `DistributedCacheTokenStore` or your own, is opt-in through `SetTokenStore`.
+- **Token lifetime.** The longest the token service grants, one hour, so that a process mints each token as rarely as possible. Lifetime is decided by the server through the 401 refresh, not by a local expiry margin.
 - **Gzip handling.** Price and export files are streamed to your `Stream` or file exactly as served, still gzipped, without being held in memory. The SDK never decompresses a price file on its own: `PriceFileReader` reads a downloaded file when you want rows, and `DownloadAndDecompressExportAsync` writes an export as plain CSV.
 - **Upload retry.** The 401 retry sends the request body a second time. `UploadEncryptedFileAsync` takes the encrypted bytes as a `byte[]` and builds the multipart body in memory, so the retry always resends the complete body; there is no streamed-upload limitation.
 

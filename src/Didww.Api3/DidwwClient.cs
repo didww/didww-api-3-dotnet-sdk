@@ -37,6 +37,10 @@ public class DidwwClient
         $"didww-dotnet-sdk/{typeof(DidwwClient).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
 
     private const int MaxErrorBodySize = 1 << 20;
+    // Shared by every client built without SetTokenStore: the cache key already
+    // separates API keys, audiences, versions and scopes.
+    private static readonly MemoryTokenStore DefaultTokenStore = new();
+
     private static readonly Regex ApiVersionPattern = new("^[0-9]{4}-[0-9]{2}-[0-9]{2}\\z", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
 
     private readonly DidwwCredentials _credentials;
@@ -84,7 +88,7 @@ public class DidwwClient
         };
 
         Logger = builder.Logger ?? NullLogger.Instance;
-        TokenStore = builder.TokenStore ?? new MemoryTokenStore();
+        TokenStore = builder.TokenStore ?? DefaultTokenStore;
         HttpMessageHandler innerHandler = builder.InnerHandler ?? DidwwHttp.DefaultHandler.Value;
         Tokens = new TokenProvider(AuthUrl, _credentials.ApiKey, ApiVersion, Scope, TokenStore, innerHandler, Logger);
 
@@ -537,7 +541,8 @@ public class DidwwClient
         /// <summary>
         /// Sets the store that caches access tokens, for example one shared by
         /// several processes. The store holds live bearer tokens and must be
-        /// protected accordingly. The default is a new <see cref="MemoryTokenStore"/>.
+        /// protected accordingly. The default is a <see cref="MemoryTokenStore"/> shared
+        /// by every client built without one.
         /// </summary>
         public Builder SetTokenStore(ITokenStore store)
         {

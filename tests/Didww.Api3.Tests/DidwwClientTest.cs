@@ -321,7 +321,7 @@ public class DidwwClientTest
 
         var mint = wireMock.LogEntries.Single(e => e.RequestMessage.Path == "/token").RequestMessage;
         mint.Headers!["Api-Key"].Should().ContainSingle().Which.Should().Be("test-key");
-        JToken.DeepEquals(JToken.Parse(mint.Body!), JToken.Parse("""{"aud":["api.didww.com"],"api_version":"2026-11-19"}"""))
+        JToken.DeepEquals(JToken.Parse(mint.Body!), JToken.Parse("""{"aud":["api.didww.com"],"api_version":"2026-11-19","expires_in":3600}"""))
             .Should().BeTrue();
     }
 
@@ -427,6 +427,7 @@ public class DidwwClientTest
 
     private static DidwwClient NewClient(WireMockServer wireMock) => DidwwClient.NewBuilder()
         .SetCredentials(new DidwwCredentials("test-key", DidwwEnvironment.Sandbox))
+        .SetTokenStore(new MemoryTokenStore())
         .SetBaseUrl(wireMock.Url + "/v3")
         .SetAuthUrl(wireMock.Url!)
         .SetLogger(null)

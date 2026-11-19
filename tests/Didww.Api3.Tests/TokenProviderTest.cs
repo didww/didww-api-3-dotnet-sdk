@@ -72,7 +72,7 @@ public class TokenProviderTest : IDisposable
         var token = await client.Tokens.GetTokenAsync(Api, CancellationToken.None);
 
         token.ApiVersion.Should().Be("2099-01-01");
-        AssertJsonEquals(_server.MintBody(0), """{"aud":["api.didww.com"],"api_version":"2099-01-01"}""");
+        AssertJsonEquals(_server.MintBody(0), """{"aud":["api.didww.com"],"api_version":"2099-01-01","expires_in":3600}""");
     }
 
     [Fact]
@@ -98,8 +98,8 @@ public class TokenProviderTest : IDisposable
         vin.AccessToken.Should().NotBe(api.AccessToken);
         vin.Audience.Should().Equal(VoiceIn);
         _server.Mints.Should().Be(2);
-        AssertJsonEquals(_server.MintBody(0), """{"aud":["api.didww.com"],"api_version":"2026-11-19"}""");
-        AssertJsonEquals(_server.MintBody(1), """{"aud":["api-vin.didww.com"],"api_version":"2026-11-19"}""");
+        AssertJsonEquals(_server.MintBody(0), """{"aud":["api.didww.com"],"api_version":"2026-11-19","expires_in":3600}""");
+        AssertJsonEquals(_server.MintBody(1), """{"aud":["api-vin.didww.com"],"api_version":"2026-11-19","expires_in":3600}""");
     }
 
     [Fact]
@@ -115,6 +115,20 @@ public class TokenProviderTest : IDisposable
             .SetInnerHandler(_server)
             .SetTokenStore(store)
             .Build();
+
+        await NewClient().Tokens.GetTokenAsync(Api, CancellationToken.None);
+        var token = await NewClient().Tokens.GetTokenAsync(Api, CancellationToken.None);
+
+        token.AccessToken.Should().Be("token-1");
+        _server.Mints.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TestTokenSharedByDefault()
+    {
+        var apiKey = "key-" + Guid.NewGuid().ToString("N");
+        DidwwClient NewClient() =>
+            _server.NewClient(b => b.SetCredentials(new DidwwCredentials(apiKey, DidwwEnvironment.Sandbox)));
 
         await NewClient().Tokens.GetTokenAsync(Api, CancellationToken.None);
         var token = await NewClient().Tokens.GetTokenAsync(Api, CancellationToken.None);

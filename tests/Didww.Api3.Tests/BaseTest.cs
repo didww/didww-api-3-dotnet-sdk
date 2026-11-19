@@ -1,4 +1,5 @@
 using System.Net;
+using Didww.Api3.Auth;
 using WireMock;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
@@ -29,6 +30,7 @@ public abstract class BaseTest : IDisposable
     /// </summary>
     protected DidwwClient.Builder NewClientBuilder() => DidwwClient.NewBuilder()
         .SetCredentials(new DidwwCredentials("test-api-key", DidwwEnvironment.Sandbox))
+        .SetTokenStore(new MemoryTokenStore())
         .SetBaseUrl(WireMock.Url + "/v3")
         .SetAuthUrl(WireMock.Url!)
         .SetVoiceInPricesUrl(WireMock.Url!)
