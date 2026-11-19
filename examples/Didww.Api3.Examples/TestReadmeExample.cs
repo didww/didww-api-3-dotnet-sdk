@@ -1282,11 +1282,13 @@ public static class TestReadmeExample
         throw new InvalidOperationException("no Ukrainian local DID group with an address requirement and an available DID");
     }
 
-    // An emergency-capable DID of the account in the country, without an emergency
-    // calling service; orders one when there is none.
+    // An emergency-capable DID of the account in the country that is not bound to an
+    // identity, an emergency verification or an emergency calling service yet (an
+    // emergency verification binds the DID to the identity of its address); orders
+    // one when there is none.
     private static async Task<Did> EmergencyDidAsync(Country country)
     {
-        string[] didIncludes = ["did_group", "emergency_calling_service"];
+        string[] didIncludes = ["did_group", "identity", "emergency_verification", "emergency_calling_service"];
         var dids = (await _client.Dids().ListAsync(new QueryParams()
             .Filter("did_group.features", EnumWire.Value(Feature.Emergency))
             .Filter("emergency_enabled", "false")
@@ -1294,8 +1296,9 @@ public static class TestReadmeExample
             .Filter("terminated", "false")
             .Include(didIncludes)
             .Sort("-created_at")
-            .Page(1, 20))).Data;
-        var did = dids.FirstOrDefault(d => d.EmergencyCallingService == null);
+            .Page(1, 50))).Data;
+        var did = dids.FirstOrDefault(d =>
+            d.Identity == null && d.EmergencyVerification == null && d.EmergencyCallingService == null);
         if (did != null)
             return did;
 
@@ -1374,8 +1377,6 @@ public static class TestReadmeExample
             Identity = Identity.Build(createdIdentity.Id!),
             Country = Country.Build(countryId)
         };
-        if (requirement.AddressAreaLevel == AreaLevel.City && didGroup.City != null)
-            address.City = City.Build(didGroup.City.Id!);
         var createdAddress = (await _client.Addresses().CreateAsync(address)).Data;
         cleanup.Add("address", () => TryDeleteAsync("address", () => _client.Addresses().DeleteAsync(createdAddress.Id!)));
         Console.WriteLine($"    address {createdAddress.Id} ({createdAddress.CityName})");
