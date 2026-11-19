@@ -73,7 +73,7 @@ The process exits with 1 when an example fails or the example name is unknown.
 | [`EmergencyScenarioExample.cs`](EmergencyScenarioExample.cs) | `emergency-scenario` | End-to-end: find DID → check requirements → validate → create verification → get service. |
 | [`PricesLookupExample.cs`](PricesLookupExample.cs) | `prices-lookup [number]` | Looks up Voice IN, Voice OUT, SMS OUT (A2P, P2P, OTP) and SMS IN prices for a number. |
 | [`PricesDownloadExample.cs`](PricesDownloadExample.cs) | `prices-download [dir]` | Downloads the gzipped Voice IN price file to the directory given as argument, or to `didww-prices` in the user cache directory, re-checks it with If-Modified-Since and reads a few rows. |
-| [`WebhookExample.cs`](WebhookExample.cs) | `webhook` | Demonstrates webhook callback signature validation. |
+| [`WebhookExample.cs`](WebhookExample.cs) | `webhook` | Signs a sample callback the way DIDWW does and validates it with `RequestValidator`: `True` for the callback, `False` for a tampered payload. Needs no API key. |
 
 ## Troubleshooting
 
