@@ -232,6 +232,21 @@ public class DidTest : BaseTest
     }
 
     [Fact]
+    public async Task TestIncludedTrunkSurvivesAnEmptyTrunkGroup()
+    {
+        StubGet("dids/9df99644-f1a5-4a3c-99a4-559d758eb96b", "dids/show_with_included_trunk_and_empty_group.json");
+
+        var queryParams = new QueryParams().Include("voice_in_trunk", "voice_in_trunk_group");
+        var response = await Client.Dids().FindAsync("9df99644-f1a5-4a3c-99a4-559d758eb96b", queryParams);
+        var did = response.Data;
+
+        did.VoiceInTrunk.Should().NotBeNull();
+        did.VoiceInTrunk!.Id.Should().Be("41b94706-325e-4704-a433-d65105758836");
+        did.VoiceInTrunkGroup.Should().BeNull();
+        did.HasDirtyFields.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task TestUnassignEmergencyCallingServiceFromDid()
     {
         StubPatch("dids/44957076-778a-4802-b60c-d22db0cda284",

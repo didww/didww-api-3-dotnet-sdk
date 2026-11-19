@@ -86,8 +86,12 @@ public class Did : BaseResource
         set
         {
             SetProperty(ref _voiceInTrunk, value);
-            _voiceInTrunkGroup = null;
-            MarkDirty("voiceInTrunkGroup");
+            // A response with both relationships sets the empty one too; it must not clear the other.
+            if (value != null || IsDirtyTrackingEnabled)
+            {
+                _voiceInTrunkGroup = null;
+                MarkDirty("voiceInTrunkGroup");
+            }
         }
     }
 
@@ -99,8 +103,11 @@ public class Did : BaseResource
         set
         {
             SetProperty(ref _voiceInTrunkGroup, value);
-            _voiceInTrunk = null;
-            MarkDirty("voiceInTrunk");
+            if (value != null || IsDirtyTrackingEnabled)
+            {
+                _voiceInTrunk = null;
+                MarkDirty("voiceInTrunk");
+            }
         }
     }
 
