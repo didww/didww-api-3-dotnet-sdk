@@ -41,10 +41,10 @@ The process exits with 1 when an example fails or the example name is unknown.
 | [`DidGroupsExample.cs`](DidGroupsExample.cs) | `did-groups` | Lists DID groups with included SKUs, number type, demo flag and pricing details. |
 | [`DidHistoryExample.cs`](DidHistoryExample.cs) | `did-history` | Lists DID ownership history (last 90 days). |
 | [`DidsExample.cs`](DidsExample.cs) | `dids` | Lists DIDs and demonstrates DID updates (emergency fields and identity). |
-| [`DidTrunkAssignmentExample.cs`](DidTrunkAssignmentExample.cs) | `did-trunk-assignment` | Creates trunk, assigns to DID, shows exclusivity. |
+| [`DidTrunkAssignmentExample.cs`](DidTrunkAssignmentExample.cs) | `did-trunk-assignment` | Assigns a DID to a trunk, then to a trunk group (assigning one clears the other), and restores the DID's routing. |
 | [`DidSmsRoutingExample.cs`](DidSmsRoutingExample.cs) | `did-sms-routing` | Routes a DID's inbound SMS to an SMS trunk, then to an SMS trunk group (exclusive assignment), then restores the DID's original SMS routing. |
-| [`DidReservationsExample.cs`](DidReservationsExample.cs) | `did-reservations` | Reserves an available DID, lists and deletes. |
-| [`CapacityPoolsExample.cs`](CapacityPoolsExample.cs) | `capacity-pools` | Lists capacity pools with shared groups and pricings. |
+| [`DidReservationsExample.cs`](DidReservationsExample.cs) | `did-reservations` | Reserves an available DID, lists and finds reservations, deletes the reservation. |
+| [`CapacityPoolsExample.cs`](CapacityPoolsExample.cs) | `capacity-pools` | Lists capacity pools with included shared capacity groups and qty-based pricings, finds one. |
 | [`SharedCapacityGroupsExample.cs`](SharedCapacityGroupsExample.cs) | `shared-capacity-groups` | Creates a shared capacity group in a capacity pool, lists, updates and deletes it. |
 | [`OrdersExample.cs`](OrdersExample.cs) | `orders` | Lists recent orders, orders a DID by SKU and cancels that order. |
 | [`OrdersSkuExample.cs`](OrdersSkuExample.cs) | `orders-sku` | Orders DIDs by SKU and quantity, resolving the SKU from a DID group. |
@@ -52,18 +52,18 @@ The process exits with 1 when an example fails or the example name is unknown.
 | [`OrdersReservationDidsExample.cs`](OrdersReservationDidsExample.cs) | `orders-reservation-dids` | Reserves DID then orders via ReservationDidOrderItem. |
 | [`OrdersNanpaExample.cs`](OrdersNanpaExample.cs) | `orders-nanpa` | Orders a DID number by NPA/NXX prefix. |
 | [`OrdersCapacityExample.cs`](OrdersCapacityExample.cs) | `orders-capacity` | Purchases capacity from a capacity pool. |
-| [`OrdersAllItemTypesExample.cs`](OrdersAllItemTypesExample.cs) | `orders-all-item-types` | Demonstrates all 3 order item types in one example. |
-| [`OrdersEmergencyExample.cs`](OrdersEmergencyExample.cs) | `orders-emergency` | Inspects server-created Emergency orders and `emergency_order_items`. |
-| [`TrunksExample.cs`](TrunksExample.cs) | `trunks` | Creates a SIP trunk, lists and deletes. |
+| [`OrdersAllItemTypesExample.cs`](OrdersAllItemTypesExample.cs) | `orders-all-item-types` | One order with the three DID item variants: by SKU and quantity, by available DID and by reservation. |
+| [`OrdersEmergencyExample.cs`](OrdersEmergencyExample.cs) | `orders-emergency` | Reads server-created emergency orders (recent orders with `emergency_order_items`) and follows an emergency calling service to its order. |
+| [`TrunksExample.cs`](TrunksExample.cs) | `trunks` | Lists Voice IN trunks, finds one, creates a SIP and a PSTN trunk, updates both and deletes both. |
 | [`VoiceInTrunkGroupsExample.cs`](VoiceInTrunkGroupsExample.cs) | `voice-in-trunk-groups` | Creates two trunks and a trunk group with them, lists groups, renames the group and deletes it with its trunks. |
 | [`VoiceInTrunkSipRegistrationExample.cs`](VoiceInTrunkSipRegistrationExample.cs) | `voice-in-trunk-sip-registration` | End-to-end SIP registration flow: create with `EnabledSipRegistration=true`, rename, disable by setting `Host`, re-enable by toggling the flag. The SDK keeps the dependent fields (`Host`, `Port`, `UseDidInRuri`) aligned with the server's validation rules automatically. |
 | [`VoiceOutTrunksExample.cs`](VoiceOutTrunksExample.cs) | `voice-out-trunks` | CRUD operations on outbound trunks. |
 | [`SmsTrunksExample.cs`](SmsTrunksExample.cs) | `sms-trunks` | Lists SMS trunks, creates an HTTP IN trunk, updates its configuration, regenerates the credentials of an HTTP OUT trunk and deletes both. |
 | [`SmsTrunkGroupsExample.cs`](SmsTrunkGroupsExample.cs) | `sms-trunk-groups` | Creates two inbound SMS trunks, groups them by priority, lists groups and deletes the group with its trunks. |
 | [`SenderIdVerificationsExample.cs`](SenderIdVerificationsExample.cs) | `sender-id-verifications` | Lists Sender ID verifications with their SMS trunks, routes an active one through an SMS trunk that sends messages and restores its original trunk. |
-| [`IdentityAddressProofsExample.cs`](IdentityAddressProofsExample.cs) | `identity-address-proofs` | Creates identity, address, lists proof types (birth_country). |
+| [`IdentityAddressProofsExample.cs`](IdentityAddressProofsExample.cs) | `identity-address-proofs` | Creates an identity and an address, uploads an encrypted file, attaches a proof to each, prints their verified flags and deletes them. |
 | [`AddressVerificationsExample.cs`](AddressVerificationsExample.cs) | `address-verifications` | Lists address verifications with reject_comment / external_reference_id. |
-| [`UploadFileExample.cs`](UploadFileExample.cs) | `upload-file` | Encrypts a file and uploads to `encrypted_files`. |
+| [`UploadFileExample.cs`](UploadFileExample.cs) | `upload-file [file]` | Encrypts the file given as argument, or a generated sample PDF, with the public keys, uploads it to `encrypted_files`, prints its ID and deletes it. |
 | [`ExportsExample.cs`](ExportsExample.cs) | `exports` | Creates and lists CDR exports, with external_reference_id. |
 | [`ExportsSmsExample.cs`](ExportsSmsExample.cs) | `exports-sms` | Creates SMS-In and SMS-Out exports with their filters and reads the columns of a completed one. |
 | [`EmergencyRequirementsExample.cs`](EmergencyRequirementsExample.cs) | `emergency-requirements` | Lists emergency service requirements per country/number_type. |

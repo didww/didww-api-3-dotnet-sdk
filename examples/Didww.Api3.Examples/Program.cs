@@ -113,7 +113,7 @@ try
             await AddressVerificationsExample.RunAsync(Client());
             break;
         case "upload-file":
-            await UploadFileExample.RunAsync(Client());
+            await UploadFileExample.RunAsync(Client(), exampleArgument);
             break;
         case "exports":
             await ExportsExample.RunAsync(Client());
