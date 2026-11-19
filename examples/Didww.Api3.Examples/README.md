@@ -73,7 +73,9 @@ The process exits with 1 when an example fails or the example name is unknown.
 | [`EmergencyScenarioExample.cs`](EmergencyScenarioExample.cs) | `emergency-scenario` | End-to-end: find DID → check requirements → validate → create verification → get service. |
 | [`PricesLookupExample.cs`](PricesLookupExample.cs) | `prices-lookup [number]` | Looks up Voice IN, Voice OUT, SMS OUT (A2P, P2P, OTP) and SMS IN prices for a number. |
 | [`PricesDownloadExample.cs`](PricesDownloadExample.cs) | `prices-download [dir]` | Downloads the gzipped Voice IN price file to the directory given as argument, or to `didww-prices` in the user cache directory, re-checks it with If-Modified-Since and reads a few rows. |
+| [`IncludesExample.cs`](IncludesExample.cs) | `includes` | Reads regions with their country, DID groups with SKUs, available DIDs with nested includes and DIDs with their trunk, and shows that a relationship that is not included is `null`. |
 | [`WebhookExample.cs`](WebhookExample.cs) | `webhook` | Signs a sample callback the way DIDWW does and validates it with `RequestValidator`: `True` for the callback, `False` for a tampered payload. Needs no API key. |
+| [`TestReadmeExample.cs`](TestReadmeExample.cs) | `test-readme` | Runs the code snippets of the SDK README against the sandbox, one check per snippet, deletes what it creates and restores what it changes (orders and exports cannot be deleted), reports the snippets that need production, a proxy or Redis server or DIDWW staff as skipped, prints `Results: N passed, M failed` and exits with 1 when a check fails. |
 
 ## Troubleshooting
 

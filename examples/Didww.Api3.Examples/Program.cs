@@ -13,7 +13,7 @@ using Didww.Api3.Examples;
 //   identity-address-proofs, address-verifications, upload-file [file], exports,
 //   exports-sms, emergency-requirements, emergency-requirement-validations,
 //   emergency-verifications, emergency-calling-services, emergency-scenario,
-//   prices-lookup [number], prices-download [dir], webhook
+//   prices-lookup [number], prices-download [dir], includes, webhook, test-readme
 // Without an example name a short tour runs ("all").
 // The process exits with 1 when an example fails.
 
@@ -142,9 +142,15 @@ try
         case "prices-download":
             await PricesDownloadExample.RunAsync(Client(), exampleArgument);
             break;
+        case "includes":
+            await IncludesExample.RunAsync(Client());
+            break;
         case "webhook":
             WebhookExample.Run();
             break;
+        case "test-readme":
+            // Exits with 1 when a README check fails
+            return await TestReadmeExample.RunAsync(Client());
         case "all":
             await BalanceExample.RunAsync(Client());
             Console.WriteLine();
@@ -183,7 +189,7 @@ try
             Console.WriteLine("  identity-address-proofs, address-verifications, upload-file [file], exports,");
             Console.WriteLine("  exports-sms, emergency-requirements, emergency-requirement-validations,");
             Console.WriteLine("  emergency-verifications, emergency-calling-services, emergency-scenario,");
-            Console.WriteLine("  prices-lookup [number], prices-download [dir], webhook, all");
+            Console.WriteLine("  prices-lookup [number], prices-download [dir], includes, webhook, test-readme, all");
             return 1;
     }
 }
