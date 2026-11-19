@@ -12,6 +12,7 @@ All examples read the API key from the `DIDWW_API_KEY` environment variable.
 - `DIDWW_API_KEY` (required): your DIDWW API key
 - `DIDWW_README_PROXY_URL` (`test-readme` only): an HTTP proxy, e.g. `http://localhost:3128`, for the custom handler snippet
 - `DIDWW_README_REDIS_URL` (`test-readme` only): a Redis server, e.g. `redis://localhost:6379/0`, for the Redis token cache snippet
+- `DIDWW_README_PRODUCTION_API_KEY` (`test-readme` only): a production API key for the production client snippet; the check takes a read-only token and only reads the balance, the countries and one price
 
 ## Run an example
 
@@ -77,7 +78,7 @@ The process exits with 1 when an example fails or the example name is unknown.
 | [`PricesDownloadExample.cs`](PricesDownloadExample.cs) | `prices-download [dir]` | Downloads the gzipped Voice IN price file to the directory given as argument, or to `didww-prices` in the user cache directory, re-checks it with If-Modified-Since and reads a few rows. |
 | [`IncludesExample.cs`](IncludesExample.cs) | `includes` | Reads regions with their country, DID groups with SKUs, available DIDs with nested includes and DIDs with their trunk, and shows that a relationship that is not included is `null`. |
 | [`WebhookExample.cs`](WebhookExample.cs) | `webhook` | Signs a sample callback the way DIDWW does and validates it with `RequestValidator`: `True` for the callback, `False` for a tampered payload. Needs no API key. |
-| [`TestReadmeExample.cs`](TestReadmeExample.cs) | `test-readme` | Runs the code snippets of the SDK README against the sandbox, one check per snippet, deletes what it creates and restores what it changes (orders, exports and verifications cannot be deleted), prints the address and emergency verifications it creates on lines starting with `REVIEW`, skips only the production snippets (and the proxy and Redis snippets without `DIDWW_README_PROXY_URL` or `DIDWW_README_REDIS_URL`), prints `Results: N passed, M failed` and exits with 1 when a check fails. |
+| [`TestReadmeExample.cs`](TestReadmeExample.cs) | `test-readme` | Runs the code snippets of the SDK README against the sandbox, one check per snippet, deletes what it creates and restores what it changes (orders, exports and verifications cannot be deleted), prints the address and emergency verifications it creates on lines starting with `REVIEW`, runs the production client snippet read-only with `DIDWW_README_PRODUCTION_API_KEY`, skips the production, proxy and Redis snippets when their variable is not set, prints `Results: N passed, M failed` and exits with 1 when a check fails. |
 
 ## Troubleshooting
 

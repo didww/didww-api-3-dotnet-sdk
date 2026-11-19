@@ -27,11 +27,12 @@ namespace Didww.Api3.Examples;
 // cannot be deleted; a DID or Sender ID verification a check changes is
 // restored. The address and emergency verifications it creates are printed on
 // lines starting with "REVIEW", so that they can be approved or rejected.
-// Only the snippets that would talk to production are skipped.
 //
-// The proxy and Redis snippets need a server:
-//   DIDWW_README_PROXY_URL  an HTTP proxy, e.g. http://localhost:3128
-//   DIDWW_README_REDIS_URL  a Redis server, e.g. redis://localhost:6379/0
+// Some snippets need more than the sandbox API key:
+//   DIDWW_README_PROXY_URL           an HTTP proxy, e.g. http://localhost:3128
+//   DIDWW_README_REDIS_URL           a Redis server, e.g. redis://localhost:6379/0
+//   DIDWW_README_PRODUCTION_API_KEY  a production API key for the production client
+//                                    snippet, used with a read-only token for a few reads
 // Without the variable, that check is reported as skipped. The shell snippets
 // (installation, development, release) are not checked.
 //
@@ -95,7 +96,33 @@ public static class TestReadmeExample
         });
 
         Section("Configuration");
-        Skip("Configuration: production client", "production only; the Usage check runs the same calls in the sandbox");
+        await Check("Configuration: production client (read-only)", async () =>
+        {
+            // The README's production client, always with a Read token, so that the API
+            // refuses any write. It only reads: the balance, the countries and one price.
+            // Nothing that identifies the account, and neither the key nor the token, is printed.
+            var store = new CountingTokenStore(new MemoryTokenStore());
+            var production = DidwwClient.NewBuilder()
+                .SetCredentials(new DidwwCredentials(RequiredSetting("DIDWW_README_PRODUCTION_API_KEY"), DidwwEnvironment.Production))
+                .SetScope(DidwwScope.Read)
+                .SetTokenStore(store)
+                .Build();
+
+            var balance = (await production.Balance().FindAsync()).Data;
+            Expect(balance != null, "no balance");
+            var token = store.LastToken ?? throw new InvalidOperationException("no token was minted");
+            Expect(token.Scope == "read", $"the token service granted scope {token.Scope}, not read");
+
+            var countries = await production.Countries().ListAsync();
+            Expect(countries.Data.Count > 0, "no countries");
+
+            var price = await production.VoiceInPrices().LookupAsync(
+                new Dictionary<string, string?> { ["number"] = "12125551234" });
+            Expect(price.Rows.Count > 0, "no price rows");
+
+            Console.WriteLine($"    production: token minted (scope {token.Scope}), balance read, " +
+                              $"{countries.Data.Count} countries, price lookup ok");
+        });
         await Check("Configuration: sandbox client with Read scope and a logger", async () =>
         {
             // README: loggerFactory.CreateLogger("Didww"); any ILogger works. A new
@@ -1701,6 +1728,8 @@ public static class TestReadmeExample
 
         public List<string> Writes { get; } = new();
 
+        public DidwwToken? LastToken { get; private set; }
+
         public async ValueTask<DidwwToken?> GetAsync(string key, CancellationToken cancellationToken)
         {
             var token = await inner.GetAsync(key, cancellationToken);
@@ -1712,6 +1741,7 @@ public static class TestReadmeExample
         public ValueTask SetAsync(string key, DidwwToken token, TimeSpan ttl, CancellationToken cancellationToken)
         {
             Writes.Add(key);
+            LastToken = token;
             return inner.SetAsync(key, token, ttl, cancellationToken);
         }
 
