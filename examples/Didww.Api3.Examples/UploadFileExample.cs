@@ -1,6 +1,6 @@
 namespace Didww.Api3.Examples;
 
-public static class EncryptionExample
+public static class UploadFileExample
 {
     public static async Task RunAsync(DidwwClient client)
     {
