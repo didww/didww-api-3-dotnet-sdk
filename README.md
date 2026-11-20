@@ -1236,8 +1236,6 @@ git push origin v4.0.0
 
 The [release workflow](.github/workflows/release.yml) will automatically build, test, and publish the package to [NuGet](https://www.nuget.org/). For tags on `main` (4.x), it fails when the tag does not match the version in the `.csproj`.
 
-The workflow publishes through [NuGet Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing): it exchanges a GitHub OIDC token for a temporary API key, so no NuGet API key is stored in the repository. It needs a Trusted Publishing policy on nuget.org for the workflow `release.yml` of this repository and the `NUGET_USER` repository secret (the nuget.org profile name of the policy owner). Running the workflow by hand on `main` checks the login: the current version is already published, so its push is skipped.
-
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/didww/didww-api-3-dotnet-sdk

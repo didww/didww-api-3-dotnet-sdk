@@ -4,9 +4,8 @@ on:
   push:
     tags:
       - 'v*'
-  # A manual run builds, tests and packs the current version and pushes it with
-  # --skip-duplicate: an already published version is skipped, so it checks the
-  # nuget.org login without publishing anything new.
+  # A manual run checks the build and the nuget.org login and never publishes:
+  # only a version tag publishes the package.
   workflow_dispatch:
 
 jobs:
@@ -47,12 +46,16 @@ jobs:
         run: dotnet pack src/Didww.Api3/Didww.Api3.csproj --no-build --configuration Release --output ./nupkg
 
       # Trusted Publishing: the temporary API key is valid for one hour, so it is
-      # requested right before the push
+      # requested right before the push. It also runs on a manual run, where it
+      # fails if the Trusted Publishing policy on nuget.org does not match.
       - name: NuGet login (OIDC → temporary API key)
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }} # nuget.org profile name, not the email address
 
+      # Only a version tag publishes: a manual run would otherwise publish the
+      # version in the .csproj without a tag
       - name: Publish to NuGet
+        if: startsWith(github.ref, 'refs/tags/')
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
