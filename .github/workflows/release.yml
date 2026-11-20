@@ -4,10 +4,17 @@ on:
   push:
     tags:
       - 'v*'
+  # A manual run builds, tests and packs the current version and pushes it with
+  # --skip-duplicate: an already published version is skipped, so it checks the
+  # nuget.org login without publishing anything new.
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC token for NuGet Trusted Publishing
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +26,7 @@ jobs:
             10.0.x
 
       - name: Check tag matches package version
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="$(dotnet msbuild src/Didww.Api3/Didww.Api3.csproj -getProperty:Version)"
           if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
@@ -38,5 +46,13 @@ jobs:
       - name: Pack
         run: dotnet pack src/Didww.Api3/Didww.Api3.csproj --no-build --configuration Release --output ./nupkg
 
+      # Trusted Publishing: the temporary API key is valid for one hour, so it is
+      # requested right before the push
+      - name: NuGet login (OIDC → temporary API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }} # nuget.org profile name, not the email address
+
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
