@@ -49,7 +49,7 @@ jobs:
       # requested right before the push. It also runs on a manual run, where it
       # fails if the Trusted Publishing policy on nuget.org does not match.
       - name: NuGet login (OIDC → temporary API key)
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         id: login
         with:
           user: ${{ secrets.NUGET_USER }} # nuget.org profile name, not the email address
